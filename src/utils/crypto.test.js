@@ -1,0 +1,124 @@
+import { describe, it, expect } from 'vitest'
+import {
+  computeHash,
+  computeHmac,
+  aesEncrypt,
+  aesDecrypt,
+  HASH_ALGORITHMS,
+  AES_ALGORITHMS,
+} from './crypto.js'
+
+describe('computeHash', () => {
+  it('computes SHA-256 of empty string', () => {
+    expect(computeHash('SHA-256', '')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+  })
+
+  it('computes SHA-256 of ASCII text', () => {
+    expect(computeHash('SHA-256', 'hello')).toBe('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
+  })
+
+  it('computes SHA-1 of known string', () => {
+    expect(computeHash('SHA-1', 'hello')).toBe('aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d')
+  })
+
+  it('computes SHA-384', () => {
+    const result = computeHash('SHA-384', 'hello')
+    expect(result).toHaveLength(96)
+    expect(result).toMatch(/^[0-9a-f]+$/)
+  })
+
+  it('computes SHA-512', () => {
+    const result = computeHash('SHA-512', 'hello')
+    expect(result).toHaveLength(128)
+    expect(result).toMatch(/^[0-9a-f]+$/)
+  })
+
+  it('computes MD5', () => {
+    expect(computeHash('MD5', 'hello')).toBe('5d41402abc4b2a76b9719d911017c592')
+  })
+
+  it('computes RIPEMD160', () => {
+    expect(computeHash('RIPEMD160', 'hello')).toBe('108f07b8382412612c048d07d13f814118445acd')
+  })
+
+  it('computes hash of Unicode text', () => {
+    const result = computeHash('SHA-256', '你好')
+    expect(result).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('throws for unsupported algorithm', () => {
+    expect(() => computeHash('BAD', 'test')).toThrow('Unsupported hash algorithm')
+  })
+})
+
+describe('computeHmac', () => {
+  it('computes HMAC-SHA256', () => {
+    const result = computeHmac('SHA-256', 'key', 'message')
+    expect(result).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('produces different results for different keys', () => {
+    const a = computeHmac('SHA-256', 'key1', 'message')
+    const b = computeHmac('SHA-256', 'key2', 'message')
+    expect(a).not.toBe(b)
+  })
+
+  it('produces different results for different messages', () => {
+    const a = computeHmac('SHA-256', 'key', 'msg1')
+    const b = computeHmac('SHA-256', 'key', 'msg2')
+    expect(a).not.toBe(b)
+  })
+})
+
+describe('AES encrypt/decrypt', () => {
+  it('AES-CBC roundtrip', async () => {
+    const ciphertext = await aesEncrypt('AES-CBC', 'mypassword', 'Hello, World!')
+    const decrypted = await aesDecrypt('AES-CBC', 'mypassword', ciphertext)
+    expect(decrypted).toBe('Hello, World!')
+  })
+
+  it('AES-GCM roundtrip', async () => {
+    const ciphertext = await aesEncrypt('AES-GCM', 'mypassword', 'Hello, World!')
+    const decrypted = await aesDecrypt('AES-GCM', 'mypassword', ciphertext)
+    expect(decrypted).toBe('Hello, World!')
+  })
+
+  it('AES-CBC roundtrip with Unicode', async () => {
+    const ciphertext = await aesEncrypt('AES-CBC', '密码', '你好世界 🌍')
+    const decrypted = await aesDecrypt('AES-CBC', '密码', ciphertext)
+    expect(decrypted).toBe('你好世界 🌍')
+  })
+
+  it('AES-GCM roundtrip with empty string', async () => {
+    const ciphertext = await aesEncrypt('AES-GCM', 'pass', '')
+    const decrypted = await aesDecrypt('AES-GCM', 'pass', ciphertext)
+    expect(decrypted).toBe('')
+  })
+
+  it('wrong passphrase fails to decrypt', async () => {
+    const ciphertext = await aesEncrypt('AES-GCM', 'correct', 'secret')
+    await expect(aesDecrypt('AES-GCM', 'wrong', ciphertext)).rejects.toThrow()
+  })
+
+  it('each encryption produces different ciphertext (random salt+iv)', async () => {
+    const a = await aesEncrypt('AES-CBC', 'pass', 'same text')
+    const b = await aesEncrypt('AES-CBC', 'pass', 'same text')
+    expect(a).not.toBe(b)
+  })
+
+  it('ciphertext hex string has expected minimum length', async () => {
+    // AES-CBC: salt(16) + iv(16) + at least one block(16) = 48 bytes = 96 hex chars
+    const ciphertext = await aesEncrypt('AES-CBC', 'pass', 'hi')
+    expect(ciphertext.length).toBeGreaterThanOrEqual(96)
+  })
+})
+
+describe('constants', () => {
+  it('HASH_ALGORITHMS has expected entries', () => {
+    expect(HASH_ALGORITHMS).toEqual(['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512', 'MD5', 'RIPEMD160'])
+  })
+
+  it('AES_ALGORITHMS has expected entries', () => {
+    expect(AES_ALGORITHMS).toEqual(['AES-CBC', 'AES-GCM'])
+  })
+})

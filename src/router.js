@@ -6,6 +6,7 @@ import MD5 from './views/MD5.vue'
 import Diff from './views/Diff.vue'
 import Watermark from './views/Watermark.vue'
 import AesKey from './views/AesKey.vue'
+import Crypto from './views/Crypto.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -15,6 +16,7 @@ const routes = [
   { path: '/diff', component: Diff },
   { path: '/watermark', component: Watermark },
   { path: '/aes-key', component: AesKey },
+  { path: '/crypto', component: Crypto },
 ]
 
 export default createRouter({

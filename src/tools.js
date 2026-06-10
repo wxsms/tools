@@ -5,6 +5,7 @@ import {
   DocumentPlusIcon,
   SparklesIcon,
   KeyIcon,
+  LockClosedIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -34,6 +35,12 @@ export const toolGroups = [
         path: '/aes-key',
         desc: 'Generate random AES keys',
         icon: KeyIcon,
+      },
+      {
+        name: 'Crypto',
+        path: '/crypto',
+        desc: 'AES encrypt/decrypt, hash & HMAC',
+        icon: LockClosedIcon,
       },
       {
         name: 'Diff',
