@@ -30,7 +30,7 @@
               class="btn btn-ghost text-xl"
             >
               <WrenchScrewdriverIcon class="w-6 h-6" />
-              Wxsm's Tools
+              wxsm's Kit
             </router-link>
           </div>
           <div
@@ -81,7 +81,7 @@
         <!-- Footer -->
         <footer class="footer footer-center p-4 bg-base-200 text-base-content">
           <aside>
-            <p>&copy; {{ year }} wxsms — Personal Toolkit</p>
+            <p>&copy; {{ year }} wxsm — Personal Toolkit</p>
           </aside>
         </footer>
       </div>
@@ -103,7 +103,7 @@
             class="btn btn-ghost text-xl no-underline mb-4 self-start"
           >
             <WrenchScrewdriverIcon class="w-6 h-6" />
-            Wxsms's Tools
+            wxsm's Kit
           </router-link>
 
           <div class="divider mt-0 mb-2" />

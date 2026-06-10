@@ -4,7 +4,7 @@
       <div class="hero-content text-center">
         <div class="max-w-lg">
           <h1 class="text-4xl font-bold">
-            Wxsm's Toolbox
+            wxsm's Kit
           </h1>
           <p class="py-4 text-base-content/70">
             🔒 Private · ⚡ Fast · 💯 Free<br>

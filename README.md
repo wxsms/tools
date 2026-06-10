@@ -1,4 +1,4 @@
-# Wxsm's Tools
+# wxsm's Kit
 
 [![CI](https://github.com/wxsms/tools/actions/workflows/ci.yaml/badge.svg)](https://github.com/wxsms/tools/actions/workflows/ci.yaml)
 [![Coverage](https://codecov.io/gh/wxsms/tools/branch/master/graph/badge.svg)](https://codecov.io/gh/wxsms/tools)
@@ -13,6 +13,7 @@ Personal toolkit built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
 | [Gzip Encoder / Decoder](https://wxsms.github.io/tools/gzip) | Gzip compress text, output as Base64 |
 | [MD5 Hash](https://wxsms.github.io/tools/md5) | Compute MD5 hash of text |
 | [Text Diff](https://wxsms.github.io/tools/diff) | Compare texts with line-level diff and inline highlighting |
+| [Image Watermark](https://wxsms.github.io/tools/watermark) | Add transparent text watermark to images |
 
 ## Development
 
