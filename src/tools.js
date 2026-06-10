@@ -6,6 +6,7 @@ import {
   SparklesIcon,
   LockClosedIcon,
   PaperClipIcon,
+  KeyIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -29,6 +30,12 @@ export const toolGroups = [
         path: '/crypto',
         desc: 'AES encrypt/decrypt, hash & HMAC',
         icon: LockClosedIcon,
+      },
+      {
+        name: 'RSA',
+        path: '/rsa',
+        desc: 'RSA key generation, encryption & decryption',
+        icon: KeyIcon,
       },
       {
         name: 'Diff',
