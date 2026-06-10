@@ -4,8 +4,14 @@ import {
   computeHmac,
   aesEncrypt,
   aesDecrypt,
+  aesEncryptRaw,
+  aesDecryptRaw,
+  deriveKey,
+  generateIv,
+  generateSalt,
   HASH_ALGORITHMS,
   AES_ALGORITHMS,
+  AES_KEY_SIZES,
 } from './crypto.js'
 
 describe('computeHash', () => {
@@ -113,6 +119,92 @@ describe('AES encrypt/decrypt', () => {
   })
 })
 
+describe('generateIv', () => {
+  it('generates 16 bytes for AES-CBC', () => {
+    const iv = generateIv('AES-CBC')
+    expect(iv).toBeInstanceOf(Uint8Array)
+    expect(iv).toHaveLength(16)
+  })
+
+  it('generates 12 bytes for AES-GCM', () => {
+    const iv = generateIv('AES-GCM')
+    expect(iv).toBeInstanceOf(Uint8Array)
+    expect(iv).toHaveLength(12)
+  })
+
+  it('generates different values each call', () => {
+    const a = generateIv('AES-CBC')
+    const b = generateIv('AES-CBC')
+    expect(a).not.toEqual(b)
+  })
+})
+
+describe('generateSalt', () => {
+  it('generates 16 bytes', () => {
+    const salt = generateSalt()
+    expect(salt).toBeInstanceOf(Uint8Array)
+    expect(salt).toHaveLength(16)
+  })
+
+  it('generates different values each call', () => {
+    const a = generateSalt()
+    const b = generateSalt()
+    expect(a).not.toEqual(b)
+  })
+})
+
+describe('deriveKey', () => {
+  it('derives a key of specified length', async () => {
+    const salt = generateSalt()
+    const key = await deriveKey('password', salt, 32)
+    expect(key).toBeInstanceOf(Uint8Array)
+    expect(key).toHaveLength(32)
+  })
+
+  it('derives different keys for different passwords', async () => {
+    const salt = generateSalt()
+    const a = await deriveKey('pass1', salt, 32)
+    const b = await deriveKey('pass2', salt, 32)
+    expect(a).not.toEqual(b)
+  })
+
+  it('derives same key for same inputs', async () => {
+    const salt = generateSalt()
+    const a = await deriveKey('password', salt, 32)
+    const b = await deriveKey('password', salt, 32)
+    expect(a).toEqual(b)
+  })
+})
+
+describe('aesEncryptRaw / aesDecryptRaw', () => {
+  it('AES-CBC raw roundtrip', async () => {
+    const salt = generateSalt()
+    const key = await deriveKey('password', salt, 32)
+    const iv = generateIv('AES-CBC')
+    const ciphertext = aesEncryptRaw('AES-CBC', key, iv, 'Hello raw!')
+    const decrypted = aesDecryptRaw('AES-CBC', key, iv, ciphertext)
+    expect(decrypted).toBe('Hello raw!')
+  })
+
+  it('AES-GCM raw roundtrip', async () => {
+    const salt = generateSalt()
+    const key = await deriveKey('password', salt, 32)
+    const iv = generateIv('AES-GCM')
+    const ciphertext = aesEncryptRaw('AES-GCM', key, iv, 'Hello GCM!')
+    const decrypted = aesDecryptRaw('AES-GCM', key, iv, ciphertext)
+    expect(decrypted).toBe('Hello GCM!')
+  })
+
+  it('wrong key fails to decrypt (AES-GCM)', async () => {
+    const salt = generateSalt()
+    const key1 = await deriveKey('correct', salt, 32)
+    const key2 = await deriveKey('wrong', salt, 32)
+    const iv = generateIv('AES-GCM')
+    const ciphertext = aesEncryptRaw('AES-GCM', key1, iv, 'secret')
+    expect(() => aesDecryptRaw('AES-GCM', key2, iv, ciphertext)).toThrow()
+  })
+})
+
 describe('constants', () => {
   it('HASH_ALGORITHMS has expected entries', () => {
     expect(HASH_ALGORITHMS).toEqual(['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512', 'MD5', 'RIPEMD160'])
@@ -120,5 +212,9 @@ describe('constants', () => {
 
   it('AES_ALGORITHMS has expected entries', () => {
     expect(AES_ALGORITHMS).toEqual(['AES-CBC', 'AES-GCM'])
+  })
+
+  it('AES_KEY_SIZES has expected entries', () => {
+    expect(AES_KEY_SIZES).toEqual([128, 192, 256])
   })
 })
