@@ -92,6 +92,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ArrowsUpDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { encodeBase64, decodeBase64 } from '../utils/base64.js'
 
 const input = ref('')
 const output = ref('')
@@ -107,7 +108,7 @@ function onInputChange() {
     return
   }
   try {
-    output.value = btoa(unescape(encodeURIComponent(input.value)))
+    output.value = encodeBase64(input.value)
   } catch (e) {
     outputError.value = '编码失败: ' + e.message
   }
@@ -120,7 +121,7 @@ function onOutputChange() {
     return
   }
   try {
-    input.value = decodeURIComponent(escape(atob(output.value.trim())))
+    input.value = decodeBase64(output.value)
   } catch {
     inputError.value = '无效的 Base64 字符串'
   }

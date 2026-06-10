@@ -78,8 +78,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ArrowDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
-import { md5 } from '@noble/hashes/legacy.js'
-import { bytesToHex } from '@noble/hashes/utils.js'
+import { computeMd5 } from '../utils/md5.js'
 
 const input = ref('')
 const output = ref('')
@@ -91,8 +90,8 @@ function onInputChange() {
     output.value = ''
     return
   }
-  const hash = md5(new TextEncoder().encode(input.value))
-  output.value = bytesToHex(hash)
+  const hash = computeMd5(input.value)
+  output.value = hash
 }
 
 function clear() {

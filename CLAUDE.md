@@ -117,3 +117,7 @@ Uses `@heroicons/vue` outline style icons.
 ### Lint
 
 Run `npm run lint` before committing. CI will enforce this on PRs to master.
+
+### Test
+
+Run `npm run test` before committing. CI will enforce this on PRs to master.

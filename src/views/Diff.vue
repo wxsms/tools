@@ -32,7 +32,7 @@
         <button
           class="btn btn-primary btn-sm gap-1"
           :disabled="!leftText && !rightText"
-          @click="computeDiff"
+          @click="computeDiffFn"
         >
           <ArrowsRightLeftIcon class="w-4 h-4" />
           对比
@@ -187,8 +187,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import * as Diff from 'diff'
 import { ArrowsRightLeftIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { computeDiff as doComputeDiff, computeStats, computeDisplayLines } from '../utils/diff.js'
 
 const leftText = ref('')
 const rightText = ref('')
@@ -200,84 +200,16 @@ const CONTEXT = 3
 
 const hasChanges = computed(() => diffLines.value.some(l => l.type !== 'equal'))
 
-const stats = computed(() => {
-  let added = 0, deleted = 0, unchanged = 0
-  for (const line of diffLines.value) {
-    if (line.type === 'add') added++
-    else if (line.type === 'delete') deleted++
-    else unchanged++
-  }
-  return { added, deleted, unchanged }
-})
+const stats = computed(() => computeStats(diffLines.value))
 
-const displayLines = computed(() => {
-  if (showMode.value === 'full') return diffLines.value
-
-  // compact mode: show changed lines + N context lines, fold the rest
-  const lines = diffLines.value
-  const visible = new Set()
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].type !== 'equal') {
-      for (let j = Math.max(0, i - CONTEXT); j <= Math.min(lines.length - 1, i + CONTEXT); j++) {
-        visible.add(j)
-      }
-    }
-  }
-
-  const result = []
-  let i = 0
-  while (i < lines.length) {
-    if (visible.has(i)) {
-      result.push(lines[i])
-      i++
-      continue
-    }
-
-    // Collect consecutive invisible lines
-    const foldStart = i
-    while (i < lines.length && !visible.has(i)) i++
-    const foldEnd = i
-
-    // Check if this fold region is unfolded by user
-    const isUnfolded = [...unfolded.value].some(u => u >= foldStart && u < foldEnd)
-    if (isUnfolded) {
-      for (let j = foldStart; j < foldEnd; j++) {
-        result.push(lines[j])
-      }
-    } else {
-      result.push({ type: 'fold', foldIndex: foldStart, count: foldEnd - foldStart })
-    }
-  }
-  return result
-})
+const displayLines = computed(() => computeDisplayLines(diffLines.value, showMode.value, unfolded.value, CONTEXT))
 
 function unfold(foldIndex) {
   unfolded.value = new Set([...unfolded.value, foldIndex])
 }
 
-function computeDiff() {
-  const lineChanges = Diff.diffLines(leftText.value, rightText.value)
-  const result = []
-  let oldNum = 0, newNum = 0
-
-  for (const change of lineChanges) {
-    const lines = change.value.replace(/\n$/, '').split('\n')
-    for (const text of lines) {
-      if (change.added) {
-        newNum++
-        result.push({ type: 'add', text, oldNum: '', newNum })
-      } else if (change.removed) {
-        oldNum++
-        result.push({ type: 'delete', text, oldNum, newNum: '' })
-      } else {
-        oldNum++
-        newNum++
-        result.push({ type: 'equal', text, oldNum, newNum })
-      }
-    }
-  }
-
-  diffLines.value = addInlineHighlights(result)
+function computeDiffFn() {
+  diffLines.value = doComputeDiff(leftText.value, rightText.value)
   compared.value = true
   unfolded.value = new Set()
 }
@@ -289,48 +221,5 @@ function clear() {
   compared.value = false
   showMode.value = 'compact'
   unfolded.value = new Set()
-}
-
-/**
- * For consecutive delete+add pairs, compute word-level diff
- * and attach segments for inline highlighting.
- */
-function addInlineHighlights(lines) {
-  const result = []
-  let i = 0
-  while (i < lines.length) {
-    const deletes = []
-    while (i < lines.length && lines[i].type === 'delete') {
-      deletes.push(lines[i])
-      i++
-    }
-    const adds = []
-    while (i < lines.length && lines[i].type === 'add') {
-      adds.push(lines[i])
-      i++
-    }
-
-    if (deletes.length > 0 && adds.length > 0) {
-      const pairCount = Math.min(deletes.length, adds.length)
-      for (let p = 0; p < pairCount; p++) {
-        const wordDiff = Diff.diffWords(deletes[p].text, adds[p].text)
-        deletes[p].segments = wordDiff
-          .filter(p => !p.added)
-          .map(p => ({ type: p.removed ? 'delete' : 'equal', text: p.value }))
-        adds[p].segments = wordDiff
-          .filter(p => !p.removed)
-          .map(p => ({ type: p.added ? 'add' : 'equal', text: p.value }))
-      }
-      result.push(...deletes, ...adds)
-    } else {
-      result.push(...deletes, ...adds)
-    }
-
-    while (i < lines.length && lines[i].type !== 'delete' && lines[i].type !== 'add') {
-      result.push(lines[i])
-      i++
-    }
-  }
-  return result
 }
 </script>
