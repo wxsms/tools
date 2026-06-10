@@ -4,7 +4,9 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## 1. Think Before Coding
+## Coding Guidelines
+
+### 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
@@ -14,7 +16,7 @@ Before implementing:
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
 
-## 2. Simplicity First
+### 2. Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
@@ -26,7 +28,7 @@ Before implementing:
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-## 3. Surgical Changes
+### 3. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
@@ -42,7 +44,7 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
-## 4. Goal-Driven Execution
+### 4. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
@@ -60,7 +62,7 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Git Commands
+### 5. Git Commands
 
 **Use `git -C <path>` instead of `cd` before git.**
 
@@ -71,3 +73,43 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+## Project Structure
+
+Wxsms Tools — personal toolset built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
+
+```
+├── index.html              # Entry HTML
+├── vite.config.js           # Vite config (vue + tailwindcss plugins)
+├── package.json             # Dependencies
+├── public/
+│   └── favicon.svg
+├── src/
+│   ├── main.js              # App entry, mounts Vue + Router
+│   ├── App.vue              # Root component: sidebar + nav + router outlet
+│   ├── router.js            # Route definitions
+│   ├── style.css            # Global styles
+│   ├── composables/
+│   │   └── useTheme.js      # Dark/light theme toggle
+│   └── views/               # One .vue file per tool
+│       ├── Home.vue
+│       ├── Base64.vue
+│       ├── Gzip.vue
+│       ├── MD5.vue
+│       └── Diff.vue
+```
+
+### How to Add a New Tool
+
+1. **Create view** — Add `ToolName.vue` under `src/views/`, follow existing tool patterns
+2. **Register route** — Import and add route in `src/router.js`: `{ path: '/tool-name', component: ToolName }`
+3. **Add sidebar entry** — Append to `tools` array in `src/App.vue`: `{ name: 'Tool Name', path: '/tool-name', icon: XxxIcon }`, and import the icon
+
+All three steps are required.
+
+### Icon Source
+
+Uses `@heroicons/vue` outline style icons.
+
+- Browse at: https://heroicons.com/
+- Pick outline style, copy the component name (e.g. `DocumentPlusIcon`)
+- Import from `@heroicons/vue/24/outline`
