@@ -113,3 +113,7 @@ Uses `@heroicons/vue` outline style icons.
 - Browse at: https://heroicons.com/
 - Pick outline style, copy the component name (e.g. `DocumentPlusIcon`)
 - Import from `@heroicons/vue/24/outline`
+
+### Lint
+
+Run `npm run lint` before committing. CI will enforce this on PRs to master.

@@ -1,17 +1,41 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">Gzip 编码解码</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      Gzip 编码解码
+    </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">原文</span></label>
         <div class="relative">
-          <textarea v-model="input" class="textarea textarea-bordered w-full font-mono text-sm" placeholder="输入原文..." rows="6" @input="onInputChange" />
-          <button v-if="input" class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2" @click="copyInput" :title="inputCopied ? '已复制！' : '复制'">
-            <CheckIcon v-if="inputCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+          <textarea
+            v-model="input"
+            class="textarea textarea-bordered w-full font-mono text-sm"
+            placeholder="输入原文..."
+            rows="6"
+            @input="onInputChange"
+          />
+          <button
+            v-if="input"
+            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
+            :title="inputCopied ? '已复制！' : '复制'"
+            @click="copyInput"
+          >
+            <CheckIcon
+              v-if="inputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
-        <p v-if="inputError" class="text-error text-sm mt-1">{{ inputError }}</p>
+        <p
+          v-if="inputError"
+          class="text-error text-sm mt-1"
+        >
+          {{ inputError }}
+        </p>
       </div>
 
       <div class="flex justify-center opacity-40">
@@ -21,17 +45,42 @@
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">Gzip (Base64)</span></label>
         <div class="relative">
-          <textarea v-model="output" class="textarea textarea-bordered w-full font-mono text-sm" placeholder="输入 Gzip Base64 字符串..." rows="6" @input="onOutputChange" />
-          <button v-if="output" class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2" @click="copyOutput" :title="outputCopied ? '已复制！' : '复制'">
-            <CheckIcon v-if="outputCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+          <textarea
+            v-model="output"
+            class="textarea textarea-bordered w-full font-mono text-sm"
+            placeholder="输入 Gzip Base64 字符串..."
+            rows="6"
+            @input="onOutputChange"
+          />
+          <button
+            v-if="output"
+            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
+            :title="outputCopied ? '已复制！' : '复制'"
+            @click="copyOutput"
+          >
+            <CheckIcon
+              v-if="outputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
-        <p v-if="outputError" class="text-error text-sm mt-1">{{ outputError }}</p>
+        <p
+          v-if="outputError"
+          class="text-error text-sm mt-1"
+        >
+          {{ outputError }}
+        </p>
       </div>
 
       <div class="flex justify-end">
-        <button class="btn btn-ghost btn-sm gap-1" @click="clear">
+        <button
+          class="btn btn-ghost btn-sm gap-1"
+          @click="clear"
+        >
           <TrashIcon class="w-4 h-4" />
           清空
         </button>
@@ -138,7 +187,7 @@ async function onOutputChange() {
   try {
     const bytes = base64ToUint8(output.value.trim())
     input.value = await gzipDecode(bytes)
-  } catch (e) {
+  } catch {
     inputError.value = '无效的 Gzip Base64 字符串'
   }
 }
@@ -155,7 +204,7 @@ async function copyInput() {
     await navigator.clipboard.writeText(input.value)
     inputCopied.value = true
     setTimeout(() => inputCopied.value = false, 1500)
-  } catch {}
+  } catch { /* clipboard not available */ }
 }
 
 async function copyOutput() {
@@ -163,6 +212,6 @@ async function copyOutput() {
     await navigator.clipboard.writeText(output.value)
     outputCopied.value = true
     setTimeout(() => outputCopied.value = false, 1500)
-  } catch {}
+  } catch { /* clipboard not available */ }
 }
 </script>

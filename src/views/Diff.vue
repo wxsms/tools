@@ -1,53 +1,104 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">文本 Diff</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      文本 Diff
+    </h1>
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4">
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">原始文本</span></label>
-          <textarea v-model="leftText" class="textarea textarea-bordered w-full font-mono text-sm" placeholder="输入原始文本..." rows="10" />
+          <textarea
+            v-model="leftText"
+            class="textarea textarea-bordered w-full font-mono text-sm"
+            placeholder="输入原始文本..."
+            rows="10"
+          />
         </div>
         <div class="hidden lg:flex items-center justify-center opacity-30">
           <ArrowsRightLeftIcon class="w-5 h-5" />
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">修改文本</span></label>
-          <textarea v-model="rightText" class="textarea textarea-bordered w-full font-mono text-sm" placeholder="输入修改后的文本..." rows="10" />
+          <textarea
+            v-model="rightText"
+            class="textarea textarea-bordered w-full font-mono text-sm"
+            placeholder="输入修改后的文本..."
+            rows="10"
+          />
         </div>
       </div>
 
       <div class="flex justify-center gap-2">
-        <button class="btn btn-primary btn-sm gap-1" @click="computeDiff" :disabled="!leftText && !rightText">
+        <button
+          class="btn btn-primary btn-sm gap-1"
+          :disabled="!leftText && !rightText"
+          @click="computeDiff"
+        >
           <ArrowsRightLeftIcon class="w-4 h-4" />
           对比
         </button>
-        <button class="btn btn-ghost btn-sm gap-1" @click="clear">
+        <button
+          class="btn btn-ghost btn-sm gap-1"
+          @click="clear"
+        >
           <TrashIcon class="w-4 h-4" />
           清空
         </button>
       </div>
 
       <!-- No diff hint -->
-      <div v-if="compared && !hasChanges" role="alert" class="alert alert-success mt-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <div
+        v-if="compared && !hasChanges"
+        role="alert"
+        class="alert alert-success mt-4"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span>两段文本完全相同</span>
       </div>
 
       <!-- Diff result -->
-      <div v-if="compared && diffLines.length" class="mt-2">
+      <div
+        v-if="compared && diffLines.length"
+        class="mt-2"
+      >
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-lg font-semibold">对比结果</h2>
+          <h2 class="text-lg font-semibold">
+            对比结果
+          </h2>
           <div class="flex items-center gap-4">
             <div class="join">
-              <button class="btn btn-xs join-item" :class="showMode === 'compact' ? 'btn-active' : ''" @click="showMode = 'compact'">差异</button>
-              <button class="btn btn-xs join-item" :class="showMode === 'full' ? 'btn-active' : ''" @click="showMode = 'full'">全部</button>
+              <button
+                class="btn btn-xs join-item"
+                :class="showMode === 'compact' ? 'btn-active' : ''"
+                @click="showMode = 'compact'"
+              >
+                差异
+              </button>
+              <button
+                class="btn btn-xs join-item"
+                :class="showMode === 'full' ? 'btn-active' : ''"
+                @click="showMode = 'full'"
+              >
+                全部
+              </button>
             </div>
             <div class="flex items-center gap-3 text-xs opacity-70">
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-success/20 border border-success/40"></span> 新增</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-error/20 border border-error/40"></span> 删除</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-base-300 border border-base-content/10"></span> 未变</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-success/20 border border-success/40" /> 新增</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-error/20 border border-error/40" /> 删除</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-base-300 border border-base-content/10" /> 未变</span>
             </div>
           </div>
         </div>
@@ -56,35 +107,62 @@
           <table class="w-full text-sm font-mono">
             <thead>
               <tr class="bg-base-200 text-xs text-base-content/50">
-                <th class="w-12 text-right px-2 py-1">旧</th>
-                <th class="w-12 text-right px-2 py-1">新</th>
-                <th class="px-3 py-1 text-left"></th>
+                <th class="w-12 text-right px-2 py-1">
+                  旧
+                </th>
+                <th class="w-12 text-right px-2 py-1">
+                  新
+                </th>
+                <th class="px-3 py-1 text-left" />
               </tr>
             </thead>
             <tbody>
-              <template v-for="(item, i) in displayLines" :key="i">
-                <tr v-if="item.type === 'fold'"
+              <template
+                v-for="(item, i) in displayLines"
+                :key="i"
+              >
+                <tr
+                  v-if="item.type === 'fold'"
                   class="bg-base-200/50 cursor-pointer hover:bg-base-200"
                   @click="unfold(item.foldIndex)"
                 >
-                  <td colspan="3" class="text-center px-2 py-0.5 text-xs text-base-content/40 select-none">
+                  <td
+                    colspan="3"
+                    class="text-center px-2 py-0.5 text-xs text-base-content/40 select-none"
+                  >
                     ⋯ 折叠了 {{ item.count }} 行相同内容（点击展开）⋯
                   </td>
                 </tr>
-                <tr v-else
+                <tr
+                  v-else
                   :class="{
                     'bg-success/10': item.type === 'add',
                     'bg-error/10': item.type === 'delete',
                   }"
                 >
-                  <td class="text-right px-2 py-0.5 text-base-content/30 select-none align-top">{{ item.type === 'add' ? '' : item.oldNum }}</td>
-                  <td class="text-right px-2 py-0.5 text-base-content/30 select-none align-top">{{ item.type === 'delete' ? '' : item.newNum }}</td>
+                  <td class="text-right px-2 py-0.5 text-base-content/30 select-none align-top">
+                    {{ item.type === 'add' ? '' : item.oldNum }}
+                  </td>
+                  <td class="text-right px-2 py-0.5 text-base-content/30 select-none align-top">
+                    {{ item.type === 'delete' ? '' : item.newNum }}
+                  </td>
                   <td class="px-3 py-0.5 whitespace-pre-wrap break-all">
-                    <span v-if="item.type === 'add'" class="text-success">+</span>
-                    <span v-else-if="item.type === 'delete'" class="text-error">-</span>
-                    <span v-else class="text-base-content/30"> </span>
+                    <span
+                      v-if="item.type === 'add'"
+                      class="text-success"
+                    >+</span>
+                    <span
+                      v-else-if="item.type === 'delete'"
+                      class="text-error"
+                    >-</span>
+                    <span
+                      v-else
+                      class="text-base-content/30"
+                    />
                     <template v-if="item.segments">
-                      <span v-for="(seg, si) in item.segments" :key="si"
+                      <span
+                        v-for="(seg, si) in item.segments"
+                        :key="si"
                         :class="{
                           'bg-error/30 text-error': seg.type === 'delete',
                           'bg-success/30 text-success': seg.type === 'add',
@@ -144,12 +222,6 @@ const displayLines = computed(() => {
         visible.add(j)
       }
     }
-  }
-  // Always unfold user-unfolded regions
-  for (const idx of unfolded.value) {
-    // idx is the start of a fold region; expand it
-    // Find the fold region that starts at idx
-    // We'll handle this by adding those indices to visible
   }
 
   const result = []
