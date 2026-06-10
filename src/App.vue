@@ -76,7 +76,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useTheme } from './composables/useTheme.js'
-import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon, ArrowsRightLeftIcon, CircleStackIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon, ArrowsRightLeftIcon, CircleStackIcon, FingerPrintIcon } from '@heroicons/vue/24/outline'
 
 const year = new Date().getFullYear()
 const { theme, toggleTheme } = useTheme()
@@ -92,6 +92,11 @@ const tools = [
     name: 'Gzip 编码解码',
     path: '/gzip',
     icon: CircleStackIcon
+  },
+  {
+    name: 'MD5 哈希',
+    path: '/md5',
+    icon: FingerPrintIcon
   },
 ]
 </script>

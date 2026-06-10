@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ArrowsRightLeftIcon, CircleStackIcon } from '@heroicons/vue/24/outline'
+import { ArrowsRightLeftIcon, CircleStackIcon, FingerPrintIcon } from '@heroicons/vue/24/outline'
 
 const tools = [
   {
@@ -46,6 +46,12 @@ const tools = [
     path: '/gzip',
     desc: 'Gzip 压缩与解压缩（Base64 表示）',
     icon: CircleStackIcon
+  },
+  {
+    name: 'MD5 哈希',
+    path: '/md5',
+    desc: 'MD5 哈希计算',
+    icon: FingerPrintIcon
   },
 ]
 </script>
