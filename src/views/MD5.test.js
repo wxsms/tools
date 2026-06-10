@@ -9,7 +9,7 @@ function mountComponent() {
 describe('MD5', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('MD5 哈希')
+    expect(wrapper.text()).toContain('MD5 Hash')
   })
 
   it('computes MD5 hash on input', async () => {
@@ -38,7 +38,7 @@ describe('MD5', () => {
     const input = wrapper.find('input')
     await textarea.setValue('hello')
     await textarea.trigger('input')
-    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清空'))
+    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('Clear'))
     await clearBtn.trigger('click')
     expect(textarea.element.value).toBe('')
     expect(input.element.value).toBe('')

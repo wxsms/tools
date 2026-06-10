@@ -1,23 +1,23 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      MD5 哈希
+      MD5 Hash
     </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">原文</span></label>
+        <label class="label"><span class="label-text font-semibold">Plain Text</span></label>
         <div class="relative">
           <textarea
             v-model="input"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入原文..."
+            placeholder="Enter plain text..."
             rows="6"
             @input="onInputChange"
           />
           <button
             v-if="input"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="inputCopied ? '已复制！' : '复制'"
+            :title="inputCopied ? 'Copied!' : 'Copy'"
             @click="copyInput"
           >
             <CheckIcon
@@ -37,7 +37,7 @@
       </div>
 
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">MD5 哈希值</span></label>
+        <label class="label"><span class="label-text font-semibold">MD5 Hash</span></label>
         <div class="relative">
           <input
             v-model="output"
@@ -47,7 +47,7 @@
           <button
             v-if="output"
             class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-            :title="outputCopied ? '已复制！' : '复制'"
+            :title="outputCopied ? 'Copied!' : 'Copy'"
             @click="copyOutput"
           >
             <CheckIcon
@@ -68,7 +68,7 @@
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          清空
+          Clear
         </button>
       </div>
     </div>

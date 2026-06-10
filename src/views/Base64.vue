@@ -1,23 +1,23 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Base64 转换
+      Base64 Converter
     </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">原文</span></label>
+        <label class="label"><span class="label-text font-semibold">Plain Text</span></label>
         <div class="relative">
           <textarea
             v-model="input"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入原文..."
+            placeholder="Enter plain text..."
             rows="6"
             @input="onInputChange"
           />
           <button
             v-if="input"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="inputCopied ? '已复制！' : '复制'"
+            :title="inputCopied ? 'Copied!' : 'Copy'"
             @click="copyInput"
           >
             <CheckIcon
@@ -48,14 +48,14 @@
           <textarea
             v-model="output"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入 Base64 字符串..."
+            placeholder="Enter Base64 string..."
             rows="6"
             @input="onOutputChange"
           />
           <button
             v-if="output"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="outputCopied ? '已复制！' : '复制'"
+            :title="outputCopied ? 'Copied!' : 'Copy'"
             @click="copyOutput"
           >
             <CheckIcon
@@ -82,7 +82,7 @@
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          清空
+          Clear
         </button>
       </div>
     </div>
@@ -110,7 +110,7 @@ function onInputChange() {
   try {
     output.value = encodeBase64(input.value)
   } catch (e) {
-    outputError.value = '编码失败: ' + e.message
+    outputError.value = 'Encoding failed: ' + e.message
   }
 }
 
@@ -123,7 +123,7 @@ function onOutputChange() {
   try {
     input.value = decodeBase64(output.value)
   } catch {
-    inputError.value = '无效的 Base64 字符串'
+    inputError.value = 'Invalid Base64 string'
   }
 }
 

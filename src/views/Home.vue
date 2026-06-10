@@ -7,14 +7,14 @@
             Wxsms Tools
           </h1>
           <p class="py-4 text-base-content/70">
-            个人工具集合，快速、免费，全部在浏览器中运行。
+            Personal toolkit — fast, free, and runs entirely in your browser.
           </p>
         </div>
       </div>
     </div>
 
     <h2 class="text-xl font-semibold mb-4">
-      全部工具
+      All Tools
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <router-link
@@ -45,26 +45,32 @@
 </template>
 
 <script setup>
-import { ArrowsRightLeftIcon, CircleStackIcon, FingerPrintIcon } from '@heroicons/vue/24/outline'
+import { ArrowsRightLeftIcon, CircleStackIcon, FingerPrintIcon, DocumentPlusIcon } from '@heroicons/vue/24/outline'
 
 const tools = [
   {
-    name: 'Base64 转换',
+    name: 'Base64',
     path: '/base64',
-    desc: 'Base64 编码与解码',
+    desc: 'Base64 encoding and decoding',
     icon: ArrowsRightLeftIcon
   },
   {
-    name: 'Gzip 编码解码',
+    name: 'Gzip',
     path: '/gzip',
-    desc: 'Gzip 压缩与解压缩（Base64 表示）',
+    desc: 'Gzip compression & decompression (Base64 representation)',
     icon: CircleStackIcon
   },
   {
-    name: 'MD5 哈希',
+    name: 'MD5',
     path: '/md5',
-    desc: 'MD5 哈希计算',
+    desc: 'MD5 hash computation',
     icon: FingerPrintIcon
+  },
+  {
+    name: 'Diff',
+    path: '/diff',
+    desc: 'Text comparison with character-level diff and inline highlighting',
+    icon: DocumentPlusIcon
   },
 ]
 </script>

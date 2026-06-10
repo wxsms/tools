@@ -1,16 +1,16 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      文本 Diff
+      Text Diff
     </h1>
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">原始文本</span></label>
+          <label class="label"><span class="label-text font-semibold">Original Text</span></label>
           <textarea
             v-model="leftText"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入原始文本..."
+            placeholder="Enter original text..."
             rows="10"
           />
         </div>
@@ -18,11 +18,11 @@
           <ArrowsRightLeftIcon class="w-5 h-5" />
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">修改文本</span></label>
+          <label class="label"><span class="label-text font-semibold">Modified Text</span></label>
           <textarea
             v-model="rightText"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入修改后的文本..."
+            placeholder="Enter modified text..."
             rows="10"
           />
         </div>
@@ -35,14 +35,14 @@
           @click="computeDiffFn"
         >
           <ArrowsRightLeftIcon class="w-4 h-4" />
-          对比
+          Compare
         </button>
         <button
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          清空
+          Clear
         </button>
       </div>
 
@@ -66,7 +66,7 @@
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span>两段文本完全相同</span>
+        <span>The two texts are identical</span>
       </div>
 
       <!-- Diff result -->
@@ -76,7 +76,7 @@
       >
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-lg font-semibold">
-            对比结果
+            Comparison Result
           </h2>
           <div class="flex items-center gap-4">
             <div class="join">
@@ -85,20 +85,20 @@
                 :class="showMode === 'compact' ? 'btn-active' : ''"
                 @click="showMode = 'compact'"
               >
-                差异
+                Diff
               </button>
               <button
                 class="btn btn-xs join-item"
                 :class="showMode === 'full' ? 'btn-active' : ''"
                 @click="showMode = 'full'"
               >
-                全部
+                All
               </button>
             </div>
             <div class="flex items-center gap-3 text-xs opacity-70">
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-success/20 border border-success/40" /> 新增</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-error/20 border border-error/40" /> 删除</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-base-300 border border-base-content/10" /> 未变</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-success/20 border border-success/40" /> Added</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-error/20 border border-error/40" /> Deleted</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-base-300 border border-base-content/10" /> Unchanged</span>
             </div>
           </div>
         </div>
@@ -108,10 +108,10 @@
             <thead>
               <tr class="bg-base-200 text-xs text-base-content/50">
                 <th class="w-12 text-right px-2 py-1">
-                  旧
+                  Old
                 </th>
                 <th class="w-12 text-right px-2 py-1">
-                  新
+                  New
                 </th>
                 <th class="px-3 py-1 text-left" />
               </tr>
@@ -130,7 +130,7 @@
                     colspan="3"
                     class="text-center px-2 py-0.5 text-xs text-base-content/40 select-none"
                   >
-                    ⋯ 折叠了 {{ item.count }} 行相同内容（点击展开）⋯
+                    ⋯ {{ item.count }} identical lines folded (click to expand) ⋯
                   </td>
                 </tr>
                 <tr
@@ -178,7 +178,7 @@
         </div>
 
         <p class="text-xs opacity-50 mt-2">
-          共 {{ stats.unchanged }} 行未变，{{ stats.added }} 行新增，{{ stats.deleted }} 行删除
+          {{ stats.unchanged }} unchanged, {{ stats.added }} added, {{ stats.deleted }} deleted
         </p>
       </div>
     </div>

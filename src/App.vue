@@ -46,7 +46,7 @@
             </a>
             <label
               class="toggle text-base-content"
-              :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
+              :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             >
               <input
                 type="checkbox"
@@ -54,11 +54,11 @@
                 @change="toggleTheme"
               >
               <SunIcon
-                aria-label="浅色"
+                aria-label="Light"
                 class="w-4 h-4"
               />
               <MoonIcon
-                aria-label="深色"
+                aria-label="Dark"
                 class="w-4 h-4"
               />
             </label>
@@ -73,7 +73,7 @@
         <!-- Footer -->
         <footer class="footer footer-center p-4 bg-base-200 text-base-content">
           <aside>
-            <p>&copy; {{ year }} wxsms — 个人工具集</p>
+            <p>&copy; {{ year }} wxsms — Personal Toolkit</p>
           </aside>
         </footer>
       </div>
@@ -99,7 +99,7 @@
 
           <!-- Menu -->
           <p class="text-xs font-semibold opacity-50 uppercase tracking-wider mb-2 px-2">
-            工具
+            Tools
           </p>
           <ul class="menu menu-md w-full gap-1">
             <li
@@ -138,22 +138,22 @@ const isDark = computed(() => theme.value === 'dark')
 
 const tools = [
   {
-    name: 'Base64 转换',
+    name: 'Base64',
     path: '/base64',
     icon: ArrowsRightLeftIcon
   },
   {
-    name: 'Gzip 编码解码',
+    name: 'Gzip',
     path: '/gzip',
     icon: CircleStackIcon
   },
   {
-    name: 'MD5 哈希',
+    name: 'MD5',
     path: '/md5',
     icon: FingerPrintIcon
   },
   {
-    name: '文本 Diff',
+    name: 'Diff',
     path: '/diff',
     icon: DocumentPlusIcon
   },

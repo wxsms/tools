@@ -3,36 +3,36 @@
 [![CI](https://github.com/wxsms/tools/actions/workflows/ci.yaml/badge.svg)](https://github.com/wxsms/tools/actions/workflows/ci.yaml)
 [![Coverage](https://codecov.io/gh/wxsms/tools/branch/master/graph/badge.svg)](https://codecov.io/gh/wxsms/tools)
 
-个人工具集，基于 Vue 3 + Vite + Tailwind CSS + DaisyUI 构建。
+Personal toolkit built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
 
-## 工具列表
+## Tools
 
-| 工具 | 说明 |
-|------|------|
-| [Base64 转换](https://wxsms.github.io/tools/base64) | 文本与 Base64 互转，支持 Unicode |
-| [Gzip 编码解码](https://wxsms.github.io/tools/gzip) | 文本 Gzip 压缩，结果以 Base64 输出 |
-| [MD5 哈希](https://wxsms.github.io/tools/md5) | 计算文本的 MD5 哈希值 |
-| [文本 Diff](https://wxsms.github.io/tools/diff) | 文本对比，支持行级差异和行内高亮 |
+| Tool | Description |
+|------|-------------|
+| [Base64 Converter](https://wxsms.github.io/tools/base64) | Encode and decode Base64 with Unicode support |
+| [Gzip Encoder / Decoder](https://wxsms.github.io/tools/gzip) | Gzip compress text, output as Base64 |
+| [MD5 Hash](https://wxsms.github.io/tools/md5) | Compute MD5 hash of text |
+| [Text Diff](https://wxsms.github.io/tools/diff) | Compare texts with line-level diff and inline highlighting |
 
-## 开发
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 脚本
+## Scripts
 
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 启动开发服务器 |
-| `npm run build` | 生产构建 |
-| `npm run lint` | ESLint 检查 |
-| `npm run lint:fix` | ESLint 自动修复 |
-| `npm run test` | 运行测试 |
-| `npm run test:watch` | 监听模式运行测试 |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint check |
+| `npm run lint:fix` | ESLint auto-fix |
+| `npm run test` | Run tests |
+| `npm run test:watch` | Run tests in watch mode |
 
-## 技术栈
+## Tech Stack
 
 - [Vue 3](https://vuejs.org/) + [Vue Router](https://router.vuejs.org/)
 - [Vite](https://vite.dev/)
