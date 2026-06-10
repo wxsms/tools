@@ -8,6 +8,7 @@ import {
   PaperClipIcon,
   KeyIcon,
   LinkIcon,
+  LanguageIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -55,6 +56,12 @@ export const toolGroups = [
         path: '/url-encode',
         desc: 'URL encoding and decoding with batch support',
         icon: LinkIcon,
+      },
+      {
+        name: 'Case',
+        path: '/case',
+        desc: 'Case conversion & coding style naming formats',
+        icon: LanguageIcon,
       },
     ],
   },
