@@ -4,7 +4,6 @@ import Base64 from './views/Base64.vue'
 import Gzip from './views/Gzip.vue'
 import Diff from './views/Diff.vue'
 import Watermark from './views/Watermark.vue'
-import AesKey from './views/AesKey.vue'
 import Crypto from './views/Crypto.vue'
 
 const routes = [
@@ -13,7 +12,6 @@ const routes = [
   { path: '/gzip', component: Gzip },
   { path: '/diff', component: Diff },
   { path: '/watermark', component: Watermark },
-  { path: '/aes-key', component: AesKey },
   { path: '/crypto', component: Crypto },
 ]
 

@@ -3,7 +3,6 @@ import {
   CircleStackIcon,
   DocumentPlusIcon,
   SparklesIcon,
-  KeyIcon,
   LockClosedIcon,
 } from '@heroicons/vue/24/outline'
 
@@ -22,12 +21,6 @@ export const toolGroups = [
         path: '/gzip',
         desc: 'Gzip compression & decompression (Base64 representation)',
         icon: CircleStackIcon,
-      },
-      {
-        name: 'AES KeyGen',
-        path: '/aes-key',
-        desc: 'Generate random AES keys',
-        icon: KeyIcon,
       },
       {
         name: 'Crypto',

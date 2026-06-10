@@ -25,6 +25,14 @@
       >
         Hash / HMAC
       </button>
+      <button
+        role="tab"
+        class="tab"
+        :class="{ 'tab-active': activeTab === 'keygen' }"
+        @click="activeTab = 'keygen'"
+      >
+        KeyGen
+      </button>
     </div>
 
     <!-- Encrypt / Decrypt Tab -->
@@ -460,6 +468,63 @@
         </button>
       </div>
     </div>
+
+    <!-- KeyGen Tab -->
+    <div
+      v-if="activeTab === 'keygen'"
+      class="flex flex-col gap-4 max-w-2xl"
+    >
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Key Length</span></label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="size in KEYGEN_SIZES"
+            :key="size"
+            class="btn btn-sm"
+            :class="keygenSize === size ? 'btn-primary' : 'btn-outline'"
+            @click="keygenSize = size"
+          >
+            {{ size }}-bit
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-primary w-fit"
+        @click="generateKey"
+      >
+        <SparklesIcon class="w-5 h-5" />
+        Generate
+      </button>
+
+      <div v-if="keygenResult">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">Result</span></label>
+          <div class="relative">
+            <textarea
+              :value="keygenResult"
+              class="textarea textarea-bordered w-full font-mono text-sm"
+              readonly
+              rows="3"
+            />
+            <button
+              class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
+              :title="keygenCopied ? 'Copied!' : 'Copy'"
+              @click="copyKeygen"
+            >
+              <CheckIcon
+                v-if="keygenCopied"
+                class="w-4 h-4 text-success"
+              />
+              <ClipboardDocumentIcon
+                v-else
+                class="w-4 h-4"
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -471,6 +536,7 @@ import {
   ClipboardDocumentIcon,
   CheckIcon,
   TrashIcon,
+  SparklesIcon,
 } from '@heroicons/vue/24/outline'
 import {
   computeHash,
@@ -728,5 +794,19 @@ async function copyHashInput() {
 }
 async function copyHashOutput() {
   try { await navigator.clipboard.writeText(hashOutput.value); copiedHelper(hashOutputCopied) } catch { /* clipboard not available */ }
+}
+
+// --- KeyGen ---
+const KEYGEN_SIZES = [64, 128, 192, 256, 512, 1024, 2048, 4096]
+const keygenSize = ref(256)
+const keygenResult = ref('')
+const keygenCopied = ref(false)
+
+function generateKey() {
+  keygenResult.value = bytesToHex(randomBytes(keygenSize.value / 8))
+}
+
+async function copyKeygen() {
+  try { await navigator.clipboard.writeText(keygenResult.value); copiedHelper(keygenCopied) } catch { /* clipboard not available */ }
 }
 </script>
