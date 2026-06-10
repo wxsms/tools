@@ -1,7 +1,6 @@
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
-  FingerPrintIcon,
   DocumentPlusIcon,
   SparklesIcon,
   KeyIcon,
@@ -23,12 +22,6 @@ export const toolGroups = [
         path: '/gzip',
         desc: 'Gzip compression & decompression (Base64 representation)',
         icon: CircleStackIcon,
-      },
-      {
-        name: 'MD5',
-        path: '/md5',
-        desc: 'MD5 hash computation',
-        icon: FingerPrintIcon,
       },
       {
         name: 'AES KeyGen',
