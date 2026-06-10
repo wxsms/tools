@@ -60,6 +60,13 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Git Commands
+
+**Use `git -C <path>` instead of `cd` before git.**
+
+- Prefer `git -C E:/githome-windows/tools status` over `cd E:/githome-windows/tools && git status`
+- This keeps the working directory stable and avoids side effects from `cd`
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
