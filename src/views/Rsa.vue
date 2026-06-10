@@ -5,29 +5,33 @@
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <!-- Key Generation -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Key Size</span></label>
-        <div class="flex flex-wrap gap-2">
-          <button
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-3">
+          <label
             v-for="size in RSA_KEY_SIZES"
             :key="size"
-            class="btn btn-sm"
-            :class="keySize === size ? 'btn-primary' : 'btn-outline'"
-            @click="keySize = size; clearAll()"
+            class="flex items-center gap-1 cursor-pointer text-sm"
           >
-            {{ size }}-bit
-          </button>
+            <input
+              v-model="keySize"
+              type="radio"
+              name="keySize"
+              :value="size"
+              class="radio radio-xs radio-primary"
+              @change="clearAll()"
+            >
+            {{ size }}
+          </label>
         </div>
+        <button
+          class="btn btn-primary btn-sm gap-1"
+          :disabled="generating"
+          @click="generateKeys"
+        >
+          <SparklesIcon class="w-4 h-4" />
+          {{ generating ? 'Generating...' : 'Generate' }}
+        </button>
       </div>
-
-      <button
-        class="btn btn-primary w-fit"
-        :disabled="generating"
-        @click="generateKeys"
-      >
-        <SparklesIcon class="w-5 h-5" />
-        {{ generating ? 'Generating...' : 'Generate Key Pair' }}
-      </button>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
