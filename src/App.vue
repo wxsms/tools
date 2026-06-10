@@ -74,7 +74,7 @@
         </div>
 
         <!-- Page content -->
-        <main :class="['flex-1 p-6 lg:p-10', isHome ? 'max-w-5xl mx-auto' : 'max-w-4xl']">
+        <main :class="['flex-1 p-6 lg:p-10', isHome ? 'max-w-5xl mx-auto' : (route.meta.wide ? '' : 'max-w-4xl')]">
           <router-view />
         </main>
 

@@ -11,6 +11,7 @@ import Rsa from './views/Rsa.vue'
 import UrlEncode from './views/UrlEncode.vue'
 import Case from './views/Case.vue'
 import Timestamp from './views/Timestamp.vue'
+import MdHtml from './views/MdHtml.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -25,6 +26,7 @@ const routes = [
   { path: '/url-encode', component: UrlEncode },
   { path: '/case', component: Case },
   { path: '/timestamp', component: Timestamp },
+  { path: '/md-html', component: MdHtml, meta: { wide: true } },
 ]
 
 export default createRouter({

@@ -10,6 +10,7 @@ import {
   LinkIcon,
   LanguageIcon,
   ClockIcon,
+  DocumentTextIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -69,6 +70,12 @@ export const toolGroups = [
         path: '/timestamp',
         desc: 'Unix timestamp ↔ date/time conversion (10 or 13 digits)',
         icon: ClockIcon,
+      },
+      {
+        name: 'Markdown / HTML',
+        path: '/md-html',
+        desc: 'Markdown ↔ HTML bidirectional conversion',
+        icon: DocumentTextIcon,
       },
     ],
   },
