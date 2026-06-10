@@ -5,6 +5,7 @@ import {
   DocumentPlusIcon,
   SparklesIcon,
   LockClosedIcon,
+  PaperClipIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -51,6 +52,12 @@ export const toolGroups = [
         path: '/watermark',
         desc: 'Add transparent text watermark to images',
         icon: SparklesIcon,
+      },
+      {
+        name: 'File / Base64',
+        path: '/file-base64',
+        desc: 'Convert files to Base64 and back, with image preview',
+        icon: PaperClipIcon,
       },
     ],
   },

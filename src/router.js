@@ -6,6 +6,7 @@ import Diff from './views/Diff.vue'
 import Watermark from './views/Watermark.vue'
 import Crypto from './views/Crypto.vue'
 import Json from './views/Json.vue'
+import FileBase64 from './views/FileBase64.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -15,6 +16,7 @@ const routes = [
   { path: '/watermark', component: Watermark },
   { path: '/crypto', component: Crypto },
   { path: '/json', component: Json },
+  { path: '/file-base64', component: FileBase64 },
 ]
 
 export default createRouter({
