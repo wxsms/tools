@@ -13,6 +13,7 @@
         <div class="navbar bg-base-200 w-full sticky top-0 z-30 shadow-sm">
           <div class="flex-none lg:hidden">
             <label
+              v-if="!isHome"
               for="sidebar-drawer"
               aria-label="open sidebar"
               class="btn btn-square btn-ghost"
@@ -20,15 +21,22 @@
               <Bars3Icon class="w-5 h-5" />
             </label>
           </div>
-          <div class="flex-1 lg:hidden">
+          <div
+            v-if="isHome"
+            class="flex-1"
+          >
             <router-link
               to="/"
               class="btn btn-ghost text-xl"
             >
-              Wxsms Tools
+              <WrenchScrewdriverIcon class="w-6 h-6" />
+              Wxsm's Tools
             </router-link>
           </div>
-          <div class="flex-1 hidden lg:block" />
+          <div
+            v-else
+            class="flex-1"
+          />
           <div class="flex-none flex items-center gap-2">
             <a
               href="https://github.com/wxsms/tools"
@@ -95,7 +103,7 @@
             class="btn btn-ghost text-xl no-underline mb-4 self-start"
           >
             <WrenchScrewdriverIcon class="w-6 h-6" />
-            Wxsms Tools
+            Wxsms's Tools
           </router-link>
 
           <div class="divider mt-0 mb-2" />

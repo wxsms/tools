@@ -75,7 +75,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-Wxsms Tools — personal toolset built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
+Wxsm's Tools — personal toolset built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
 
 ```
 ├── index.html              # Entry HTML

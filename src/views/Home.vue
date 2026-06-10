@@ -2,12 +2,13 @@
   <div>
     <div class="hero bg-base-200 rounded-xl py-12 mb-8">
       <div class="hero-content text-center">
-        <div class="max-w-md">
+        <div class="max-w-lg">
           <h1 class="text-4xl font-bold">
-            Wxsms Tools
+            Wxsm's Toolbox
           </h1>
           <p class="py-4 text-base-content/70">
-            Personal toolkit — fast, free, and runs entirely in your browser.
+            🔒 Private · ⚡ Fast · 💯 Free<br>
+            Everything runs locally in your browser — no data leaves your device.
           </p>
         </div>
       </div>
