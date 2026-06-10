@@ -7,6 +7,7 @@ import {
   LockClosedIcon,
   PaperClipIcon,
   KeyIcon,
+  LinkIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -48,6 +49,12 @@ export const toolGroups = [
         path: '/json',
         desc: 'JSON validation, tree view, format, minify, unicode & escape conversion',
         icon: CodeBracketSquareIcon,
+      },
+      {
+        name: 'URL Encode',
+        path: '/url-encode',
+        desc: 'URL encoding and decoding with batch support',
+        icon: LinkIcon,
       },
     ],
   },

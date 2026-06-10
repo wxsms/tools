@@ -8,6 +8,7 @@ import Crypto from './views/Crypto.vue'
 import Json from './views/Json.vue'
 import FileBase64 from './views/FileBase64.vue'
 import Rsa from './views/Rsa.vue'
+import UrlEncode from './views/UrlEncode.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/json', component: Json },
   { path: '/file-base64', component: FileBase64 },
   { path: '/rsa', component: Rsa },
+  { path: '/url-encode', component: UrlEncode },
 ]
 
 export default createRouter({
