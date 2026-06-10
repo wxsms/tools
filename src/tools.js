@@ -9,6 +9,7 @@ import {
   KeyIcon,
   LinkIcon,
   LanguageIcon,
+  ClockIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -62,6 +63,12 @@ export const toolGroups = [
         path: '/case',
         desc: 'Case conversion & coding style naming formats',
         icon: LanguageIcon,
+      },
+      {
+        name: 'Timestamp',
+        path: '/timestamp',
+        desc: 'Unix timestamp ↔ date/time conversion (10 or 13 digits)',
+        icon: ClockIcon,
       },
     ],
   },

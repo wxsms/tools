@@ -1,0 +1,212 @@
+<template>
+  <div>
+    <h1 class="text-3xl font-bold mb-6">
+      Timestamp Converter
+    </h1>
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button
+        class="btn btn-sm"
+        :class="isMillis ? 'btn-ghost' : 'btn-primary'"
+        @click="setMillis(false)"
+      >
+        10-digit (s)
+      </button>
+      <button
+        class="btn btn-sm"
+        :class="isMillis ? 'btn-primary' : 'btn-ghost'"
+        @click="setMillis(true)"
+      >
+        13-digit (ms)
+      </button>
+    </div>
+
+    <div class="flex flex-col gap-4 max-w-2xl">
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Unix Timestamp</span></label>
+        <div class="relative">
+          <input
+            v-model="timestamp"
+            class="input input-bordered w-full font-mono text-sm"
+            placeholder="e.g. 1718000000 or 1718000000000"
+            @input="onTimestampChange"
+          >
+          <button
+            v-if="timestamp"
+            class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
+            :title="tsCopied ? 'Copied!' : 'Copy'"
+            @click="copyTimestamp"
+          >
+            <CheckIcon
+              v-if="tsCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
+          </button>
+        </div>
+        <p
+          v-if="tsError"
+          class="text-error text-sm mt-1"
+        >
+          {{ tsError }}
+        </p>
+      </div>
+
+      <div class="flex justify-center opacity-40">
+        <ArrowsUpDownIcon class="w-6 h-6" />
+      </div>
+
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Date & Time</span></label>
+        <div class="relative">
+          <input
+            v-model="datetime"
+            class="input input-bordered w-full font-mono text-sm"
+            placeholder="e.g. 2024-06-10 12:00:00"
+            @input="onDatetimeChange"
+          >
+          <button
+            v-if="datetime"
+            class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
+            :title="dtCopied ? 'Copied!' : 'Copy'"
+            @click="copyDatetime"
+          >
+            <CheckIcon
+              v-if="dtCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
+          </button>
+        </div>
+        <p
+          v-if="dtError"
+          class="text-error text-sm mt-1"
+        >
+          {{ dtError }}
+        </p>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          class="btn btn-ghost btn-sm gap-1"
+          @click="clear"
+        >
+          <TrashIcon class="w-4 h-4" />
+          Clear
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ArrowsUpDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
+
+const timestamp = ref('')
+const datetime = ref('')
+const isMillis = ref(false)
+const tsError = ref('')
+const dtError = ref('')
+const tsCopied = ref(false)
+const dtCopied = ref(false)
+
+function formatDt(d) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+function fillNow() {
+  const d = new Date()
+  datetime.value = formatDt(d)
+  timestamp.value = isMillis.value ? String(d.getTime()) : String(Math.floor(d.getTime() / 1000))
+  tsError.value = ''
+  dtError.value = ''
+}
+
+function setMillis(val) {
+  if (isMillis.value === val) return
+  const prevMs = resolveMs()
+  isMillis.value = val
+  if (prevMs !== null) {
+    timestamp.value = val ? String(prevMs) : String(Math.floor(prevMs / 1000))
+  } else {
+    fillNow()
+  }
+}
+
+function resolveMs() {
+  const raw = timestamp.value.trim()
+  if (!raw || !/^\d+$/.test(raw)) return null
+  const num = Number(raw)
+  const ms = isMillis.value ? num : num * 1000
+  if (ms <= 0 || ms > 9999999999999) return null
+  return ms
+}
+
+function onTimestampChange() {
+  dtError.value = ''
+  if (!timestamp.value) {
+    datetime.value = ''
+    return
+  }
+  const raw = timestamp.value.trim()
+  if (!/^\d+$/.test(raw)) {
+    dtError.value = 'Invalid timestamp (digits only)'
+    return
+  }
+  const num = Number(raw)
+  const ms = isMillis.value ? num : num * 1000
+  if (ms <= 0 || ms > 9999999999999) {
+    dtError.value = 'Timestamp out of range'
+    return
+  }
+  datetime.value = formatDt(new Date(ms))
+}
+
+function onDatetimeChange() {
+  tsError.value = ''
+  if (!datetime.value) {
+    timestamp.value = ''
+    return
+  }
+  const d = new Date(datetime.value.trim())
+  if (isNaN(d.getTime())) {
+    tsError.value = 'Invalid date string'
+    return
+  }
+  timestamp.value = isMillis.value ? String(d.getTime()) : String(Math.floor(d.getTime() / 1000))
+}
+
+function clear() {
+  timestamp.value = ''
+  datetime.value = ''
+  tsError.value = ''
+  dtError.value = ''
+}
+
+async function copyTimestamp() {
+  try {
+    await navigator.clipboard.writeText(timestamp.value)
+    tsCopied.value = true
+    setTimeout(() => tsCopied.value = false, 1500)
+  } catch { /* clipboard not available */ }
+}
+
+async function copyDatetime() {
+  try {
+    await navigator.clipboard.writeText(datetime.value)
+    dtCopied.value = true
+    setTimeout(() => dtCopied.value = false, 1500)
+  } catch { /* clipboard not available */ }
+}
+
+onMounted(fillNow)
+</script>

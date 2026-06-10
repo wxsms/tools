@@ -10,6 +10,7 @@ import FileBase64 from './views/FileBase64.vue'
 import Rsa from './views/Rsa.vue'
 import UrlEncode from './views/UrlEncode.vue'
 import Case from './views/Case.vue'
+import Timestamp from './views/Timestamp.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -23,6 +24,7 @@ const routes = [
   { path: '/rsa', component: Rsa },
   { path: '/url-encode', component: UrlEncode },
   { path: '/case', component: Case },
+  { path: '/timestamp', component: Timestamp },
 ]
 
 export default createRouter({
