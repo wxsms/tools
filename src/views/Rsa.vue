@@ -13,7 +13,7 @@
             :key="size"
             class="btn btn-sm"
             :class="keySize === size ? 'btn-primary' : 'btn-outline'"
-            @click="keySize = size"
+            @click="keySize = size; clearAll()"
           >
             {{ size }}-bit
           </button>
@@ -293,11 +293,15 @@ async function copyCt() {
   try { await navigator.clipboard.writeText(ciphertext.value); copiedHelper(ctCopied) } catch { /* clipboard not available */ }
 }
 
-function clear() {
+function clearAll() {
   publicKeyPem.value = ''
   privateKeyPem.value = ''
   plaintext.value = ''
   ciphertext.value = ''
   encError.value = ''
+}
+
+function clear() {
+  clearAll()
 }
 </script>
