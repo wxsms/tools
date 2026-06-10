@@ -4,6 +4,7 @@ import {
   FingerPrintIcon,
   DocumentPlusIcon,
   SparklesIcon,
+  KeyIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -27,6 +28,12 @@ export const toolGroups = [
         path: '/md5',
         desc: 'MD5 hash computation',
         icon: FingerPrintIcon,
+      },
+      {
+        name: 'AES KeyGen',
+        path: '/aes-key',
+        desc: 'Generate random AES keys',
+        icon: KeyIcon,
       },
       {
         name: 'Diff',
