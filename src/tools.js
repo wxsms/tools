@@ -1,6 +1,7 @@
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
+  CodeBracketSquareIcon,
   DocumentPlusIcon,
   SparklesIcon,
   LockClosedIcon,
@@ -33,6 +34,12 @@ export const toolGroups = [
         path: '/diff',
         desc: 'Text comparison with character-level diff and inline highlighting',
         icon: DocumentPlusIcon,
+      },
+      {
+        name: 'JSON',
+        path: '/json',
+        desc: 'JSON validation, tree view, format, minify, unicode & escape conversion',
+        icon: CodeBracketSquareIcon,
       },
     ],
   },

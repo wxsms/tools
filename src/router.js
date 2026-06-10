@@ -5,6 +5,7 @@ import Gzip from './views/Gzip.vue'
 import Diff from './views/Diff.vue'
 import Watermark from './views/Watermark.vue'
 import Crypto from './views/Crypto.vue'
+import Json from './views/Json.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -13,6 +14,7 @@ const routes = [
   { path: '/diff', component: Diff },
   { path: '/watermark', component: Watermark },
   { path: '/crypto', component: Crypto },
+  { path: '/json', component: Json },
 ]
 
 export default createRouter({
