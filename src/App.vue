@@ -59,7 +59,7 @@
           <p class="text-xs font-semibold opacity-50 uppercase tracking-wider mb-2 px-2">工具</p>
           <ul class="menu menu-md w-full gap-1">
             <li v-for="tool in tools" :key="tool.path">
-              <router-link :to="tool.path" class="flex items-center gap-3">
+              <router-link :to="tool.path" class="flex items-center gap-3" active-class="menu-active">
                 <component :is="tool.icon" class="w-5 h-5" />
                 {{ tool.name }}
               </router-link>
