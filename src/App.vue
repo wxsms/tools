@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="drawer lg:drawer-open">
+    <div :class="['drawer', { 'lg:drawer-open': !isHome }]">
       <input
         id="sidebar-drawer"
         type="checkbox"
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Page content -->
-        <main class="flex-1 p-6 lg:p-10 max-w-4xl">
+        <main :class="['flex-1 p-6 lg:p-10', isHome ? 'max-w-5xl mx-auto' : 'max-w-4xl']">
           <router-view />
         </main>
 
@@ -79,7 +79,10 @@
       </div>
 
       <!-- Sidebar -->
-      <div class="drawer-side z-40">
+      <div
+        v-if="!isHome"
+        class="drawer-side z-40"
+      >
         <label
           for="sidebar-drawer"
           aria-label="close sidebar"
@@ -98,27 +101,32 @@
           <div class="divider mt-0 mb-2" />
 
           <!-- Menu -->
-          <p class="text-xs font-semibold opacity-50 uppercase tracking-wider mb-2 px-2">
-            Tools
-          </p>
-          <ul class="menu menu-md w-full gap-1">
-            <li
-              v-for="tool in tools"
-              :key="tool.path"
-            >
-              <router-link
-                :to="tool.path"
-                class="flex items-center gap-3"
-                active-class="menu-active"
+          <div
+            v-for="group in toolGroups"
+            :key="group.name"
+          >
+            <p class="text-xs font-semibold opacity-50 uppercase tracking-wider mb-2 px-2">
+              {{ group.name }}
+            </p>
+            <ul class="menu menu-md w-full gap-1">
+              <li
+                v-for="tool in group.tools"
+                :key="tool.path"
               >
-                <component
-                  :is="tool.icon"
-                  class="w-5 h-5"
-                />
-                {{ tool.name }}
-              </router-link>
-            </li>
-          </ul>
+                <router-link
+                  :to="tool.path"
+                  class="flex items-center gap-3"
+                  active-class="menu-active"
+                >
+                  <component
+                    :is="tool.icon"
+                    class="w-5 h-5"
+                  />
+                  {{ tool.name }}
+                </router-link>
+              </li>
+            </ul>
+          </div>
 
           <div class="flex-1" />
         </aside>
@@ -129,33 +137,14 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTheme } from './composables/useTheme.js'
-import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon, ArrowsRightLeftIcon, CircleStackIcon, FingerPrintIcon, DocumentPlusIcon } from '@heroicons/vue/24/outline'
+import { toolGroups } from './tools.js'
+import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline'
 
 const year = new Date().getFullYear()
+const route = useRoute()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
-
-const tools = [
-  {
-    name: 'Base64',
-    path: '/base64',
-    icon: ArrowsRightLeftIcon
-  },
-  {
-    name: 'Gzip',
-    path: '/gzip',
-    icon: CircleStackIcon
-  },
-  {
-    name: 'MD5',
-    path: '/md5',
-    icon: FingerPrintIcon
-  },
-  {
-    name: 'Diff',
-    path: '/diff',
-    icon: DocumentPlusIcon
-  },
-]
+const isHome = computed(() => route.path === '/')
 </script>
