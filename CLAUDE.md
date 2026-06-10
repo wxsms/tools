@@ -106,6 +106,10 @@ wxsm's Kit — personal toolset built with Vue 3 + Vite + Tailwind CSS + DaisyUI
 
 All three steps are required.
 
+### Layout Reference for Converter Tools
+
+When implementing a bidirectional converter tool (e.g. encode/decode, timestamp/datetime), prioritize referencing `src/views/UrlEncode.vue` for layout and interaction patterns.
+
 ### Icon Source
 
 Uses `@heroicons/vue` outline style icons.
