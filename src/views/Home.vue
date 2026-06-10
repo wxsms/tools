@@ -18,7 +18,9 @@
         class="card bg-base-200 hover:bg-base-300 transition-colors"
       >
         <div class="card-body flex-row items-center gap-4">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center" v-html="tool.icon"></div>
+          <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <component :is="tool.icon" class="w-5 h-5" />
+            </div>
           <div>
             <h3 class="card-title text-base">{{ tool.name }}</h3>
             <p class="text-sm text-base-content/60">{{ tool.desc }}</p>
@@ -30,12 +32,14 @@
 </template>
 
 <script setup>
+import { ArrowsRightLeftIcon } from '@heroicons/vue/24/outline'
+
 const tools = [
   {
     name: 'Base64 转换',
     path: '/base64',
     desc: 'Base64 编码与解码',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>'
+    icon: ArrowsRightLeftIcon
   },
 ]
 </script>
