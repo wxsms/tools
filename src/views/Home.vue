@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ArrowsRightLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowsRightLeftIcon, CircleStackIcon } from '@heroicons/vue/24/outline'
 
 const tools = [
   {
@@ -40,6 +40,12 @@ const tools = [
     path: '/base64',
     desc: 'Base64 编码与解码',
     icon: ArrowsRightLeftIcon
+  },
+  {
+    name: 'Gzip 编码解码',
+    path: '/gzip',
+    desc: 'Gzip 压缩与解压缩（Base64 表示）',
+    icon: CircleStackIcon
   },
 ]
 </script>

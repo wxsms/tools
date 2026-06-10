@@ -76,7 +76,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useTheme } from './composables/useTheme.js'
-import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon, ArrowsRightLeftIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon, ArrowsRightLeftIcon, CircleStackIcon } from '@heroicons/vue/24/outline'
 
 const year = new Date().getFullYear()
 const { theme, toggleTheme } = useTheme()
@@ -87,6 +87,11 @@ const tools = [
     name: 'Base64 转换',
     path: '/base64',
     icon: ArrowsRightLeftIcon
+  },
+  {
+    name: 'Gzip 编码解码',
+    path: '/gzip',
+    icon: CircleStackIcon
   },
 ]
 </script>
