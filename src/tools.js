@@ -11,6 +11,7 @@ import {
   LanguageIcon,
   ClockIcon,
   DocumentTextIcon,
+  QrCodeIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -93,6 +94,12 @@ export const toolGroups = [
         path: '/file-base64',
         desc: '文件与 Base64 互转，支持图片预览',
         icon: PaperClipIcon,
+      },
+      {
+        name: '二维码生成',
+        path: '/qr-code',
+        desc: '将文本或链接生成二维码，支持自定义颜色与纠错级别',
+        icon: QrCodeIcon,
       },
     ],
   },

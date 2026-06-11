@@ -12,6 +12,7 @@ import UrlEncode from './views/UrlEncode.vue'
 import Case from './views/Case.vue'
 import Timestamp from './views/Timestamp.vue'
 import MdHtml from './views/MdHtml.vue'
+import QrCode from './views/QrCode.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -27,6 +28,7 @@ const routes = [
   { path: '/case', component: Case },
   { path: '/timestamp', component: Timestamp },
   { path: '/md-html', component: MdHtml, meta: { wide: true } },
+  { path: '/qr-code', component: QrCode },
 ]
 
 export default createRouter({
