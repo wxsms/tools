@@ -17,7 +17,6 @@ import {
   SwatchIcon,
   GlobeAltIcon,
   PhotoIcon,
-  ArrowPathIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -154,16 +153,10 @@ export const toolGroups = [
         icon: QrCodeIcon,
       },
       {
-        name: '图片压缩',
+        name: '图片处理',
         path: '/image-compress',
-        desc: '调整质量与尺寸压缩图片',
+        desc: '图片压缩、缩放与格式转换',
         icon: PhotoIcon,
-      },
-      {
-        name: '图片格式转换',
-        path: '/image-convert',
-        desc: 'PNG / JPEG / WebP 格式互转',
-        icon: ArrowPathIcon,
       },
     ],
   },

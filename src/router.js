@@ -20,7 +20,6 @@ import Password from './views/Password.vue'
 import ColorPicker from './views/ColorPicker.vue'
 import IpLookup from './views/IpLookup.vue'
 import ImageCompress from './views/ImageCompress.vue'
-import ImageConvert from './views/ImageConvert.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -44,7 +43,6 @@ const routes = [
   { path: '/color-picker', component: ColorPicker },
   { path: '/ip-lookup', component: IpLookup },
   { path: '/image-compress', component: ImageCompress },
-  { path: '/image-convert', component: ImageConvert },
 ]
 
 export default createRouter({

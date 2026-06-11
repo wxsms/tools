@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      图片压缩
+      图片处理
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <div class="form-control">
@@ -20,7 +20,10 @@
         class="flex flex-col gap-4"
       >
         <div class="grid grid-cols-2 gap-4">
-          <div class="form-control">
+          <div
+            v-if="format !== 'image/png'"
+            class="form-control"
+          >
             <label class="label"><span class="label-text font-semibold">质量</span></label>
             <div class="flex items-center gap-2">
               <input
@@ -65,6 +68,14 @@
         </div>
 
         <div class="stats shadow">
+          <div class="stat">
+            <div class="stat-title">
+              原始格式
+            </div>
+            <div class="stat-value text-base">
+              {{ sourceType || '未知' }}
+            </div>
+          </div>
           <div class="stat">
             <div class="stat-title">
               原始大小
@@ -133,6 +144,7 @@ const imageSrc = ref('')
 const imageObj = ref(null)
 const originalSize = ref(0)
 const compressedSize = ref(0)
+const sourceType = ref('')
 
 const quality = ref(0.7)
 const scale = ref(1)
@@ -153,6 +165,7 @@ function formatSize(bytes) {
 function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
+  sourceType.value = file.type
   originalSize.value = file.size
   const reader = new FileReader()
   reader.onload = (ev) => {
@@ -175,6 +188,10 @@ function render() {
   cvs.width = Math.round(img.width * scale.value)
   cvs.height = Math.round(img.height * scale.value)
   const ctx = cvs.getContext('2d')
+  if (format.value === 'image/jpeg') {
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, cvs.width, cvs.height)
+  }
   ctx.drawImage(img, 0, 0, cvs.width, cvs.height)
 
   const dataUrl = cvs.toDataURL(format.value, quality.value)
@@ -188,6 +205,7 @@ function render() {
 function reset() {
   imageSrc.value = ''
   imageObj.value = null
+  sourceType.value = ''
   originalSize.value = 0
   compressedSize.value = 0
   ratio.value = ''
@@ -201,7 +219,7 @@ function download() {
   if (!canvas.value) return
   const ext = format.value.split('/')[1]
   const link = document.createElement('a')
-  link.download = `compressed.${ext}`
+  link.download = `output.${ext}`
   link.href = canvas.value.toDataURL(format.value, quality.value)
   link.click()
 }
