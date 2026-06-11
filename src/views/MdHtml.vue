@@ -81,6 +81,7 @@
           class="overflow-auto rounded-btn border border-base-300 bg-base-100 p-4 md-preview"
           style="height: calc(100vh - 260px); min-height: 400px;"
         >
+          <!-- eslint-disable-next-line vue/no-v-html -->
           <div v-html="htmlRef" />
         </div>
 
