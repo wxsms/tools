@@ -21,30 +21,7 @@ import {
 
 export const toolGroups = [
   {
-    name: '编码',
-    tools: [
-      {
-        name: 'UUID 生成',
-        path: '/uuid',
-        desc: '批量生成 UUID v4，支持大写与无连字符',
-        icon: FingerPrintIcon,
-      },
-      {
-        name: 'HTML 实体编码',
-        path: '/html-entity',
-        desc: 'HTML 特殊字符与实体互转',
-        icon: CodeBracketSquareIcon,
-      },
-      {
-        name: '密码生成',
-        path: '/password',
-        desc: '可配置长度、字符集的随机密码生成器',
-        icon: KeyIcon,
-      },
-    ],
-  },
-  {
-    name: '文本',
+    name: '编码转换',
     tools: [
       {
         name: 'Base64 转换',
@@ -53,11 +30,28 @@ export const toolGroups = [
         icon: ArrowsRightLeftIcon,
       },
       {
+        name: 'URL 编码',
+        path: '/url-encode',
+        desc: 'URL 编码与解码，支持批量处理',
+        icon: LinkIcon,
+      },
+      {
+        name: 'HTML 实体编码',
+        path: '/html-entity',
+        desc: 'HTML 特殊字符与实体互转',
+        icon: CodeBracketSquareIcon,
+      },
+      {
         name: 'Gzip 压缩',
         path: '/gzip',
         desc: 'Gzip 压缩与解压（Base64 表示）',
         icon: CircleStackIcon,
       },
+    ],
+  },
+  {
+    name: '加解密',
+    tools: [
       {
         name: '加密解密',
         path: '/crypto',
@@ -71,6 +65,46 @@ export const toolGroups = [
         icon: KeyIcon,
       },
       {
+        name: '密码生成',
+        path: '/password',
+        desc: '可配置长度、字符集的随机密码生成器',
+        icon: FingerPrintIcon,
+      },
+    ],
+  },
+  {
+    name: '生成转换',
+    tools: [
+      {
+        name: 'UUID 生成',
+        path: '/uuid',
+        desc: '批量生成 UUID v4，支持大写与无连字符',
+        icon: FingerPrintIcon,
+      },
+      {
+        name: '时间戳转换',
+        path: '/timestamp',
+        desc: 'Unix 时间戳 ↔ 日期时间转换（10 位 / 13 位）',
+        icon: ClockIcon,
+      },
+      {
+        name: '颜色转换',
+        path: '/color-picker',
+        desc: 'HEX / RGB / HSL 颜色互转与预览',
+        icon: SwatchIcon,
+      },
+      {
+        name: 'Markdown 转换',
+        path: '/md-html',
+        desc: 'Markdown ↔ HTML 双向转换',
+        icon: DocumentTextIcon,
+      },
+    ],
+  },
+  {
+    name: '文本处理',
+    tools: [
+      {
         name: '文本对比',
         path: '/diff',
         desc: '文本对比，支持字符级差异与行内高亮',
@@ -83,12 +117,6 @@ export const toolGroups = [
         icon: CodeBracketSquareIcon,
       },
       {
-        name: 'URL 编码',
-        path: '/url-encode',
-        desc: 'URL 编码与解码，支持批量处理',
-        icon: LinkIcon,
-      },
-      {
         name: '正则测试',
         path: '/regex',
         desc: '正则表达式实时测试与匹配高亮',
@@ -99,35 +127,6 @@ export const toolGroups = [
         path: '/case',
         desc: '大小写转换与编程命名风格转换',
         icon: LanguageIcon,
-      },
-      {
-        name: '时间戳转换',
-        path: '/timestamp',
-        desc: 'Unix 时间戳 ↔ 日期时间转换（10 位 / 13 位）',
-        icon: ClockIcon,
-      },
-      {
-        name: 'Markdown 转换',
-        path: '/md-html',
-        desc: 'Markdown ↔ HTML 双向转换',
-        icon: DocumentTextIcon,
-      },
-      {
-        name: '颜色转换',
-        path: '/color-picker',
-        desc: 'HEX / RGB / HSL 颜色互转与预览',
-        icon: SwatchIcon,
-      },
-    ],
-  },
-  {
-    name: '网络',
-    tools: [
-      {
-        name: 'IP 查询',
-        path: '/ip-lookup',
-        desc: '查询 IP 地址归属地信息',
-        icon: GlobeAltIcon,
       },
     ],
   },
@@ -157,6 +156,17 @@ export const toolGroups = [
         path: '/image-compress',
         desc: '图片压缩、缩放与格式转换',
         icon: PhotoIcon,
+      },
+    ],
+  },
+  {
+    name: '网络',
+    tools: [
+      {
+        name: 'IP 查询',
+        path: '/ip-lookup',
+        desc: '查询 IP 地址归属地信息',
+        icon: GlobeAltIcon,
       },
     ],
   },
