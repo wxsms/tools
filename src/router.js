@@ -13,6 +13,7 @@ import Case from './views/Case.vue'
 import Timestamp from './views/Timestamp.vue'
 import MdHtml from './views/MdHtml.vue'
 import QrCode from './views/QrCode.vue'
+import Regex from './views/Regex.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -29,6 +30,7 @@ const routes = [
   { path: '/timestamp', component: Timestamp },
   { path: '/md-html', component: MdHtml, meta: { wide: true } },
   { path: '/qr-code', component: QrCode },
+  { path: '/regex', component: Regex },
 ]
 
 export default createRouter({

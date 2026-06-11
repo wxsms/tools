@@ -12,6 +12,7 @@ import {
   ClockIcon,
   DocumentTextIcon,
   QrCodeIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -59,6 +60,12 @@ export const toolGroups = [
         path: '/url-encode',
         desc: 'URL 编码与解码，支持批量处理',
         icon: LinkIcon,
+      },
+      {
+        name: '正则测试',
+        path: '/regex',
+        desc: '正则表达式实时测试与匹配高亮',
+        icon: MagnifyingGlassIcon,
       },
       {
         name: '大小写转换',
