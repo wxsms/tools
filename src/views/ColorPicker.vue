@@ -1,21 +1,45 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">颜色转换</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      颜色转换
+    </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <!-- Preview -->
       <div class="flex items-center gap-4">
-        <div class="w-20 h-20 rounded-lg border border-base-300" :style="{ backgroundColor: hex }" />
-        <input v-model="hex" type="color" class="input input-bordered w-12 h-10 p-1 cursor-pointer">
+        <div
+          class="w-20 h-20 rounded-lg border border-base-300"
+          :style="{ backgroundColor: hex }"
+        />
+        <input
+          v-model="hex"
+          type="color"
+          class="input input-bordered w-12 h-10 p-1 cursor-pointer"
+        >
       </div>
 
       <!-- HEX -->
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">HEX</span></label>
         <div class="relative">
-          <input v-model="hex" class="input input-bordered w-full font-mono text-sm" placeholder="#ff0000" @input="onHexChange">
-          <button class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2" :title="hexCopied ? '已复制！' : '复制'" @click="copyVal(hex, 'hexCopied')">
-            <CheckIcon v-if="hexCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+          <input
+            v-model="hex"
+            class="input input-bordered w-full font-mono text-sm"
+            placeholder="#ff0000"
+            @input="onHexChange"
+          >
+          <button
+            class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2"
+            :title="hexCopied ? '已复制！' : '复制'"
+            @click="copyVal(hex, 'hexCopied')"
+          >
+            <CheckIcon
+              v-if="hexCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
       </div>
@@ -24,10 +48,25 @@
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">RGB</span></label>
         <div class="relative">
-          <input v-model="rgb" class="input input-bordered w-full font-mono text-sm" placeholder="rgb(255, 0, 0)" @input="onRgbChange">
-          <button class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2" :title="rgbCopied ? '已复制！' : '复制'" @click="copyVal(rgb, 'rgbCopied')">
-            <CheckIcon v-if="rgbCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+          <input
+            v-model="rgb"
+            class="input input-bordered w-full font-mono text-sm"
+            placeholder="rgb(255, 0, 0)"
+            @input="onRgbChange"
+          >
+          <button
+            class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2"
+            :title="rgbCopied ? '已复制！' : '复制'"
+            @click="copyVal(rgb, 'rgbCopied')"
+          >
+            <CheckIcon
+              v-if="rgbCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
       </div>
@@ -36,10 +75,25 @@
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">HSL</span></label>
         <div class="relative">
-          <input v-model="hsl" class="input input-bordered w-full font-mono text-sm" placeholder="hsl(0, 100%, 50%)" @input="onHslChange">
-          <button class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2" :title="hslCopied ? '已复制！' : '复制'" @click="copyVal(hsl, 'hslCopied')">
-            <CheckIcon v-if="hslCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+          <input
+            v-model="hsl"
+            class="input input-bordered w-full font-mono text-sm"
+            placeholder="hsl(0, 100%, 50%)"
+            @input="onHslChange"
+          >
+          <button
+            class="btn btn-ghost btn-xs btn-square absolute right-1 top-1/2 -translate-y-1/2"
+            :title="hslCopied ? '已复制！' : '复制'"
+            @click="copyVal(hsl, 'hslCopied')"
+          >
+            <CheckIcon
+              v-if="hslCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
       </div>

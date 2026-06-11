@@ -13,9 +13,37 @@ import {
   DocumentTextIcon,
   QrCodeIcon,
   MagnifyingGlassIcon,
+  FingerPrintIcon,
+  SwatchIcon,
+  GlobeAltIcon,
+  PhotoIcon,
+  ArrowPathIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
+  {
+    name: '编码',
+    tools: [
+      {
+        name: 'UUID 生成',
+        path: '/uuid',
+        desc: '批量生成 UUID v4，支持大写与无连字符',
+        icon: FingerPrintIcon,
+      },
+      {
+        name: 'HTML 实体编码',
+        path: '/html-entity',
+        desc: 'HTML 特殊字符与实体互转',
+        icon: CodeBracketSquareIcon,
+      },
+      {
+        name: '密码生成',
+        path: '/password',
+        desc: '可配置长度、字符集的随机密码生成器',
+        icon: KeyIcon,
+      },
+    ],
+  },
   {
     name: '文本',
     tools: [
@@ -85,6 +113,23 @@ export const toolGroups = [
         desc: 'Markdown ↔ HTML 双向转换',
         icon: DocumentTextIcon,
       },
+      {
+        name: '颜色转换',
+        path: '/color-picker',
+        desc: 'HEX / RGB / HSL 颜色互转与预览',
+        icon: SwatchIcon,
+      },
+    ],
+  },
+  {
+    name: '网络',
+    tools: [
+      {
+        name: 'IP 查询',
+        path: '/ip-lookup',
+        desc: '查询 IP 地址归属地信息',
+        icon: GlobeAltIcon,
+      },
     ],
   },
   {
@@ -107,6 +152,18 @@ export const toolGroups = [
         path: '/qr-code',
         desc: '将文本或链接生成二维码，支持自定义颜色与纠错级别',
         icon: QrCodeIcon,
+      },
+      {
+        name: '图片压缩',
+        path: '/image-compress',
+        desc: '调整质量与尺寸压缩图片',
+        icon: PhotoIcon,
+      },
+      {
+        name: '图片格式转换',
+        path: '/image-convert',
+        desc: 'PNG / JPEG / WebP 格式互转',
+        icon: ArrowPathIcon,
       },
     ],
   },

@@ -17,7 +17,7 @@ const mockData = {
 
 describe('IpLookup', () => {
   beforeEach(() => {
-    global.fetch = vi.fn(() =>
+    globalThis.fetch = vi.fn(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve(mockData) })
     )
   })
@@ -40,6 +40,6 @@ describe('IpLookup', () => {
   it('fetches current IP on mount', async () => {
     mount(IpLookup)
     await new Promise(r => setTimeout(r, 100))
-    expect(global.fetch).toHaveBeenCalledWith('https://ipapi.co/json/')
+    expect(globalThis.fetch).toHaveBeenCalledWith('https://ipapi.co/json/')
   })
 })

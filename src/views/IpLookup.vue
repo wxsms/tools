@@ -1,6 +1,8 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">IP 查询</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      IP 查询
+    </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="flex gap-2">
         <input
@@ -9,26 +11,46 @@
           placeholder="输入 IP 地址（留空查询当前 IP）"
           @keyup.enter="lookup"
         >
-        <button class="btn btn-primary btn-sm gap-1" :disabled="loading" @click="lookup">
+        <button
+          class="btn btn-primary btn-sm gap-1"
+          :disabled="loading"
+          @click="lookup"
+        >
           <MagnifyingGlassIcon class="w-4 h-4" />
           查询
         </button>
       </div>
 
-      <div v-if="loading" class="flex justify-center py-8">
+      <div
+        v-if="loading"
+        class="flex justify-center py-8"
+      >
         <span class="loading loading-spinner loading-lg" />
       </div>
 
-      <div v-if="error" class="alert alert-error">
+      <div
+        v-if="error"
+        class="alert alert-error"
+      >
         <span>{{ error }}</span>
       </div>
 
-      <div v-if="displayRows.length" class="overflow-x-auto">
+      <div
+        v-if="displayRows.length"
+        class="overflow-x-auto"
+      >
         <table class="table table-zebra">
           <tbody>
-            <tr v-for="row in displayRows" :key="row.label">
-              <td class="font-semibold w-32">{{ row.label }}</td>
-              <td class="font-mono text-sm">{{ row.value }}</td>
+            <tr
+              v-for="row in displayRows"
+              :key="row.label"
+            >
+              <td class="font-semibold w-32">
+                {{ row.label }}
+              </td>
+              <td class="font-mono text-sm">
+                {{ row.value }}
+              </td>
             </tr>
           </tbody>
         </table>

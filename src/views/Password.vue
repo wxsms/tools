@@ -1,44 +1,82 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">密码生成器</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      密码生成器
+    </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">密码长度</span></label>
         <div class="flex items-center gap-2">
-          <input v-model.number="length" type="range" min="4" max="64" step="1" class="range range-sm flex-1">
+          <input
+            v-model.number="length"
+            type="range"
+            min="4"
+            max="64"
+            step="1"
+            class="range range-sm flex-1"
+          >
           <span class="text-sm w-10 text-right">{{ length }}</span>
         </div>
       </div>
 
       <div class="flex flex-wrap gap-4">
         <label class="label cursor-pointer gap-2">
-          <input v-model="uppercase" type="checkbox" class="checkbox checkbox-sm checkbox-primary">
+          <input
+            v-model="uppercase"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary"
+          >
           <span class="label-text">大写字母</span>
         </label>
         <label class="label cursor-pointer gap-2">
-          <input v-model="lowercase" type="checkbox" class="checkbox checkbox-sm checkbox-primary">
+          <input
+            v-model="lowercase"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary"
+          >
           <span class="label-text">小写字母</span>
         </label>
         <label class="label cursor-pointer gap-2">
-          <input v-model="numbers" type="checkbox" class="checkbox checkbox-sm checkbox-primary">
+          <input
+            v-model="numbers"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary"
+          >
           <span class="label-text">数字</span>
         </label>
         <label class="label cursor-pointer gap-2">
-          <input v-model="symbols" type="checkbox" class="checkbox checkbox-sm checkbox-primary">
+          <input
+            v-model="symbols"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary"
+          >
           <span class="label-text">符号</span>
         </label>
         <label class="label cursor-pointer gap-2">
-          <input v-model="excludeAmbiguous" type="checkbox" class="checkbox checkbox-sm checkbox-primary">
+          <input
+            v-model="excludeAmbiguous"
+            type="checkbox"
+            class="checkbox checkbox-sm checkbox-primary"
+          >
           <span class="label-text">排除易混淆字符</span>
         </label>
       </div>
 
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">生成数量</span></label>
-        <input v-model.number="count" type="number" min="1" max="50" class="input input-bordered w-32">
+        <input
+          v-model.number="count"
+          type="number"
+          min="1"
+          max="50"
+          class="input input-bordered w-32"
+        >
       </div>
 
-      <button class="btn btn-primary btn-sm w-fit gap-1" @click="generate">
+      <button
+        class="btn btn-primary btn-sm w-fit gap-1"
+        @click="generate"
+      >
         <SparklesIcon class="w-4 h-4" />
         生成
       </button>
@@ -59,8 +97,14 @@
             :title="copied ? '已复制！' : '复制'"
             @click="copy"
           >
-            <CheckIcon v-if="copied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+            <CheckIcon
+              v-if="copied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
       </div>

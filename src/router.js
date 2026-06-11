@@ -14,6 +14,13 @@ import Timestamp from './views/Timestamp.vue'
 import MdHtml from './views/MdHtml.vue'
 import QrCode from './views/QrCode.vue'
 import Regex from './views/Regex.vue'
+import Uuid from './views/Uuid.vue'
+import HtmlEntity from './views/HtmlEntity.vue'
+import Password from './views/Password.vue'
+import ColorPicker from './views/ColorPicker.vue'
+import IpLookup from './views/IpLookup.vue'
+import ImageCompress from './views/ImageCompress.vue'
+import ImageConvert from './views/ImageConvert.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -31,6 +38,13 @@ const routes = [
   { path: '/md-html', component: MdHtml, meta: { wide: true } },
   { path: '/qr-code', component: QrCode },
   { path: '/regex', component: Regex },
+  { path: '/uuid', component: Uuid },
+  { path: '/html-entity', component: HtmlEntity },
+  { path: '/password', component: Password },
+  { path: '/color-picker', component: ColorPicker },
+  { path: '/ip-lookup', component: IpLookup },
+  { path: '/image-compress', component: ImageCompress },
+  { path: '/image-convert', component: ImageConvert },
 ]
 
 export default createRouter({

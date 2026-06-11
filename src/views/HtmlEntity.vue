@@ -1,6 +1,8 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">HTML 实体编码</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      HTML 实体编码
+    </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">明文</span></label>
@@ -18,8 +20,14 @@
             :title="inputCopied ? '已复制！' : '复制'"
             @click="copyText(input, 'inputCopied')"
           >
-            <CheckIcon v-if="inputCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+            <CheckIcon
+              v-if="inputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
       </div>
@@ -44,15 +52,29 @@
             :title="outputCopied ? '已复制！' : '复制'"
             @click="copyText(output, 'outputCopied')"
           >
-            <CheckIcon v-if="outputCopied" class="w-4 h-4 text-success" />
-            <ClipboardDocumentIcon v-else class="w-4 h-4" />
+            <CheckIcon
+              v-if="outputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
           </button>
         </div>
-        <p v-if="error" class="text-error text-sm mt-1">{{ error }}</p>
+        <p
+          v-if="error"
+          class="text-error text-sm mt-1"
+        >
+          {{ error }}
+        </p>
       </div>
 
       <div class="flex justify-end">
-        <button class="btn btn-ghost btn-sm gap-1" @click="clear">
+        <button
+          class="btn btn-ghost btn-sm gap-1"
+          @click="clear"
+        >
           <TrashIcon class="w-4 h-4" />
           清空
         </button>
