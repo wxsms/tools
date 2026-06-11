@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      JSON Validator
+      JSON 校验器
     </h1>
 
     <!-- Toolbar -->
@@ -12,7 +12,7 @@
         @click="format"
       >
         <SparklesIcon class="w-4 h-4" />
-        Format
+        格式化
       </button>
       <button
         class="btn btn-sm gap-1"
@@ -20,7 +20,7 @@
         @click="minify"
       >
         <ArrowsPointingInIcon class="w-4 h-4" />
-        Minify
+        压缩
       </button>
       <button
         class="btn btn-sm gap-1"
@@ -57,7 +57,7 @@
       <!-- Left: editor -->
       <div class="form-control">
         <label class="label">
-          <span class="label-text font-semibold">Input</span>
+          <span class="label-text font-semibold">输入</span>
         </label>
         <div class="relative">
           <textarea
@@ -67,13 +67,13 @@
               'textarea-success': touched && input.trim() && isValid,
               'textarea-error': touched && input.trim() && !isValid,
             }"
-            placeholder="Paste JSON here..."
+            placeholder="在此粘贴 JSON..."
             @input="onInput"
           />
           <button
             v-if="input"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="copied ? 'Copied!' : 'Copy'"
+            :title="copied ? '已复制！' : '复制'"
             @click="copy"
           >
             <CheckIcon
@@ -91,14 +91,14 @@
           :class="isValid ? 'text-success' : 'text-error'"
           class="text-sm mt-1"
         >
-          {{ isValid ? 'Valid JSON' : 'Invalid JSON: ' + error }}
+          {{ isValid ? 'JSON 有效' : 'JSON 无效：' + error }}
         </p>
       </div>
 
       <!-- Right: tree view -->
       <div class="form-control">
         <label class="label">
-          <span class="label-text font-semibold">Tree View</span>
+          <span class="label-text font-semibold">树形视图</span>
         </label>
         <div
           class="border border-base-content/10 rounded-lg overflow-auto p-3 h-[520px]"
@@ -115,7 +115,7 @@
             v-else
             class="text-base-content/30 text-sm"
           >
-            Enter valid JSON to see the tree view
+            输入有效的 JSON 以查看树形视图
           </p>
         </div>
       </div>
@@ -224,7 +224,7 @@ function removeQuoteEscape() {
     // Unwrap one layer of JSON string escaping
     input.value = JSON.parse(input.value)
   } catch (e) {
-    error.value = 'Not a valid escaped string: ' + e.message
+    error.value = '不是有效的转义字符串：' + e.message
   }
 }
 

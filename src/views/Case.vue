@@ -1,11 +1,11 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Case Converter
+      大小写转换器
     </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Input</span></label>
+        <label class="label"><span class="label-text font-semibold">输入</span></label>
         <div class="relative">
           <textarea
             v-model="input"
@@ -17,7 +17,7 @@
           <button
             v-if="input"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="inputCopied ? 'Copied!' : 'Copy'"
+            :title="inputCopied ? '已复制！' : '复制'"
             @click="copyText(input, 'inputCopied')"
           >
             <CheckIcon
@@ -38,7 +38,7 @@
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          Clear
+          清空
         </button>
       </div>
 
@@ -61,7 +61,7 @@
           <button
             v-if="item.value"
             class="btn btn-ghost btn-xs btn-square absolute right-1 top-1"
-            :title="item.copied ? 'Copied!' : 'Copy'"
+            :title="item.copied ? '已复制！' : '复制'"
             @click="copyText(item.value, item.key)"
           >
             <CheckIcon
@@ -88,14 +88,14 @@ const input = ref('')
 const inputCopied = ref(false)
 
 const results = reactive([
-  { key: 'upper', label: 'UPPER CASE', desc: 'all upper', value: '', copied: false },
-  { key: 'lower', label: 'lower case', desc: 'all lower', value: '', copied: false },
-  { key: 'camel', label: 'camelCase', desc: 'small camel', value: '', copied: false },
-  { key: 'pascal', label: 'PascalCase', desc: 'big camel', value: '', copied: false },
-  { key: 'snake', label: 'snake_case', desc: 'lower snake', value: '', copied: false },
-  { key: 'screamingSnake', label: 'SCREAMING_SNAKE_CASE', desc: 'upper snake', value: '', copied: false },
-  { key: 'kebab', label: 'kebab-case', desc: 'kebab / hyphen', value: '', copied: false },
-  { key: 'title', label: 'Title Case', desc: 'capitalized words', value: '', copied: false },
+  { key: 'upper', label: 'UPPER CASE', desc: '全部大写', value: '', copied: false },
+  { key: 'lower', label: 'lower case', desc: '全部小写', value: '', copied: false },
+  { key: 'camel', label: 'camelCase', desc: '小驼峰', value: '', copied: false },
+  { key: 'pascal', label: 'PascalCase', desc: '大驼峰', value: '', copied: false },
+  { key: 'snake', label: 'snake_case', desc: '下划线', value: '', copied: false },
+  { key: 'screamingSnake', label: 'SCREAMING_SNAKE_CASE', desc: '大写下划线', value: '', copied: false },
+  { key: 'kebab', label: 'kebab-case', desc: '短横线', value: '', copied: false },
+  { key: 'title', label: 'Title Case', desc: '首字母大写', value: '', copied: false },
 ])
 
 function convert() {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import Crypto from './Crypto.vue'
 
 // Mock crypto utils — heavy crypto operations don't need real execution in component tests
@@ -33,29 +34,29 @@ function mountComponent() {
 describe('Crypto', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('Crypto')
+    expect(wrapper.text()).toContain('加密解密')
   })
 
   it('renders encrypt tab by default', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('Password')
-    expect(wrapper.text()).toContain('Plaintext')
+    expect(wrapper.text()).toContain('密码')
+    expect(wrapper.text()).toContain('明文')
   })
 
   it('switches to hash tab', async () => {
     const wrapper = mountComponent()
     const tabs = wrapper.findAll('[role="tab"]')
     await tabs[1].trigger('click')
-    expect(wrapper.text()).toContain('Input')
-    expect(wrapper.text()).toContain('Hash')
+    expect(wrapper.text()).toContain('输入')
+    expect(wrapper.text()).toContain('哈希')
   })
 
   it('switches to keygen tab', async () => {
     const wrapper = mountComponent()
     const tabs = wrapper.findAll('[role="tab"]')
     await tabs[2].trigger('click')
-    expect(wrapper.text()).toContain('Key Length')
-    expect(wrapper.text()).toContain('Generate')
+    expect(wrapper.text()).toContain('密钥长度')
+    expect(wrapper.text()).toContain('生成')
   })
 
   describe('Hash / HMAC tab', () => {
@@ -81,14 +82,14 @@ describe('Crypto', () => {
       const buttons = wrapper.findAll('button')
       const hmacBtn = buttons.find(b => b.text().trim() === 'HMAC')
       await hmacBtn.trigger('click')
-      expect(wrapper.text()).toContain('HMAC Key')
+      expect(wrapper.text()).toContain('HMAC 密钥')
     })
 
     it('clears hash fields', async () => {
       const wrapper = await mountHashTab()
       const textarea = wrapper.find('textarea')
       await textarea.setValue('hello')
-      const clearBtn = wrapper.findAll('button').find(b => b.text().includes('Clear'))
+      const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清空'))
       await clearBtn.trigger('click')
       expect(textarea.element.value).toBe('')
     })
@@ -104,8 +105,9 @@ describe('Crypto', () => {
 
     it('generates a key when button is clicked', async () => {
       const wrapper = await mountKeygenTab()
-      const genBtn = wrapper.findAll('button').find(b => b.text().includes('Generate'))
+      const genBtn = wrapper.findAll('button').find(b => b.text().trim() === '生成')
       await genBtn.trigger('click')
+      await nextTick()
       const { randomBytes, bytesToHex } = await import('../utils/crypto.js')
       expect(randomBytes).toHaveBeenCalled()
       expect(bytesToHex).toHaveBeenCalled()
@@ -129,7 +131,7 @@ describe('Crypto', () => {
 
     it('clears encrypt fields', async () => {
       const wrapper = mountComponent()
-      const clearBtn = wrapper.findAll('button').find(b => b.text().includes('Clear'))
+      const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清空'))
       await clearBtn.trigger('click')
       // After clear, textarea values should be empty
       const textareas = wrapper.findAll('textarea')

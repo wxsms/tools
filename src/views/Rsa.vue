@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      RSA
+      RSA 加密 / 解密
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <!-- Key Generation -->
@@ -29,25 +29,25 @@
           @click="generateKeys"
         >
           <SparklesIcon class="w-4 h-4" />
-          {{ generating ? 'Generating...' : 'Generate' }}
+          {{ generating ? '生成中...' : '生成' }}
         </button>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">Public Key</span></label>
+          <label class="label"><span class="label-text font-semibold">公钥</span></label>
           <div class="relative">
             <textarea
               v-model="publicKeyPem"
               class="textarea textarea-bordered w-full font-mono text-sm"
-              placeholder="Paste or generate public key..."
+              placeholder="粘贴或生成公钥..."
               rows="5"
               @input="onKeyChange"
             />
             <button
               v-if="publicKeyPem"
               class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-              :title="pubCopied ? 'Copied!' : 'Copy'"
+              :title="pubCopied ? '已复制！' : '复制'"
               @click="copyPub"
             >
               <CheckIcon
@@ -62,19 +62,19 @@
           </div>
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">Private Key</span></label>
+          <label class="label"><span class="label-text font-semibold">私钥</span></label>
           <div class="relative">
             <textarea
               v-model="privateKeyPem"
               class="textarea textarea-bordered w-full font-mono text-sm"
-              placeholder="Paste or generate private key..."
+              placeholder="粘贴或生成私钥..."
               rows="5"
               @input="onKeyChange"
             />
             <button
               v-if="privateKeyPem"
               class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-              :title="priCopied ? 'Copied!' : 'Copy'"
+              :title="priCopied ? '已复制！' : '复制'"
               @click="copyPri"
             >
               <CheckIcon
@@ -92,14 +92,14 @@
 
       <div class="divider" />
 
-      <!-- Plaintext ↔ Ciphertext -->
+      <!-- 明文 ↔ Ciphertext -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Plaintext</span></label>
+        <label class="label"><span class="label-text font-semibold">明文</span></label>
         <div class="relative">
           <textarea
             v-model="plaintext"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="Enter plaintext to encrypt..."
+            placeholder="输入要加密的明文..."
             rows="6"
             @input="onPlaintextInput"
           />
@@ -112,7 +112,7 @@
           <button
             v-if="plaintext && !(loading && lastEdit === 'ciphertext')"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="ptCopied ? 'Copied!' : 'Copy'"
+            :title="ptCopied ? '已复制！' : '复制'"
             @click="copyPt"
           >
             <CheckIcon
@@ -132,12 +132,12 @@
       </div>
 
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Ciphertext (Base64)</span></label>
+        <label class="label"><span class="label-text font-semibold">密文 (Base64)</span></label>
         <div class="relative">
           <textarea
             v-model="ciphertext"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="Enter Base64 ciphertext to decrypt..."
+            placeholder="输入 Base64 密文以解密..."
             rows="6"
             @input="onCiphertextInput"
           />
@@ -150,7 +150,7 @@
           <button
             v-if="ciphertext && !(loading && lastEdit === 'plaintext')"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="ctCopied ? 'Copied!' : 'Copy'"
+            :title="ctCopied ? '已复制！' : '复制'"
             @click="copyCt"
           >
             <CheckIcon
@@ -177,7 +177,7 @@
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          Clear
+          清空
         </button>
       </div>
     </div>
@@ -281,7 +281,7 @@ function processEnc() {
         plaintext.value = await decrypt(ct.trim(), pri)
       }
     } catch (e) {
-      encError.value = e.message || (direction === 'plaintext' ? 'Encryption failed' : 'Decryption failed')
+      encError.value = e.message || (direction === 'plaintext' ? '加密失败' : '解密失败')
       if (direction === 'plaintext') ciphertext.value = ''
       else plaintext.value = ''
     } finally {

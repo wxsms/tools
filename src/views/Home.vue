@@ -7,8 +7,8 @@
             wxsm's Kit
           </h1>
           <p class="py-4 text-base-content/70">
-            🔒 Private · ⚡ Fast · 💯 Free<br>
-            Everything runs locally in your browser — no data leaves your device.
+            🔧 实用 · ⚡ 快速 · 💯 免费<br>
+            所有操作均在浏览器本地运行，数据不会离开你的设备。
           </p>
         </div>
       </div>

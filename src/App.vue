@@ -81,7 +81,7 @@
         <!-- Footer -->
         <footer class="footer footer-center p-4 bg-base-200 text-base-content">
           <aside>
-            <p>&copy; {{ year }} wxsm — Personal Toolkit</p>
+            <p>&copy; {{ year }} wxsm — 个人工具箱</p>
           </aside>
         </footer>
       </div>

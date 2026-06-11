@@ -23,13 +23,13 @@ function mountComponent() {
 describe('Json', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('JSON Validator')
+    expect(wrapper.text()).toContain('JSON 校验器')
   })
 
   it('renders toolbar buttons', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('Format')
-    expect(wrapper.text()).toContain('Minify')
+    expect(wrapper.text()).toContain('格式化')
+    expect(wrapper.text()).toContain('压缩')
     expect(wrapper.text()).toContain('中文 → Unicode')
     expect(wrapper.text()).toContain('Unicode → 中文')
   })
@@ -39,7 +39,7 @@ describe('Json', () => {
     // Component starts with valid sample JSON
     const textarea = wrapper.find('textarea')
     await textarea.trigger('input')
-    expect(wrapper.text()).toContain('Valid JSON')
+    expect(wrapper.text()).toContain('JSON 有效')
   })
 
   it('shows invalid JSON indicator for invalid input', async () => {
@@ -47,14 +47,14 @@ describe('Json', () => {
     const textarea = wrapper.find('textarea')
     await textarea.setValue('{invalid}')
     await textarea.trigger('input')
-    expect(wrapper.text()).toContain('Invalid JSON')
+    expect(wrapper.text()).toContain('JSON 无效')
   })
 
   it('formats JSON', async () => {
     const wrapper = mountComponent()
     const textarea = wrapper.find('textarea')
     await textarea.setValue('{"a":1}')
-    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('Format'))
+    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('格式化'))
     await formatBtn.trigger('click')
     // After formatting, the value should have indentation
     expect(textarea.element.value).toContain('\n')
@@ -65,7 +65,7 @@ describe('Json', () => {
     const wrapper = mountComponent()
     const textarea = wrapper.find('textarea')
     await textarea.setValue('{\n  "a": 1\n}')
-    const minifyBtn = wrapper.findAll('button').find(b => b.text().includes('Minify'))
+    const minifyBtn = wrapper.findAll('button').find(b => b.text().includes('压缩'))
     await minifyBtn.trigger('click')
     expect(textarea.element.value).toBe('{"a":1}')
   })
@@ -112,7 +112,7 @@ describe('Json', () => {
     const wrapper = mountComponent()
     const textarea = wrapper.find('textarea')
     await textarea.setValue('')
-    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('Format'))
+    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('格式化'))
     expect(formatBtn.element.disabled).toBe(true)
   })
 
@@ -120,7 +120,7 @@ describe('Json', () => {
     const wrapper = mountComponent()
     const textarea = wrapper.find('textarea')
     await textarea.setValue('{"a":1}')
-    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('Format'))
+    const formatBtn = wrapper.findAll('button').find(b => b.text().includes('格式化'))
     expect(formatBtn.element.disabled).toBe(false)
   })
 
@@ -129,6 +129,6 @@ describe('Json', () => {
     const textarea = wrapper.find('textarea')
     await textarea.setValue('')
     await textarea.trigger('input')
-    expect(wrapper.text()).toContain('Enter valid JSON to see the tree view')
+    expect(wrapper.text()).toContain('输入有效的 JSON 以查看树形视图')
   })
 })

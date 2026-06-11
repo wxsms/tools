@@ -1,12 +1,12 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Image Watermark
+      图片水印
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <!-- Upload -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Select Image</span></label>
+        <label class="label"><span class="label-text font-semibold">选择图片</span></label>
         <input
           ref="fileInput"
           type="file"
@@ -22,18 +22,18 @@
         class="flex flex-col gap-4"
       >
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">Watermark Text</span></label>
+          <label class="label"><span class="label-text font-semibold">水印文字</span></label>
           <input
             v-model="text"
             type="text"
             class="input input-bordered w-full"
-            placeholder="Enter watermark text..."
+            placeholder="输入水印文字..."
           >
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Font Size</span></label>
+            <label class="label"><span class="label-text font-semibold">字号</span></label>
             <div class="flex items-center gap-2">
               <input
                 v-model.number="fontSize"
@@ -47,7 +47,7 @@
             </div>
           </div>
           <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Color</span></label>
+            <label class="label"><span class="label-text font-semibold">颜色</span></label>
             <div class="flex items-center gap-2">
               <input
                 v-model="color"
@@ -65,7 +65,7 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Opacity</span></label>
+            <label class="label"><span class="label-text font-semibold">透明度</span></label>
             <div class="flex items-center gap-2">
               <input
                 v-model.number="opacity"
@@ -79,7 +79,7 @@
             </div>
           </div>
           <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Rotation</span></label>
+            <label class="label"><span class="label-text font-semibold">旋转</span></label>
             <div class="flex items-center gap-2">
               <input
                 v-model.number="rotation"
@@ -101,13 +101,13 @@
               type="checkbox"
               class="checkbox checkbox-sm checkbox-primary"
             >
-            <span class="label-text font-semibold">Tile / Repeat Watermark</span>
+            <span class="label-text font-semibold">平铺水印</span>
           </label>
         </div>
 
         <!-- Preview -->
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">Preview</span></label>
+          <label class="label"><span class="label-text font-semibold">预览</span></label>
           <div class="border border-base-300 rounded-lg overflow-hidden bg-base-200">
             <canvas
               ref="canvas"
@@ -123,7 +123,7 @@
             @click="reset"
           >
             <TrashIcon class="w-4 h-4" />
-            Reset
+            重置
           </button>
           <button
             class="btn btn-primary btn-sm gap-1"
@@ -131,7 +131,7 @@
             @click="download"
           >
             <ArrowDownTrayIcon class="w-4 h-4" />
-            Download
+            下载
           </button>
         </div>
       </div>

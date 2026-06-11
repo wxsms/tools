@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Markdown / HTML
+      Markdown / HTML 转换
     </h1>
 
     <div class="flex gap-4">
@@ -22,7 +22,7 @@
               v-else
               class="w-3.5 h-3.5"
             />
-            {{ mdCopied ? 'Copied!' : 'Copy' }}
+            {{ mdCopied ? '已复制！' : '复制' }}
           </button>
         </label>
         <div
@@ -41,13 +41,13 @@
                 :class="['join-item btn btn-xs', htmlMode === 'source' ? 'btn-primary' : 'btn-ghost']"
                 @click="htmlMode = 'source'"
               >
-                Source
+                源码
               </button>
               <button
                 :class="['join-item btn btn-xs', htmlMode === 'preview' ? 'btn-primary' : 'btn-ghost']"
                 @click="htmlMode = 'preview'"
               >
-                Preview
+                预览
               </button>
             </div>
             <button
@@ -63,19 +63,19 @@
                 v-else
                 class="w-3.5 h-3.5"
               />
-              {{ htmlCopied ? 'Copied!' : 'Copy' }}
+              {{ htmlCopied ? '已复制！' : '复制' }}
             </button>
           </div>
         </label>
 
-        <!-- Source mode: CodeMirror editor -->
+        <!-- 源码 mode: CodeMirror editor -->
         <div
           v-if="htmlMode === 'source'"
           ref="htmlEditorEl"
           class="cm-container border border-base-300"
         />
 
-        <!-- Preview mode: rendered HTML -->
+        <!-- 预览 mode: rendered HTML -->
         <div
           v-else
           class="overflow-auto rounded-btn border border-base-300 bg-base-100 p-4 md-preview"
@@ -99,7 +99,7 @@
         @click="clear"
       >
         <TrashIcon class="w-4 h-4" />
-        Clear
+        清空
       </button>
     </div>
   </div>
@@ -120,36 +120,36 @@ import { marked } from 'marked'
 import { useTheme } from '../composables/useTheme.js'
 import { ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
-const defaultMd = `# Hello World
+const defaultMd = `# 你好世界
 
-This is a **Markdown** example with various elements:
+这是一个 **Markdown** 示例，包含各种元素：
 
-## Features
+## 功能特性
 
-- Unordered list item 1
-- Unordered list item 2
-  - Nested item
+- 无序列表项 1
+- 无序列表项 2
+  - 嵌套项
 
-1. Ordered list item
-2. Another item
+1. 有序列表项
+2. 另一个列表项
 
-> A blockquote example
+> 一段引用示例
 
 \`\`\`js
 const greeting = "Hello!";
 console.log(greeting);
 \`\`\`
 
-Inline \`code\` and a [link](https://example.com).
+行内 \`代码\` 和一个[链接](https://example.com)。
 
-| Column A | Column B |
-|----------|----------|
-| Cell 1   | Cell 2   |
-| Cell 3   | Cell 4   |
+| 列 A | 列 B |
+|------|------|
+| 单元格 1 | 单元格 2 |
+| 单元格 3 | 单元格 4 |
 
 ---
 
-*Italic text* and ~~strikethrough~~.`
+*斜体文本* 和 ~~删除线~~。`
 
 const md = ref(defaultMd)
 const htmlRef = ref('')
@@ -238,7 +238,7 @@ function mdToHtml() {
       htmlUpdatingFromMd = false
     }
   } catch (e) {
-    error.value = 'Markdown → HTML failed: ' + e.message
+    error.value = 'Markdown → HTML 转换失败：' + e.message
   }
 }
 
@@ -266,7 +266,7 @@ function htmlToMd() {
       mdUpdatingFromHtml = false
     }
   } catch (e) {
-    error.value = 'HTML → Markdown failed: ' + e.message
+    error.value = 'HTML → Markdown 转换失败：' + e.message
   }
 }
 

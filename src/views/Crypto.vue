@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Crypto
+      加密解密
     </h1>
 
     <!-- Tabs -->
@@ -15,7 +15,7 @@
         :class="{ 'tab-active': activeTab === 'encrypt' }"
         @click="activeTab = 'encrypt'"
       >
-        Encrypt / Decrypt
+        加密 / 解密
       </button>
       <button
         role="tab"
@@ -23,7 +23,7 @@
         :class="{ 'tab-active': activeTab === 'hash' }"
         @click="activeTab = 'hash'"
       >
-        Hash / HMAC
+        哈希 / HMAC
       </button>
       <button
         role="tab"
@@ -31,7 +31,7 @@
         :class="{ 'tab-active': activeTab === 'keygen' }"
         @click="activeTab = 'keygen'"
       >
-        KeyGen
+        密钥生成
       </button>
     </div>
 
@@ -40,9 +40,9 @@
       v-if="activeTab === 'encrypt'"
       class="flex flex-col gap-4 max-w-2xl"
     >
-      <!-- Algorithm -->
+      <!-- 算法 -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Algorithm</span></label>
+        <label class="label"><span class="label-text font-semibold">算法</span></label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="algo in AES_ALGORITHMS"
@@ -56,62 +56,62 @@
         </div>
       </div>
 
-      <!-- Password -->
+      <!-- 密码 -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Password</span></label>
+        <label class="label"><span class="label-text font-semibold">密码</span></label>
         <input
           v-model="password"
           type="text"
           class="input input-bordered w-full font-mono text-sm"
-          placeholder="Enter password..."
+          placeholder="输入密码..."
           @input="processEnc()"
         >
       </div>
 
-      <!-- Advanced Options (collapsible) -->
+      <!-- 高级选项 (collapsible) -->
       <div class="collapse collapse-arrow bg-base-200">
         <input
           v-model="advancedOpen"
           type="checkbox"
         >
         <div class="collapse-title text-sm font-semibold py-2 min-h-0">
-          Advanced Options
+          高级选项
         </div>
         <div class="collapse-content">
           <div class="flex flex-col gap-4 pt-2">
-            <!-- Key Mode -->
+            <!-- 密钥模式 -->
             <div class="form-control">
-              <label class="label"><span class="label-text font-semibold">Key Mode</span></label>
+              <label class="label"><span class="label-text font-semibold">密钥模式</span></label>
               <div class="flex gap-2">
                 <button
                   class="btn btn-sm"
                   :class="keyMode === 'passphrase' ? 'btn-primary' : 'btn-outline'"
                   @click="keyMode = 'passphrase'; processEnc()"
                 >
-                  Passphrase
+                  密码短语
                 </button>
                 <button
                   class="btn btn-sm"
                   :class="keyMode === 'hex' ? 'btn-primary' : 'btn-outline'"
                   @click="keyMode = 'hex'; processEnc()"
                 >
-                  Hex Key
+                  Hex 密钥
                 </button>
               </div>
             </div>
 
-            <!-- Hex Key (advanced only) -->
+            <!-- Hex 密钥 (advanced only) -->
             <div
               v-if="keyMode === 'hex'"
               class="form-control"
             >
               <label class="label">
-                <span class="label-text font-semibold">Hex Key</span>
+                <span class="label-text font-semibold">Hex 密钥</span>
                 <button
                   class="btn btn-ghost btn-xs"
                   @click="regenerateHexKey"
                 >
-                  Regenerate
+                  重新生成
                 </button>
               </label>
               <input
@@ -128,31 +128,31 @@
               </p>
             </div>
 
-            <!-- Salt (passphrase mode, advanced only) -->
+            <!-- 盐值 (passphrase mode, advanced only) -->
             <div
               v-if="keyMode === 'passphrase'"
               class="form-control"
             >
               <label class="label">
-                <span class="label-text font-semibold">Salt</span>
+                <span class="label-text font-semibold">盐值</span>
                 <button
                   class="btn btn-ghost btn-xs"
                   @click="regenerateSalt"
                 >
-                  Regenerate
+                  重新生成
                 </button>
               </label>
               <div class="relative">
                 <input
                   v-model="saltHex"
                   class="input input-bordered w-full font-mono text-sm"
-                  placeholder="Auto-generated salt"
+                  placeholder="自动生成的盐值"
                   @input="processEnc()"
                 >
                 <button
                   v-if="saltHex"
                   class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-                  :title="saltCopied ? 'Copied!' : 'Copy'"
+                  :title="saltCopied ? '已复制！' : '复制'"
                   @click="copySalt"
                 >
                   <CheckIcon
@@ -167,12 +167,12 @@
               </div>
             </div>
 
-            <!-- Key Size (passphrase mode, advanced only) -->
+            <!-- 密钥长度 (passphrase mode, advanced only) -->
             <div
               v-if="keyMode === 'passphrase'"
               class="form-control"
             >
-              <label class="label"><span class="label-text font-semibold">Key Size</span></label>
+              <label class="label"><span class="label-text font-semibold">密钥长度</span></label>
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="size in AES_KEY_SIZES"
@@ -191,7 +191,7 @@
               v-if="keyMode === 'passphrase'"
               class="form-control"
             >
-              <label class="label"><span class="label-text font-semibold">PBKDF2 Iterations</span></label>
+              <label class="label"><span class="label-text font-semibold">PBKDF2 迭代次数</span></label>
               <input
                 v-model.number="iterations"
                 type="number"
@@ -201,7 +201,7 @@
                 @input="processEnc()"
               >
               <p class="text-xs text-base-content/50 mt-1">
-                Default: {{ DEFAULT_ITERATIONS.toLocaleString() }}. Higher = more secure but slower.
+                默认：{{ DEFAULT_ITERATIONS.toLocaleString() }}。值越大越安全，但速度越慢。
               </p>
             </div>
 
@@ -213,7 +213,7 @@
                   class="btn btn-ghost btn-xs"
                   @click="regenerateIv"
                 >
-                  Regenerate
+                  重新生成
                 </button>
               </label>
               <div class="relative">
@@ -226,7 +226,7 @@
                 <button
                   v-if="ivHex"
                   class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-                  :title="ivCopied ? 'Copied!' : 'Copy'"
+                  :title="ivCopied ? '已复制！' : '复制'"
                   @click="copyIv"
                 >
                   <CheckIcon
@@ -250,14 +250,14 @@
         </div>
       </div>
 
-      <!-- Plaintext (input) -->
+      <!-- 明文 (input) -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Plaintext</span></label>
+        <label class="label"><span class="label-text font-semibold">明文</span></label>
         <div class="relative">
           <textarea
             v-model="plaintext"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="Enter plaintext..."
+            placeholder="输入明文..."
             rows="6"
             @input="onPlaintextInput"
           />
@@ -270,7 +270,7 @@
           <button
             v-if="plaintext && !(encLoading && lastEdit === 'ciphertext')"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="plaintextCopied ? 'Copied!' : 'Copy'"
+            :title="plaintextCopied ? '已复制！' : '复制'"
             @click="copyPlaintext"
           >
             <CheckIcon
@@ -291,12 +291,12 @@
 
       <!-- Ciphertext (output / bidirectional) -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Ciphertext (hex)</span></label>
+        <label class="label"><span class="label-text font-semibold">密文 (hex)</span></label>
         <div class="relative">
           <textarea
             v-model="ciphertext"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="Enter ciphertext to decrypt..."
+            placeholder="输入密文以解密..."
             rows="6"
             @input="onCiphertextInput"
           />
@@ -309,7 +309,7 @@
           <button
             v-if="ciphertext && !(encLoading && lastEdit === 'plaintext')"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="ciphertextCopied ? 'Copied!' : 'Copy'"
+            :title="ciphertextCopied ? '已复制！' : '复制'"
             @click="copyCiphertext"
           >
             <CheckIcon
@@ -336,19 +336,19 @@
           @click="clearEnc"
         >
           <TrashIcon class="w-4 h-4" />
-          Clear
+          清空
         </button>
       </div>
     </div>
 
-    <!-- Hash / HMAC Tab -->
+    <!-- 哈希 / HMAC Tab -->
     <div
       v-if="activeTab === 'hash'"
       class="flex flex-col gap-4 max-w-2xl"
     >
-      <!-- Algorithm -->
+      <!-- 算法 -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Algorithm</span></label>
+        <label class="label"><span class="label-text font-semibold">算法</span></label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="algo in HASH_ALGORITHMS"
@@ -362,16 +362,16 @@
         </div>
       </div>
 
-      <!-- Mode -->
+      <!-- 模式 -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Mode</span></label>
+        <label class="label"><span class="label-text font-semibold">模式</span></label>
         <div class="flex gap-2">
           <button
             class="btn btn-sm"
             :class="hashMode === 'hash' ? 'btn-primary' : 'btn-outline'"
             @click="hashMode = 'hash'; onHashInputChange()"
           >
-            Hash
+            哈希
           </button>
           <button
             class="btn btn-sm"
@@ -383,36 +383,36 @@
         </div>
       </div>
 
-      <!-- HMAC Key -->
+      <!-- HMAC 密钥 -->
       <div
         v-if="hashMode === 'hmac'"
         class="form-control"
       >
-        <label class="label"><span class="label-text font-semibold">HMAC Key</span></label>
+        <label class="label"><span class="label-text font-semibold">HMAC 密钥</span></label>
         <input
           v-model="hmacKey"
           type="text"
           class="input input-bordered w-full font-mono text-sm"
-          placeholder="Enter HMAC key..."
+          placeholder="输入 HMAC 密钥..."
           @input="onHashInputChange"
         >
       </div>
 
-      <!-- Input -->
+      <!-- 输入 -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Input</span></label>
+        <label class="label"><span class="label-text font-semibold">输入</span></label>
         <div class="relative">
           <textarea
             v-model="hashInput"
             class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="Enter text to hash..."
+            placeholder="输入要哈希的文本..."
             rows="6"
             @input="onHashInputChange"
           />
           <button
             v-if="hashInput"
             class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="hashInputCopied ? 'Copied!' : 'Copy'"
+            :title="hashInputCopied ? '已复制！' : '复制'"
             @click="copyHashInput"
           >
             <CheckIcon
@@ -433,7 +433,7 @@
 
       <!-- Output -->
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">{{ hashMode === 'hmac' ? 'HMAC' : 'Hash' }}</span></label>
+        <label class="label"><span class="label-text font-semibold">{{ hashMode === 'hmac' ? 'HMAC' : '哈希' }}</span></label>
         <div class="relative">
           <input
             v-model="hashOutput"
@@ -443,7 +443,7 @@
           <button
             v-if="hashOutput"
             class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-            :title="hashOutputCopied ? 'Copied!' : 'Copy'"
+            :title="hashOutputCopied ? '已复制！' : '复制'"
             @click="copyHashOutput"
           >
             <CheckIcon
@@ -464,7 +464,7 @@
           @click="clearHash"
         >
           <TrashIcon class="w-4 h-4" />
-          Clear
+          清空
         </button>
       </div>
     </div>
@@ -475,7 +475,7 @@
       class="flex flex-col gap-4 max-w-2xl"
     >
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Key Length</span></label>
+        <label class="label"><span class="label-text font-semibold">密钥长度</span></label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="size in KEYGEN_SIZES"
@@ -494,12 +494,12 @@
         @click="generateKey"
       >
         <SparklesIcon class="w-5 h-5" />
-        Generate
+        生成
       </button>
 
       <div v-if="keygenResult">
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">Result</span></label>
+          <label class="label"><span class="label-text font-semibold">结果</span></label>
           <div class="relative">
             <textarea
               :value="keygenResult"
@@ -509,7 +509,7 @@
             />
             <button
               class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-              :title="keygenCopied ? 'Copied!' : 'Copy'"
+              :title="keygenCopied ? '已复制！' : '复制'"
               @click="copyKeygen"
             >
               <CheckIcon
@@ -688,18 +688,18 @@ async function processAdvanced(algo, pwd, kMode, direction, pt, ct, iter) {
     hexKeyError.value = ''
     const hex = hexKey.value.trim()
     if (!/^[0-9a-fA-F]+$/.test(hex)) {
-      hexKeyError.value = 'Invalid hex characters'
+      hexKeyError.value = '无效的十六进制字符'
       return
     }
     if (hex.length !== 32 && hex.length !== 48 && hex.length !== 64) {
-      hexKeyError.value = 'Key must be 32, 48, or 64 hex chars (128/192/256-bit)'
+      hexKeyError.value = '密钥必须为 32、48 或 64 个十六进制字符（128/192/256 位）'
       return
     }
     const key = hexToBytes(hex)
     ivError.value = ''
     const expectedIvLen = algo === 'AES-GCM' ? 24 : 32
     if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvLen) {
-      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} must be ${expectedIvLen} hex chars`
+      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} 必须为 ${expectedIvLen} 个十六进制字符`
       return
     }
     const iv = hexToBytes(ivHex.value)
@@ -709,12 +709,12 @@ async function processAdvanced(algo, pwd, kMode, direction, pt, ct, iter) {
       plaintext.value = aesDecryptRaw(algo, key, iv, ct.trim())
     }
   } else {
-    // Passphrase + explicit salt/IV
+    // 密码短语 + explicit salt/IV
     if (!pwd) return
     ivError.value = ''
     const expectedIvLen = algo === 'AES-GCM' ? 24 : 32
     if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvLen) {
-      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} must be ${expectedIvLen} hex chars`
+      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} 必须为 ${expectedIvLen} 个十六进制字符`
       return
     }
     const salt = hexToBytes(saltHex.value)
@@ -754,7 +754,7 @@ async function copyIv() {
   try { await navigator.clipboard.writeText(ivHex.value); copiedHelper(ivCopied) } catch { /* clipboard not available */ }
 }
 
-// --- Hash / HMAC ---
+// --- 哈希 / HMAC ---
 const hashAlgo = ref('SHA-256')
 const hashMode = ref('hash')
 const hmacKey = ref('')

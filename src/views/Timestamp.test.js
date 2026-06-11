@@ -19,7 +19,7 @@ function toLocalString(ms) {
 describe('Timestamp', () => {
   it('renders title', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain('Timestamp Converter')
+    expect(wrapper.text()).toContain('时间戳转换器')
   })
 
   it('fills current timestamp on mount (10-digit by default)', async () => {
@@ -52,7 +52,7 @@ describe('Timestamp', () => {
     await inputs[0].setValue('1718000000')
     await inputs[0].trigger('input')
 
-    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13-digit'))
+    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13 位'))
     await btn13.trigger('click')
 
     expect(inputs[0].element.value).toBe('1718000000000')
@@ -60,13 +60,13 @@ describe('Timestamp', () => {
 
   it('switches from 13-digit to 10-digit and converts', async () => {
     const wrapper = await mountComponent()
-    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13-digit'))
+    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13 位'))
     await btn13.trigger('click')
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('1718000000000')
     await inputs[0].trigger('input')
 
-    const btn10 = wrapper.findAll('button').find(b => b.text().includes('10-digit'))
+    const btn10 = wrapper.findAll('button').find(b => b.text().includes('10 位'))
     await btn10.trigger('click')
 
     expect(inputs[0].element.value).toBe('1718000000')
@@ -77,7 +77,7 @@ describe('Timestamp', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('abc')
     await inputs[0].trigger('input')
-    expect(wrapper.text()).toContain('Invalid timestamp (digits only)')
+    expect(wrapper.text()).toContain('无效的时间戳')
   })
 
   it('shows error for out-of-range timestamp', async () => {
@@ -85,7 +85,7 @@ describe('Timestamp', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('0')
     await inputs[0].trigger('input')
-    expect(wrapper.text()).toContain('Timestamp out of range')
+    expect(wrapper.text()).toContain('时间戳超出范围')
   })
 
   it('shows error for invalid date string', async () => {
@@ -93,7 +93,7 @@ describe('Timestamp', () => {
     const inputs = wrapper.findAll('input')
     await inputs[1].setValue('not-a-date')
     await inputs[1].trigger('input')
-    expect(wrapper.text()).toContain('Invalid date string')
+    expect(wrapper.text()).toContain('无效的日期字符串')
   })
 
   it('clears datetime when timestamp is emptied', async () => {
@@ -124,7 +124,7 @@ describe('Timestamp', () => {
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('1718000000')
     await inputs[0].trigger('input')
-    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('Clear'))
+    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清空'))
     await clearBtn.trigger('click')
     expect(inputs[0].element.value).toBe('')
     expect(inputs[1].element.value).toBe('')
@@ -132,7 +132,7 @@ describe('Timestamp', () => {
 
   it('converts 13-digit timestamp to date when in millis mode', async () => {
     const wrapper = await mountComponent()
-    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13-digit'))
+    const btn13 = wrapper.findAll('button').find(b => b.text().includes('13 位'))
     await btn13.trigger('click')
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('1718000000000')

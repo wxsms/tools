@@ -36,18 +36,18 @@ describe('Home', () => {
 
   it('renders tool group headings', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain('Text')
-    expect(wrapper.text()).toContain('Image')
+    expect(wrapper.text()).toContain('文本')
+    expect(wrapper.text()).toContain('图片')
   })
 
   it('renders tool cards with names and descriptions', async () => {
     const wrapper = await mountComponent()
     expect(wrapper.text()).toContain('Base64')
     expect(wrapper.text()).toContain('Gzip')
-    expect(wrapper.text()).toContain('Crypto')
-    expect(wrapper.text()).toContain('Diff')
+    expect(wrapper.text()).toContain('加密解密')
+    expect(wrapper.text()).toContain('文本对比')
     expect(wrapper.text()).toContain('JSON')
-    expect(wrapper.text()).toContain('Watermark')
+    expect(wrapper.text()).toContain('图片水印')
   })
 
   it('renders links to tool pages', async () => {

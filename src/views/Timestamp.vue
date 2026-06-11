@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      Timestamp Converter
+      时间戳转换器
     </h1>
 
     <!-- Toolbar -->
@@ -11,20 +11,20 @@
         :class="isMillis ? 'btn-ghost' : 'btn-primary'"
         @click="setMillis(false)"
       >
-        10-digit (s)
+        10 位 (秒)
       </button>
       <button
         class="btn btn-sm"
         :class="isMillis ? 'btn-primary' : 'btn-ghost'"
         @click="setMillis(true)"
       >
-        13-digit (ms)
+        13 位 (毫秒)
       </button>
     </div>
 
     <div class="flex flex-col gap-4 max-w-2xl">
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Unix Timestamp</span></label>
+        <label class="label"><span class="label-text font-semibold">Unix 时间戳</span></label>
         <div class="relative">
           <input
             v-model="timestamp"
@@ -35,7 +35,7 @@
           <button
             v-if="timestamp"
             class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-            :title="tsCopied ? 'Copied!' : 'Copy'"
+            :title="tsCopied ? '已复制！' : '复制'"
             @click="copyTimestamp"
           >
             <CheckIcon
@@ -61,7 +61,7 @@
       </div>
 
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Date & Time</span></label>
+        <label class="label"><span class="label-text font-semibold">日期时间</span></label>
         <div class="relative">
           <input
             v-model="datetime"
@@ -72,7 +72,7 @@
           <button
             v-if="datetime"
             class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-            :title="dtCopied ? 'Copied!' : 'Copy'"
+            :title="dtCopied ? '已复制！' : '复制'"
             @click="copyDatetime"
           >
             <CheckIcon
@@ -99,7 +99,7 @@
           @click="clear"
         >
           <TrashIcon class="w-4 h-4" />
-          Clear
+          清空
         </button>
       </div>
     </div>
@@ -159,13 +159,13 @@ function onTimestampChange() {
   }
   const raw = timestamp.value.trim()
   if (!/^\d+$/.test(raw)) {
-    dtError.value = 'Invalid timestamp (digits only)'
+    dtError.value = '无效的时间戳（仅限数字）'
     return
   }
   const num = Number(raw)
   const ms = isMillis.value ? num : num * 1000
   if (ms <= 0 || ms > 9999999999999) {
-    dtError.value = 'Timestamp out of range'
+    dtError.value = '时间戳超出范围'
     return
   }
   datetime.value = formatDt(new Date(ms))
@@ -179,7 +179,7 @@ function onDatetimeChange() {
   }
   const d = new Date(datetime.value.trim())
   if (isNaN(d.getTime())) {
-    tsError.value = 'Invalid date string'
+    tsError.value = '无效的日期字符串'
     return
   }
   timestamp.value = isMillis.value ? String(d.getTime()) : String(Math.floor(d.getTime() / 1000))

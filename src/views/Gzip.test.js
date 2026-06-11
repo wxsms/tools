@@ -22,7 +22,7 @@ function mountComponent() {
 describe('Gzip', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('Gzip Encoder / Decoder')
+    expect(wrapper.text()).toContain('Gzip 压缩 / 解压')
   })
 
   it('encodes input and shows result', async () => {
@@ -40,7 +40,7 @@ describe('Gzip', () => {
     const textareas = wrapper.findAll('textarea')
     await textareas[1].setValue('!!!invalid!!!')
     await textareas[1].trigger('input')
-    expect(wrapper.text()).toContain('Invalid Gzip Base64 string')
+    expect(wrapper.text()).toContain('无效的 Gzip Base64 字符串')
   })
 
   it('clears output when input is emptied', async () => {
@@ -67,7 +67,7 @@ describe('Gzip', () => {
     const wrapper = mountComponent()
     const textareas = wrapper.findAll('textarea')
     await textareas[0].setValue('hello')
-    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('Clear'))
+    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清空'))
     await clearBtn.trigger('click')
     expect(textareas[0].element.value).toBe('')
     expect(textareas[1].element.value).toBe('')
