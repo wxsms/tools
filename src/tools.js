@@ -28,6 +28,10 @@ import {
   CalculatorIcon,
   QueueListIcon,
   TagIcon,
+  Square3Stack3DIcon,
+  SwatchIcon,
+  Square2StackIcon,
+  PlayIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -145,6 +149,35 @@ export const toolGroups = [
         path: '/lorem',
         desc: '中英文占位文本生成，可配置段落数与句数',
         icon: QueueListIcon,
+      },
+    ],
+  },
+  {
+    name: 'CSS',
+    tools: [
+      {
+        name: '盒阴影',
+        path: '/box-shadow',
+        desc: 'CSS box-shadow 可视化生成',
+        icon: Square3Stack3DIcon,
+      },
+      {
+        name: '渐变',
+        path: '/gradient',
+        desc: 'CSS 渐变可视化生成',
+        icon: SwatchIcon,
+      },
+      {
+        name: '圆角',
+        path: '/border-radius',
+        desc: 'CSS border-radius 可视化生成',
+        icon: Square2StackIcon,
+      },
+      {
+        name: '三角形',
+        path: '/triangle',
+        desc: 'CSS border 三角形生成',
+        icon: PlayIcon,
       },
     ],
   },

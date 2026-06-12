@@ -29,6 +29,10 @@ import Cron from './views/Cron.vue'
 import Radix from './views/Radix.vue'
 import Lorem from './views/Lorem.vue'
 import MimeTypes from './views/MimeTypes.vue'
+import BoxShadow from './views/BoxShadow.vue'
+import Gradient from './views/Gradient.vue'
+import BorderRadius from './views/BorderRadius.vue'
+import Triangle from './views/Triangle.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -61,6 +65,10 @@ const routes = [
   { path: '/radix', component: Radix },
   { path: '/lorem', component: Lorem },
   { path: '/mime-types', component: MimeTypes },
+  { path: '/box-shadow', component: BoxShadow, meta: { wide: true } },
+  { path: '/gradient', component: Gradient, meta: { wide: true } },
+  { path: '/border-radius', component: BorderRadius, meta: { wide: true } },
+  { path: '/triangle', component: Triangle, meta: { wide: true } },
 ]
 
 export default createRouter({
