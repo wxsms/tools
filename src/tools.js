@@ -5,9 +5,11 @@ import {
   DocumentPlusIcon,
   SparklesIcon,
   LockClosedIcon,
+  ShieldCheckIcon,
   PaperClipIcon,
   KeyIcon,
   LinkIcon,
+  HashtagIcon,
   LanguageIcon,
   ClockIcon,
   DocumentTextIcon,
@@ -62,7 +64,7 @@ export const toolGroups = [
         name: '哈希 / 散列',
         path: '/hash-hmac',
         desc: '哈希摘要与 HMAC 计算',
-        icon: LockClosedIcon,
+        icon: ShieldCheckIcon,
       },
       {
         name: 'RSA 加密',
@@ -70,17 +72,17 @@ export const toolGroups = [
         desc: 'RSA 密钥生成、加密与解密',
         icon: KeyIcon,
       },
-      {
-        name: '密码生成',
-        path: '/password',
-        desc: '可配置长度、字符集的随机密码生成器',
-        icon: FingerPrintIcon,
-      },
     ],
   },
   {
     name: '生成转换',
     tools: [
+      {
+        name: '密码生成',
+        path: '/password',
+        desc: '可配置长度、字符集的随机密码生成器',
+        icon: HashtagIcon,
+      },
       {
         name: 'UUID 生成',
         path: '/uuid',
