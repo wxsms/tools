@@ -65,10 +65,10 @@ const routes = [
   { path: '/radix', component: Radix },
   { path: '/lorem', component: Lorem },
   { path: '/mime-types', component: MimeTypes },
-  { path: '/box-shadow', component: BoxShadow, meta: { wide: true } },
-  { path: '/gradient', component: Gradient, meta: { wide: true } },
-  { path: '/border-radius', component: BorderRadius, meta: { wide: true } },
-  { path: '/triangle', component: Triangle, meta: { wide: true } },
+  { path: '/box-shadow', component: BoxShadow },
+  { path: '/gradient', component: Gradient },
+  { path: '/border-radius', component: BorderRadius },
+  { path: '/triangle', component: Triangle },
 ]
 
 export default createRouter({
