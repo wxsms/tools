@@ -89,7 +89,7 @@
             :style="{ backgroundImage: checkerboard }"
           >
             <div
-              class="w-40 h-40 bg-white border-2 border-dashed border-base-content/30"
+              class="w-40 h-40 bg-indigo-400 border-2 border-dashed border-base-content/30"
               :style="{ borderRadius: previewValue }"
             />
           </div>
