@@ -6,6 +6,8 @@ vi.mock('../utils/crypto.js', () => ({
   computeHash: vi.fn((algo, input) => `${algo}-hash-of-${input}`),
   computeHmac: vi.fn((algo, key, input) => `hmac-${algo}-${key}-${input}`),
   HASH_ALGORITHMS: ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512', 'MD5', 'RIPEMD160'],
+  bytesToHex: vi.fn((bytes) => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')),
+  randomBytes: vi.fn((len) => new Uint8Array(len).fill(0x42)),
 }))
 
 function mountComponent() {

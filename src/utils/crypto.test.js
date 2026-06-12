@@ -10,8 +10,9 @@ import {
   generateIv,
   generateSalt,
   HASH_ALGORITHMS,
-  AES_ALGORITHMS,
+  SYMMETRIC_ALGORITHMS,
   AES_KEY_SIZES,
+  IV_LENGTHS,
 } from './crypto.js'
 
 describe('computeHash', () => {
@@ -210,8 +211,12 @@ describe('constants', () => {
     expect(HASH_ALGORITHMS).toEqual(['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512', 'MD5', 'RIPEMD160'])
   })
 
-  it('AES_ALGORITHMS has expected entries', () => {
-    expect(AES_ALGORITHMS).toEqual(['AES-CBC', 'AES-GCM'])
+  it('SYMMETRIC_ALGORITHMS has expected entries', () => {
+    expect(SYMMETRIC_ALGORITHMS).toEqual(['AES-CBC', 'AES-GCM', 'AES-CTR', 'ChaCha20-Poly1305'])
+  })
+
+  it('IV_LENGTHS has correct values', () => {
+    expect(IV_LENGTHS).toEqual({ 'AES-CBC': 16, 'AES-GCM': 12, 'AES-CTR': 16, 'ChaCha20-Poly1305': 12 })
   })
 
   it('AES_KEY_SIZES has expected entries', () => {

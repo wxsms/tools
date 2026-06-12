@@ -17,8 +17,9 @@ vi.mock('../utils/crypto.js', () => ({
     return bytes
   }),
   randomBytes: vi.fn((len) => new Uint8Array(len).fill(0x42)),
-  AES_ALGORITHMS: ['AES-CBC', 'AES-GCM'],
+  SYMMETRIC_ALGORITHMS: ['AES-CBC', 'AES-GCM', 'AES-CTR', 'ChaCha20-Poly1305'],
   AES_KEY_SIZES: [128, 192, 256],
+  IV_LENGTHS: { 'AES-CBC': 16, 'AES-GCM': 12, 'AES-CTR': 16, 'ChaCha20-Poly1305': 12 },
   DEFAULT_ITERATIONS: 100000,
 }))
 
@@ -32,10 +33,12 @@ describe('AesEncrypt', () => {
     expect(wrapper.text()).toContain('对称加密')
   })
 
-  it('renders algorithm selection buttons', () => {
+  it('renders all algorithm selection buttons', () => {
     const wrapper = mountComponent()
     expect(wrapper.text()).toContain('AES-CBC')
     expect(wrapper.text()).toContain('AES-GCM')
+    expect(wrapper.text()).toContain('AES-CTR')
+    expect(wrapper.text()).toContain('ChaCha20-Poly1305')
   })
 
   it('renders password and plaintext inputs', () => {

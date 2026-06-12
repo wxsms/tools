@@ -9,7 +9,7 @@
         <label class="label"><span class="label-text font-semibold">算法</span></label>
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="algo in AES_ALGORITHMS"
+            v-for="algo in SYMMETRIC_ALGORITHMS"
             :key="algo"
             class="btn btn-sm"
             :class="encAlgo === algo ? 'btn-primary' : 'btn-outline'"
@@ -198,7 +198,7 @@
             <!-- IV / Nonce (advanced only) -->
             <div class="form-control">
               <label class="label">
-                <span class="label-text font-semibold">{{ encAlgo === 'AES-GCM' ? 'Nonce' : 'IV' }}</span>
+                <span class="label-text font-semibold">{{ ivLabel }}</span>
                 <button
                   class="btn btn-ghost btn-xs"
                   @click="regenerateIv"
@@ -210,7 +210,7 @@
                 <input
                   v-model="ivHex"
                   class="input input-bordered w-full font-mono text-sm"
-                  :placeholder="encAlgo === 'AES-GCM' ? '24 hex chars (12 bytes)' : '32 hex chars (16 bytes)'"
+                  :placeholder="ivPlaceholder"
                   @input="processEnc()"
                 >
                 <button
@@ -334,7 +334,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   ArrowsUpDownIcon,
   ClipboardDocumentIcon,
@@ -353,8 +353,9 @@ import {
   bytesToHex,
   hexToBytes,
   randomBytes,
-  AES_ALGORITHMS,
+  SYMMETRIC_ALGORITHMS,
   AES_KEY_SIZES,
+  IV_LENGTHS,
   DEFAULT_ITERATIONS,
 } from '../utils/crypto.js'
 
@@ -378,6 +379,11 @@ const iterations = ref(DEFAULT_ITERATIONS)
 const ivHex = ref(bytesToHex(generateIv('AES-CBC')))
 const ivCopied = ref(false)
 const ivError = ref('')
+
+const ivByteLen = computed(() => IV_LENGTHS[encAlgo.value] || 16)
+const ivHexLen = computed(() => ivByteLen.value * 2)
+const ivLabel = computed(() => ivByteLen.value === 12 ? 'Nonce' : 'IV')
+const ivPlaceholder = computed(() => `${ivHexLen.value} hex chars (${ivByteLen.value} bytes)`)
 
 let encDebounce = null
 const lastEdit = ref('plaintext')
@@ -485,9 +491,9 @@ async function processAdvanced(algo, pwd, kMode, direction, pt, ct, iter) {
     }
     const key = hexToBytes(hex)
     ivError.value = ''
-    const expectedIvLen = algo === 'AES-GCM' ? 24 : 32
-    if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvLen) {
-      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} 必须为 ${expectedIvLen} 个十六进制字符`
+    const expectedIvHexLen = (IV_LENGTHS[algo] || 16) * 2
+    if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvHexLen) {
+      ivError.value = `${IV_LENGTHS[algo] === 12 ? 'Nonce' : 'IV'} 必须为 ${expectedIvHexLen} 个十六进制字符`
       return
     }
     const iv = hexToBytes(ivHex.value)
@@ -499,9 +505,9 @@ async function processAdvanced(algo, pwd, kMode, direction, pt, ct, iter) {
   } else {
     if (!pwd) return
     ivError.value = ''
-    const expectedIvLen = algo === 'AES-GCM' ? 24 : 32
-    if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvLen) {
-      ivError.value = `${algo === 'AES-GCM' ? 'Nonce' : 'IV'} 必须为 ${expectedIvLen} 个十六进制字符`
+    const expectedIvHexLen = (IV_LENGTHS[algo] || 16) * 2
+    if (!ivHex.value || !/^[0-9a-fA-F]+$/.test(ivHex.value) || ivHex.value.length !== expectedIvHexLen) {
+      ivError.value = `${IV_LENGTHS[algo] === 12 ? 'Nonce' : 'IV'} 必须为 ${expectedIvHexLen} 个十六进制字符`
       return
     }
     const salt = hexToBytes(saltHex.value)

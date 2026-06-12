@@ -56,6 +56,35 @@
         >
       </div>
 
+      <!-- HMAC 密钥生成 -->
+      <div
+        v-if="hashMode === 'hmac'"
+        class="flex items-center gap-4 flex-wrap"
+      >
+        <label
+          v-for="size in KEYGEN_SIZES"
+          :key="size"
+          class="flex items-center gap-1 cursor-pointer text-sm"
+        >
+          <input
+            v-model="keygenSize"
+            type="radio"
+            name="keygenSize"
+            :value="size"
+            class="radio radio-xs radio-primary"
+            @change="generateHmacKey"
+          >
+          {{ size }}
+        </label>
+        <button
+          class="btn btn-primary btn-sm gap-1"
+          @click="generateHmacKey"
+        >
+          <SparklesIcon class="w-4 h-4" />
+          生成
+        </button>
+      </div>
+
       <!-- 输入 -->
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">输入</span></label>
@@ -135,12 +164,15 @@ import {
   ArrowDownIcon,
   ClipboardDocumentIcon,
   CheckIcon,
+  SparklesIcon,
   TrashIcon,
 } from '@heroicons/vue/24/outline'
 import {
   computeHash,
   computeHmac,
   HASH_ALGORITHMS,
+  bytesToHex,
+  randomBytes,
 } from '../utils/crypto.js'
 
 const hashAlgo = ref('SHA-256')
@@ -150,6 +182,9 @@ const hashInput = ref('')
 const hashOutput = ref('')
 const hashInputCopied = ref(false)
 const hashOutputCopied = ref(false)
+
+const KEYGEN_SIZES = [128, 192, 256, 512]
+const keygenSize = ref(256)
 
 function onHashInputChange() {
   if (!hashInput.value) {
@@ -176,6 +211,13 @@ function clearHash() {
   hashOutput.value = ''
   hmacKey.value = ''
 }
+
+function generateHmacKey() {
+  hmacKey.value = bytesToHex(randomBytes(keygenSize.value / 8))
+  onHashInputChange()
+}
+
+generateHmacKey()
 
 function copiedHelper(flag) {
   flag.value = true
