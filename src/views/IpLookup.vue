@@ -12,7 +12,7 @@
           @keyup.enter="lookup"
         >
         <button
-          class="btn btn-primary btn-sm gap-1"
+          class="btn btn-primary gap-1"
           :disabled="loading"
           @click="lookup"
         >
