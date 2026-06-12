@@ -16,7 +16,8 @@ import {
   QrCodeIcon,
   MagnifyingGlassIcon,
   FingerPrintIcon,
-  SwatchIcon,
+  EyeDropperIcon,
+
   GlobeAltIcon,
   PhotoIcon,
 } from '@heroicons/vue/24/outline'
@@ -96,10 +97,10 @@ export const toolGroups = [
         icon: ClockIcon,
       },
       {
-        name: '颜色转换',
+        name: '取色器',
         path: '/color-picker',
-        desc: 'HEX / RGB / HSL 颜色互转与预览',
-        icon: SwatchIcon,
+        desc: '屏幕取色与 HEX / RGB / HSL 颜色互转',
+        icon: EyeDropperIcon,
       },
       {
         name: 'Markdown 转换',

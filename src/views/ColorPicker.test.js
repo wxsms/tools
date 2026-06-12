@@ -9,7 +9,7 @@ function mountComponent() {
 describe('ColorPicker', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('颜色转换')
+    expect(wrapper.text()).toContain('取色器')
   })
 
   it('shows HEX, RGB, HSL inputs', () => {
@@ -32,5 +32,18 @@ describe('ColorPicker', () => {
     const wrapper = mountComponent()
     const preview = wrapper.find('.rounded-lg')
     expect(preview.exists()).toBe(true)
+  })
+
+  it('renders eyedropper button', () => {
+    const wrapper = mountComponent()
+    expect(wrapper.text()).toContain('取色')
+  })
+
+  it('disables eyedropper button when API is not supported', () => {
+    const wrapper = mountComponent()
+    const btn = wrapper.findAll('button').find(b => b.text().includes('取色'))
+    if (!('EyeDropper' in window)) {
+      expect(btn.attributes('disabled')).toBeDefined()
+    }
   })
 })

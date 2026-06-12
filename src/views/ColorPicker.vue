@@ -1,20 +1,34 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      颜色转换
+      取色器
     </h1>
     <div class="flex flex-col gap-4 max-w-2xl">
-      <!-- Preview -->
-      <div class="flex items-center gap-4">
-        <div
-          class="w-20 h-20 rounded-lg border border-base-300"
-          :style="{ backgroundColor: hex }"
-        />
+      <!-- Preview card -->
+      <div
+        class="relative rounded-lg border border-base-300 h-28"
+        :style="{ backgroundColor: hex }"
+      >
         <input
           v-model="hex"
           type="color"
-          class="input input-bordered w-12 h-10 p-1 cursor-pointer"
+          class="absolute bottom-2 left-2 w-9 h-9 rounded-lg cursor-pointer bg-black/20 border-0 p-0.5"
+          @input="onHexChange"
         >
+        <div
+          class="tooltip absolute bottom-2 right-2"
+          :data-tip="eyedropperSupported ? '从屏幕取色' : '当前浏览器不支持取色'"
+        >
+          <button
+            class="btn btn-sm gap-1 bg-black/20 backdrop-blur-sm border-0"
+            :class="isLightColor ? 'text-neutral' : 'text-white'"
+            :disabled="!eyedropperSupported || picking"
+            @click="pickColor"
+          >
+            <EyeDropperIcon class="w-4 h-4" />
+            {{ picking ? '取色中…' : '取色' }}
+          </button>
+        </div>
       </div>
 
       <!-- HEX -->
@@ -102,12 +116,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import { ref, computed } from 'vue'
+import { ClipboardDocumentIcon, CheckIcon, EyeDropperIcon } from '@heroicons/vue/24/outline'
 
-const hex = ref('#ff0000')
-const rgb = ref('rgb(255, 0, 0)')
-const hsl = ref('hsl(0, 100%, 50%)')
+const hex = ref('#6366f1')
+const rgb = ref('rgb(99, 102, 241)')
+const hsl = ref('hsl(239, 84%, 67%)')
 const hexCopied = ref(false)
 const rgbCopied = ref(false)
 const hslCopied = ref(false)
@@ -184,6 +198,28 @@ function onHslChange() {
   const [r, g, b] = hslToRgb(h, s, l)
   hex.value = rgbToHex(r, g, b)
   rgb.value = `rgb(${r}, ${g}, ${b})`
+}
+
+const eyedropperSupported = typeof window !== 'undefined' && 'EyeDropper' in window
+const picking = ref(false)
+
+const isLightColor = computed(() => {
+  const [r, g, b] = hexToRgb(hex.value)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128
+})
+
+async function pickColor() {
+  try {
+    picking.value = true
+    const dropper = new EyeDropper()
+    const result = await dropper.open()
+    hex.value = result.sRGBHex
+    onHexChange()
+  } catch {
+    // user cancelled or API error
+  } finally {
+    picking.value = false
+  }
 }
 
 async function copyVal(text, flag) {
