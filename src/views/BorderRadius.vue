@@ -84,9 +84,12 @@
       <div class="flex flex-col gap-4">
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">预览</span></label>
-          <div class="rounded-lg border border-base-300 min-h-[200px] flex items-center justify-center">
+          <div
+            class="rounded-lg border border-base-300 min-h-[200px] flex items-center justify-center"
+            :style="{ backgroundImage: checkerboard }"
+          >
             <div
-              class="w-40 h-40 border-2 border-dashed border-base-content/30"
+              class="w-40 h-40 bg-white border-2 border-dashed border-base-content/30"
               :style="{ borderRadius: previewValue }"
             />
           </div>
@@ -133,6 +136,8 @@ const linked = ref(true)
 const corners = ref({ tl: 16, tr: 16, br: 16, bl: 16 })
 const unit = ref('px')
 const copied = ref(false)
+
+const checkerboard = "url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\"><rect width=\"10\" height=\"10\" fill=\"%23f0f0f0\"/><rect x=\"10\" y=\"10\" width=\"10\" height=\"10\" fill=\"%23f0f0f0\"/><rect x=\"10\" width=\"10\" height=\"10\" fill=\"%23e0e0e0\"/><rect y=\"10\" width=\"10\" height=\"10\" fill=\"%23e0e0e0\"/></svg>')"
 
 function onLinkedChange(e) {
   const val = Number(e.target.value)
