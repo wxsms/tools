@@ -17,9 +17,14 @@ import {
   MagnifyingGlassIcon,
   FingerPrintIcon,
   EyeDropperIcon,
-
+  CalendarDaysIcon,
+  CommandLineIcon,
+  AdjustmentsHorizontalIcon,
+  SignalIcon,
   GlobeAltIcon,
   PhotoIcon,
+  TicketIcon,
+  ServerIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -49,6 +54,18 @@ export const toolGroups = [
         path: '/gzip',
         desc: 'Gzip 压缩与解压（Base64 表示）',
         icon: CircleStackIcon,
+      },
+      {
+        name: 'Unicode 转换',
+        path: '/unicode',
+        desc: 'Unicode 编码与解码',
+        icon: LanguageIcon,
+      },
+      {
+        name: 'JWT 解码',
+        path: '/jwt-decode',
+        desc: '解析 JWT Token 的 Header 与 Payload',
+        icon: TicketIcon,
       },
     ],
   },
@@ -85,9 +102,9 @@ export const toolGroups = [
         icon: HashtagIcon,
       },
       {
-        name: 'UUID 生成',
+        name: 'ID 生成',
         path: '/uuid',
-        desc: '批量生成 UUID v4，支持大写与无连字符',
+        desc: 'UUID v4 与 NanoID 生成',
         icon: FingerPrintIcon,
       },
       {
@@ -108,6 +125,12 @@ export const toolGroups = [
         desc: 'Markdown ↔ HTML 双向转换',
         icon: DocumentTextIcon,
       },
+      {
+        name: 'Cron 解析',
+        path: '/cron',
+        desc: 'Cron 表达式解析与生成',
+        icon: CalendarDaysIcon,
+      },
     ],
   },
   {
@@ -123,7 +146,7 @@ export const toolGroups = [
         name: 'JSON 校验',
         path: '/json',
         desc: 'JSON 校验、树形查看、格式化、压缩、Unicode 与转义转换',
-        icon: CodeBracketSquareIcon,
+        icon: CommandLineIcon,
       },
       {
         name: '正则测试',
@@ -135,7 +158,7 @@ export const toolGroups = [
         name: '大小写转换',
         path: '/case',
         desc: '大小写转换与编程命名风格转换',
-        icon: LanguageIcon,
+        icon: AdjustmentsHorizontalIcon,
       },
     ],
   },
@@ -176,6 +199,18 @@ export const toolGroups = [
         path: '/ip-lookup',
         desc: '查询 IP 地址归属地信息',
         icon: GlobeAltIcon,
+      },
+      {
+        name: 'URL 解析',
+        path: '/url-parse',
+        desc: '拆分 URL 各部分与 Query 参数',
+        icon: ServerIcon,
+      },
+      {
+        name: 'HTTP 状态码',
+        path: '/http-status',
+        desc: 'HTTP 状态码含义速查',
+        icon: SignalIcon,
       },
     ],
   },

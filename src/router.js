@@ -21,6 +21,11 @@ import Password from './views/Password.vue'
 import ColorPicker from './views/ColorPicker.vue'
 import IpLookup from './views/IpLookup.vue'
 import ImageCompress from './views/ImageCompress.vue'
+import HttpStatus from './views/HttpStatus.vue'
+import Unicode from './views/Unicode.vue'
+import UrlParse from './views/UrlParse.vue'
+import JwtDecode from './views/JwtDecode.vue'
+import Cron from './views/Cron.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -45,6 +50,11 @@ const routes = [
   { path: '/color-picker', component: ColorPicker },
   { path: '/ip-lookup', component: IpLookup },
   { path: '/image-compress', component: ImageCompress },
+  { path: '/http-status', component: HttpStatus },
+  { path: '/unicode', component: Unicode },
+  { path: '/url-parse', component: UrlParse },
+  { path: '/cron', component: Cron },
+  { path: '/jwt-decode', component: JwtDecode },
 ]
 
 export default createRouter({

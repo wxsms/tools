@@ -9,7 +9,7 @@ function mountComponent() {
 describe('Uuid', () => {
   it('renders title', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('UUID 生成器')
+    expect(wrapper.text()).toContain('ID 生成器')
   })
 
   it('generates a UUID on mount', () => {
@@ -42,5 +42,15 @@ describe('Uuid', () => {
     await numInput.setValue(5)
     const codes = wrapper.findAll('code')
     expect(codes).toHaveLength(5)
+  })
+
+  it('switches to NanoID mode', async () => {
+    const wrapper = mountComponent()
+    const buttons = wrapper.findAll('button')
+    const nanoIdBtn = buttons.find(b => b.text() === 'NanoID')
+    await nanoIdBtn.trigger('click')
+    const codes = wrapper.findAll('code')
+    expect(codes).toHaveLength(1)
+    expect(codes[0].text()).toMatch(/^[A-Za-z0-9]{21}$/)
   })
 })
