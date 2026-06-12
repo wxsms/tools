@@ -1,45 +1,9 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      加密解密
+      对称加密
     </h1>
-
-    <!-- Tabs -->
-    <div
-      role="tablist"
-      class="tabs tabs-boxed mb-6 w-fit"
-    >
-      <button
-        role="tab"
-        class="tab"
-        :class="{ 'tab-active': activeTab === 'encrypt' }"
-        @click="activeTab = 'encrypt'"
-      >
-        加密 / 解密
-      </button>
-      <button
-        role="tab"
-        class="tab"
-        :class="{ 'tab-active': activeTab === 'hash' }"
-        @click="activeTab = 'hash'"
-      >
-        哈希 / HMAC
-      </button>
-      <button
-        role="tab"
-        class="tab"
-        :class="{ 'tab-active': activeTab === 'keygen' }"
-        @click="activeTab = 'keygen'"
-      >
-        密钥生成
-      </button>
-    </div>
-
-    <!-- Encrypt / Decrypt Tab -->
-    <div
-      v-if="activeTab === 'encrypt'"
-      class="flex flex-col gap-4 max-w-2xl"
-    >
+    <div class="flex flex-col gap-4 max-w-2xl">
       <!-- 算法 -->
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">算法</span></label>
@@ -63,9 +27,35 @@
           v-model="password"
           type="text"
           class="input input-bordered w-full font-mono text-sm"
-          placeholder="输入密码..."
+          placeholder="输入密码或自动生成..."
           @input="processEnc()"
         >
+      </div>
+
+      <!-- 密钥生成 -->
+      <div class="flex items-center gap-4 flex-wrap">
+        <label
+          v-for="size in KEYGEN_SIZES"
+          :key="size"
+          class="flex items-center gap-1 cursor-pointer text-sm"
+        >
+          <input
+            v-model="keygenSize"
+            type="radio"
+            name="keygenSize"
+            :value="size"
+            class="radio radio-xs radio-primary"
+            @change="generateAndFillKey"
+          >
+          {{ size }}
+        </label>
+        <button
+          class="btn btn-primary btn-sm gap-1"
+          @click="generateAndFillKey"
+        >
+          <SparklesIcon class="w-4 h-4" />
+          生成
+        </button>
       </div>
 
       <!-- 高级选项 (collapsible) -->
@@ -340,191 +330,6 @@
         </button>
       </div>
     </div>
-
-    <!-- 哈希 / HMAC Tab -->
-    <div
-      v-if="activeTab === 'hash'"
-      class="flex flex-col gap-4 max-w-2xl"
-    >
-      <!-- 算法 -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">算法</span></label>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="algo in HASH_ALGORITHMS"
-            :key="algo"
-            class="btn btn-sm"
-            :class="hashAlgo === algo ? 'btn-primary' : 'btn-outline'"
-            @click="hashAlgo = algo; onHashInputChange()"
-          >
-            {{ algo }}
-          </button>
-        </div>
-      </div>
-
-      <!-- 模式 -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">模式</span></label>
-        <div class="flex gap-2">
-          <button
-            class="btn btn-sm"
-            :class="hashMode === 'hash' ? 'btn-primary' : 'btn-outline'"
-            @click="hashMode = 'hash'; onHashInputChange()"
-          >
-            哈希
-          </button>
-          <button
-            class="btn btn-sm"
-            :class="hashMode === 'hmac' ? 'btn-primary' : 'btn-outline'"
-            @click="hashMode = 'hmac'; onHashInputChange()"
-          >
-            HMAC
-          </button>
-        </div>
-      </div>
-
-      <!-- HMAC 密钥 -->
-      <div
-        v-if="hashMode === 'hmac'"
-        class="form-control"
-      >
-        <label class="label"><span class="label-text font-semibold">HMAC 密钥</span></label>
-        <input
-          v-model="hmacKey"
-          type="text"
-          class="input input-bordered w-full font-mono text-sm"
-          placeholder="输入 HMAC 密钥..."
-          @input="onHashInputChange"
-        >
-      </div>
-
-      <!-- 输入 -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">输入</span></label>
-        <div class="relative">
-          <textarea
-            v-model="hashInput"
-            class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入要哈希的文本..."
-            rows="6"
-            @input="onHashInputChange"
-          />
-          <button
-            v-if="hashInput"
-            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="hashInputCopied ? '已复制！' : '复制'"
-            @click="copyHashInput"
-          >
-            <CheckIcon
-              v-if="hashInputCopied"
-              class="w-4 h-4 text-success"
-            />
-            <ClipboardDocumentIcon
-              v-else
-              class="w-4 h-4"
-            />
-          </button>
-        </div>
-      </div>
-
-      <div class="flex justify-center opacity-40">
-        <ArrowDownIcon class="w-6 h-6" />
-      </div>
-
-      <!-- Output -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">{{ hashMode === 'hmac' ? 'HMAC' : '哈希' }}</span></label>
-        <div class="relative">
-          <input
-            v-model="hashOutput"
-            class="input input-bordered w-full font-mono text-sm"
-            readonly
-          >
-          <button
-            v-if="hashOutput"
-            class="btn btn-ghost btn-xs btn-square absolute right-2 top-1/2 -translate-y-1/2"
-            :title="hashOutputCopied ? '已复制！' : '复制'"
-            @click="copyHashOutput"
-          >
-            <CheckIcon
-              v-if="hashOutputCopied"
-              class="w-4 h-4 text-success"
-            />
-            <ClipboardDocumentIcon
-              v-else
-              class="w-4 h-4"
-            />
-          </button>
-        </div>
-      </div>
-
-      <div class="flex justify-end">
-        <button
-          class="btn btn-ghost btn-sm gap-1"
-          @click="clearHash"
-        >
-          <TrashIcon class="w-4 h-4" />
-          清空
-        </button>
-      </div>
-    </div>
-
-    <!-- KeyGen Tab -->
-    <div
-      v-if="activeTab === 'keygen'"
-      class="flex flex-col gap-4 max-w-2xl"
-    >
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">密钥长度</span></label>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="size in KEYGEN_SIZES"
-            :key="size"
-            class="btn btn-sm"
-            :class="keygenSize === size ? 'btn-primary' : 'btn-outline'"
-            @click="keygenSize = size"
-          >
-            {{ size }}-bit
-          </button>
-        </div>
-      </div>
-
-      <button
-        class="btn btn-primary w-fit"
-        @click="generateKey"
-      >
-        <SparklesIcon class="w-5 h-5" />
-        生成
-      </button>
-
-      <div v-if="keygenResult">
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">结果</span></label>
-          <div class="relative">
-            <textarea
-              :value="keygenResult"
-              class="textarea textarea-bordered w-full font-mono text-sm"
-              readonly
-              rows="3"
-            />
-            <button
-              class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-              :title="keygenCopied ? '已复制！' : '复制'"
-              @click="copyKeygen"
-            >
-              <CheckIcon
-                v-if="keygenCopied"
-                class="w-4 h-4 text-success"
-              />
-              <ClipboardDocumentIcon
-                v-else
-                class="w-4 h-4"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -532,15 +337,12 @@
 import { ref } from 'vue'
 import {
   ArrowsUpDownIcon,
-  ArrowDownIcon,
   ClipboardDocumentIcon,
   CheckIcon,
-  TrashIcon,
   SparklesIcon,
+  TrashIcon,
 } from '@heroicons/vue/24/outline'
 import {
-  computeHash,
-  computeHmac,
   aesEncrypt,
   aesDecrypt,
   aesEncryptRaw,
@@ -551,21 +353,11 @@ import {
   bytesToHex,
   hexToBytes,
   randomBytes,
-  HASH_ALGORITHMS,
   AES_ALGORITHMS,
   AES_KEY_SIZES,
   DEFAULT_ITERATIONS,
 } from '../utils/crypto.js'
 
-// --- Shared ---
-const activeTab = ref('encrypt')
-
-function copiedHelper(flag) {
-  flag.value = true
-  setTimeout(() => flag.value = false, 1500)
-}
-
-// --- Encrypt / Decrypt ---
 const encAlgo = ref('AES-CBC')
 const password = ref('')
 const plaintext = ref('')
@@ -575,7 +367,6 @@ const encLoading = ref(false)
 const plaintextCopied = ref(false)
 const ciphertextCopied = ref(false)
 
-// Advanced options
 const advancedOpen = ref(false)
 const keyMode = ref('passphrase')
 const hexKey = ref(bytesToHex(randomBytes(32)))
@@ -589,7 +380,6 @@ const ivCopied = ref(false)
 const ivError = ref('')
 
 let encDebounce = null
-// Track which direction the user is editing (reactive for template)
 const lastEdit = ref('plaintext')
 
 function regenerateIv() {
@@ -623,7 +413,6 @@ async function processEnc() {
   encError.value = ''
   clearTimeout(encDebounce)
 
-  // Snapshot values
   const algo = encAlgo.value
   const pwd = password.value
   const pt = plaintext.value
@@ -655,7 +444,6 @@ async function processEnc() {
     return
   }
 
-  // Show loading immediately
   encLoading.value = true
 
   encDebounce = setTimeout(async () => {
@@ -709,7 +497,6 @@ async function processAdvanced(algo, pwd, kMode, direction, pt, ct, iter) {
       plaintext.value = aesDecryptRaw(algo, key, iv, ct.trim())
     }
   } else {
-    // 密码短语 + explicit salt/IV
     if (!pwd) return
     ivError.value = ''
     const expectedIvLen = algo === 'AES-GCM' ? 24 : 32
@@ -741,6 +528,11 @@ function clearEnc() {
   regenerateSalt()
 }
 
+function copiedHelper(flag) {
+  flag.value = true
+  setTimeout(() => flag.value = false, 1500)
+}
+
 async function copyPlaintext() {
   try { await navigator.clipboard.writeText(plaintext.value); copiedHelper(plaintextCopied) } catch { /* clipboard not available */ }
 }
@@ -754,59 +546,15 @@ async function copyIv() {
   try { await navigator.clipboard.writeText(ivHex.value); copiedHelper(ivCopied) } catch { /* clipboard not available */ }
 }
 
-// --- 哈希 / HMAC ---
-const hashAlgo = ref('SHA-256')
-const hashMode = ref('hash')
-const hmacKey = ref('')
-const hashInput = ref('')
-const hashOutput = ref('')
-const hashInputCopied = ref(false)
-const hashOutputCopied = ref(false)
-
-function onHashInputChange() {
-  if (!hashInput.value) {
-    hashOutput.value = ''
-    return
-  }
-  try {
-    if (hashMode.value === 'hmac') {
-      if (!hmacKey.value) {
-        hashOutput.value = ''
-        return
-      }
-      hashOutput.value = computeHmac(hashAlgo.value, hmacKey.value, hashInput.value)
-    } else {
-      hashOutput.value = computeHash(hashAlgo.value, hashInput.value)
-    }
-  } catch {
-    hashOutput.value = ''
-  }
-}
-
-function clearHash() {
-  hashInput.value = ''
-  hashOutput.value = ''
-  hmacKey.value = ''
-}
-
-async function copyHashInput() {
-  try { await navigator.clipboard.writeText(hashInput.value); copiedHelper(hashInputCopied) } catch { /* clipboard not available */ }
-}
-async function copyHashOutput() {
-  try { await navigator.clipboard.writeText(hashOutput.value); copiedHelper(hashOutputCopied) } catch { /* clipboard not available */ }
-}
-
-// --- KeyGen ---
-const KEYGEN_SIZES = [64, 128, 192, 256, 512, 1024, 2048, 4096]
+// --- Key Generation ---
+const KEYGEN_SIZES = [128, 192, 256, 512]
 const keygenSize = ref(256)
-const keygenResult = ref('')
-const keygenCopied = ref(false)
 
-function generateKey() {
-  keygenResult.value = bytesToHex(randomBytes(keygenSize.value / 8))
+function generateAndFillKey() {
+  password.value = bytesToHex(randomBytes(keygenSize.value / 8))
+  processEnc()
 }
 
-async function copyKeygen() {
-  try { await navigator.clipboard.writeText(keygenResult.value); copiedHelper(keygenCopied) } catch { /* clipboard not available */ }
-}
+// Auto-generate a key on mount
+generateAndFillKey()
 </script>

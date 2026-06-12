@@ -12,7 +12,8 @@ function createTestRouter() {
       { path: '/base64', component: { template: '<div />' } },
       { path: '/gzip', component: { template: '<div />' } },
       { path: '/diff', component: { template: '<div />' } },
-      { path: '/crypto', component: { template: '<div />' } },
+      { path: '/aes-encrypt', component: { template: '<div />' } },
+      { path: '/hash-hmac', component: { template: '<div />' } },
       { path: '/json', component: { template: '<div />' } },
       { path: '/watermark', component: { template: '<div />' } },
     ],
@@ -44,7 +45,7 @@ describe('Home', () => {
     const wrapper = await mountComponent()
     expect(wrapper.text()).toContain('Base64')
     expect(wrapper.text()).toContain('Gzip')
-    expect(wrapper.text()).toContain('加密解密')
+    expect(wrapper.text()).toContain('对称加密')
     expect(wrapper.text()).toContain('文本对比')
     expect(wrapper.text()).toContain('JSON')
     expect(wrapper.text()).toContain('图片水印')
@@ -56,7 +57,7 @@ describe('Home', () => {
     const hrefs = links.map(a => a.attributes('href'))
     expect(hrefs).toContain('/base64')
     expect(hrefs).toContain('/gzip')
-    expect(hrefs).toContain('/crypto')
+    expect(hrefs).toContain('/aes-encrypt')
     expect(hrefs).toContain('/json')
   })
 })

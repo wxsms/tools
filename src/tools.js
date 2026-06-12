@@ -53,9 +53,15 @@ export const toolGroups = [
     name: '加解密',
     tools: [
       {
-        name: '加密解密',
-        path: '/crypto',
-        desc: 'AES 加解密、哈希与 HMAC',
+        name: '对称加密',
+        path: '/aes-encrypt',
+        desc: 'AES 对称加密与解密',
+        icon: LockClosedIcon,
+      },
+      {
+        name: '哈希 / 散列',
+        path: '/hash-hmac',
+        desc: '哈希摘要与 HMAC 计算',
         icon: LockClosedIcon,
       },
       {
