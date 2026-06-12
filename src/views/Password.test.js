@@ -14,28 +14,25 @@ describe('Password', () => {
 
   it('generates a password on mount', () => {
     const wrapper = mountComponent()
-    const textarea = wrapper.find('textarea')
-    expect(textarea.element.value.length).toBe(16)
+    const codes = wrapper.findAll('code')
+    expect(codes).toHaveLength(1)
+    expect(codes[0].text().length).toBe(16)
   })
 
   it('respects length setting', async () => {
     const wrapper = mountComponent()
     const rangeInput = wrapper.find('input[type="range"]')
     await rangeInput.setValue(8)
-    const btn = wrapper.findAll('button').find(b => b.text().includes('生成'))
-    await btn.trigger('click')
-    const textarea = wrapper.find('textarea')
-    expect(textarea.element.value.length).toBe(8)
+    const codes = wrapper.findAll('code')
+    expect(codes).toHaveLength(1)
+    expect(codes[0].text().length).toBe(8)
   })
 
   it('generates multiple passwords', async () => {
     const wrapper = mountComponent()
     const numInput = wrapper.find('input[type="number"]')
     await numInput.setValue(3)
-    const btn = wrapper.findAll('button').find(b => b.text().includes('生成'))
-    await btn.trigger('click')
-    const textarea = wrapper.find('textarea')
-    const lines = textarea.element.value.split('\n')
-    expect(lines).toHaveLength(3)
+    const codes = wrapper.findAll('code')
+    expect(codes).toHaveLength(3)
   })
 })
