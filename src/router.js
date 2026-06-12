@@ -26,6 +26,9 @@ import Unicode from './views/Unicode.vue'
 import UrlParse from './views/UrlParse.vue'
 import JwtDecode from './views/JwtDecode.vue'
 import Cron from './views/Cron.vue'
+import Radix from './views/Radix.vue'
+import Lorem from './views/Lorem.vue'
+import MimeTypes from './views/MimeTypes.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -55,6 +58,9 @@ const routes = [
   { path: '/url-parse', component: UrlParse },
   { path: '/cron', component: Cron },
   { path: '/jwt-decode', component: JwtDecode },
+  { path: '/radix', component: Radix },
+  { path: '/lorem', component: Lorem },
+  { path: '/mime-types', component: MimeTypes },
 ]
 
 export default createRouter({

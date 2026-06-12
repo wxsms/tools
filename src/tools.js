@@ -25,6 +25,9 @@ import {
   PhotoIcon,
   TicketIcon,
   ServerIcon,
+  CalculatorIcon,
+  QueueListIcon,
+  TagIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -66,6 +69,12 @@ export const toolGroups = [
         path: '/jwt-decode',
         desc: '解析 JWT Token 的 Header 与 Payload',
         icon: TicketIcon,
+      },
+      {
+        name: '进制转换',
+        path: '/radix',
+        desc: '二进制 / 八进制 / 十进制 / 十六进制互转，支持 2-36 任意进制',
+        icon: CalculatorIcon,
       },
     ],
   },
@@ -130,6 +139,12 @@ export const toolGroups = [
         path: '/cron',
         desc: 'Cron 表达式解析与生成',
         icon: CalendarDaysIcon,
+      },
+      {
+        name: '占位文本',
+        path: '/lorem',
+        desc: '中英文占位文本生成，可配置段落数与句数',
+        icon: QueueListIcon,
       },
     ],
   },
@@ -211,6 +226,12 @@ export const toolGroups = [
         path: '/http-status',
         desc: 'HTTP 状态码含义速查',
         icon: SignalIcon,
+      },
+      {
+        name: 'MIME 类型',
+        path: '/mime-types',
+        desc: 'MIME 类型与文件扩展名速查',
+        icon: TagIcon,
       },
     ],
   },
