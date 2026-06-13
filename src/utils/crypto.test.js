@@ -160,22 +160,22 @@ describe('generateSalt', () => {
 describe('deriveKey', () => {
   it('derives a key of specified length', async () => {
     const salt = generateSalt()
-    const key = await deriveKey('password', salt, 32)
+    const key = await deriveKey('password', salt, 32, TEST_ITERATIONS)
     expect(key).toBeInstanceOf(Uint8Array)
     expect(key).toHaveLength(32)
   })
 
   it('derives different keys for different passwords', async () => {
     const salt = generateSalt()
-    const a = await deriveKey('pass1', salt, 32)
-    const b = await deriveKey('pass2', salt, 32)
+    const a = await deriveKey('pass1', salt, 32, TEST_ITERATIONS)
+    const b = await deriveKey('pass2', salt, 32, TEST_ITERATIONS)
     expect(a).not.toEqual(b)
   })
 
   it('derives same key for same inputs', async () => {
     const salt = generateSalt()
-    const a = await deriveKey('password', salt, 32)
-    const b = await deriveKey('password', salt, 32)
+    const a = await deriveKey('password', salt, 32, TEST_ITERATIONS)
+    const b = await deriveKey('password', salt, 32, TEST_ITERATIONS)
     expect(a).toEqual(b)
   })
 })
@@ -183,7 +183,7 @@ describe('deriveKey', () => {
 describe('aesEncryptRaw / aesDecryptRaw', () => {
   it('AES-CBC raw roundtrip', async () => {
     const salt = generateSalt()
-    const key = await deriveKey('password', salt, 32)
+    const key = await deriveKey('password', salt, 32, TEST_ITERATIONS)
     const iv = generateIv('AES-CBC')
     const ciphertext = aesEncryptRaw('AES-CBC', key, iv, 'Hello raw!')
     const decrypted = aesDecryptRaw('AES-CBC', key, iv, ciphertext)
@@ -192,7 +192,7 @@ describe('aesEncryptRaw / aesDecryptRaw', () => {
 
   it('AES-GCM raw roundtrip', async () => {
     const salt = generateSalt()
-    const key = await deriveKey('password', salt, 32)
+    const key = await deriveKey('password', salt, 32, TEST_ITERATIONS)
     const iv = generateIv('AES-GCM')
     const ciphertext = aesEncryptRaw('AES-GCM', key, iv, 'Hello GCM!')
     const decrypted = aesDecryptRaw('AES-GCM', key, iv, ciphertext)
@@ -201,8 +201,8 @@ describe('aesEncryptRaw / aesDecryptRaw', () => {
 
   it('wrong key fails to decrypt (AES-GCM)', async () => {
     const salt = generateSalt()
-    const key1 = await deriveKey('correct', salt, 32)
-    const key2 = await deriveKey('wrong', salt, 32)
+    const key1 = await deriveKey('correct', salt, 32, TEST_ITERATIONS)
+    const key2 = await deriveKey('wrong', salt, 32, TEST_ITERATIONS)
     const iv = generateIv('AES-GCM')
     const ciphertext = aesEncryptRaw('AES-GCM', key1, iv, 'secret')
     expect(() => aesDecryptRaw('AES-GCM', key2, iv, ciphertext)).toThrow()
