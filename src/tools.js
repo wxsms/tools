@@ -32,6 +32,8 @@ import {
   SwatchIcon,
   Square2StackIcon,
   PlayIcon,
+  FilmIcon,
+  CameraIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -179,6 +181,12 @@ export const toolGroups = [
         desc: 'CSS border 三角形生成',
         icon: PlayIcon,
       },
+      {
+        name: '动画',
+        path: '/css-animation',
+        desc: 'CSS animation 可视化生成',
+        icon: FilmIcon,
+      },
     ],
   },
   {
@@ -236,6 +244,12 @@ export const toolGroups = [
         path: '/image-compress',
         desc: '图片压缩、缩放与格式转换',
         icon: PhotoIcon,
+      },
+      {
+        name: '代码截图',
+        path: '/code-screenshot',
+        desc: '代码语法高亮截图，支持多语言与主题',
+        icon: CameraIcon,
       },
     ],
   },
