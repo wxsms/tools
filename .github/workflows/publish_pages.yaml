@@ -19,8 +19,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: browser-actions/setup-chromium@v1
+      - run: echo "PUPPETEER_EXECUTABLE_PATH=$(which chromium)" >> "$GITHUB_ENV"
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
       - run: npm run build
+        env:
+          VITE_SITE_URL: https://tools.wxsm.space
       - run: cp dist/index.html dist/404.html
       - name: GitHub Pages
         uses: crazy-max/ghaction-github-pages@v4

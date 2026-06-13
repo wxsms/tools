@@ -1,7 +1,28 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import vitePrerender from 'vite-plugin-prerender-k'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import routeDefs from './src/routes.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    vitePrerender({
+      staticDir: path.join(__dirname, 'dist'),
+      routes: routeDefs.map(r => r.path),
+      renderer: new vitePrerender.PuppeteerRenderer({
+        headless: true,
+        renderAfterDocumentEvent: 'x-app-rendered',
+      }),
+      postProcess(renderedRoute) {
+        renderedRoute.route = renderedRoute.originalRoute
+        return renderedRoute
+      },
+    }),
+  ],
 })

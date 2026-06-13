@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import routeDefs from './routes.js'
 import Home from './views/Home.vue'
 import Base64 from './views/Base64.vue'
 import Gzip from './views/Gzip.vue'
@@ -34,42 +35,49 @@ import Gradient from './views/Gradient.vue'
 import BorderRadius from './views/BorderRadius.vue'
 import Triangle from './views/Triangle.vue'
 
-const routes = [
-  { path: '/', component: Home },
-  { path: '/base64', component: Base64 },
-  { path: '/gzip', component: Gzip },
-  { path: '/diff', component: Diff },
-  { path: '/watermark', component: Watermark },
-  { path: '/aes-encrypt', component: AesEncrypt },
-  { path: '/hash-hmac', component: HashHmac },
-  { path: '/json', component: Json },
-  { path: '/file-base64', component: FileBase64 },
-  { path: '/rsa', component: Rsa },
-  { path: '/url-encode', component: UrlEncode },
-  { path: '/case', component: Case },
-  { path: '/timestamp', component: Timestamp },
-  { path: '/md-html', component: MdHtml, meta: { wide: true } },
-  { path: '/qr-code', component: QrCode },
-  { path: '/regex', component: Regex },
-  { path: '/uuid', component: Uuid },
-  { path: '/html-entity', component: HtmlEntity },
-  { path: '/password', component: Password },
-  { path: '/color-picker', component: ColorPicker },
-  { path: '/ip-lookup', component: IpLookup },
-  { path: '/image-compress', component: ImageCompress },
-  { path: '/http-status', component: HttpStatus },
-  { path: '/unicode', component: Unicode },
-  { path: '/url-parse', component: UrlParse },
-  { path: '/cron', component: Cron },
-  { path: '/jwt-decode', component: JwtDecode },
-  { path: '/radix', component: Radix },
-  { path: '/lorem', component: Lorem },
-  { path: '/mime-types', component: MimeTypes },
-  { path: '/box-shadow', component: BoxShadow },
-  { path: '/gradient', component: Gradient },
-  { path: '/border-radius', component: BorderRadius },
-  { path: '/triangle', component: Triangle },
-]
+const components = {
+  '/': Home,
+  '/base64': Base64,
+  '/gzip': Gzip,
+  '/diff': Diff,
+  '/watermark': Watermark,
+  '/aes-encrypt': AesEncrypt,
+  '/hash-hmac': HashHmac,
+  '/json': Json,
+  '/file-base64': FileBase64,
+  '/rsa': Rsa,
+  '/url-encode': UrlEncode,
+  '/case': Case,
+  '/timestamp': Timestamp,
+  '/md-html': MdHtml,
+  '/qr-code': QrCode,
+  '/regex': Regex,
+  '/uuid': Uuid,
+  '/html-entity': HtmlEntity,
+  '/password': Password,
+  '/color-picker': ColorPicker,
+  '/ip-lookup': IpLookup,
+  '/image-compress': ImageCompress,
+  '/http-status': HttpStatus,
+  '/unicode': Unicode,
+  '/url-parse': UrlParse,
+  '/jwt-decode': JwtDecode,
+  '/cron': Cron,
+  '/radix': Radix,
+  '/lorem': Lorem,
+  '/mime-types': MimeTypes,
+  '/box-shadow': BoxShadow,
+  '/gradient': Gradient,
+  '/border-radius': BorderRadius,
+  '/triangle': Triangle,
+}
+
+const routes = routeDefs.map(r => ({
+  ...r,
+  component: components[r.path],
+}))
+
+export { routeDefs }
 
 export default createRouter({
   history: createWebHistory(),

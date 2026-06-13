@@ -144,15 +144,56 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme.js'
 import { toolGroups } from './tools.js'
 import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline'
 
+const SITE_TITLE = "wxsm's Kit"
+const SITE_URL = import.meta.env.VITE_SITE_URL || ''
+
 const year = new Date().getFullYear()
 const route = useRoute()
+const router = useRouter()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
 const isHome = computed(() => route.path === '/')
+
+function updateMeta(name, content) {
+  let el = document.querySelector(`meta[name="${name}"]`)
+  if (!el) {
+    el = document.createElement('meta')
+    el.name = name
+    document.head.appendChild(el)
+  }
+  el.content = content
+}
+
+function updateMetaProperty(property, content) {
+  let el = document.querySelector(`meta[property="${property}"]`)
+  if (!el) {
+    el = document.createElement('meta')
+    el.property = property
+    document.head.appendChild(el)
+  }
+  el.content = content
+}
+
+function syncMeta(to) {
+  const title = to.meta.title ? `${to.meta.title} - ${SITE_TITLE}` : SITE_TITLE
+  document.title = title
+  updateMeta('description', to.meta.description || '')
+  updateMetaProperty('og:title', title)
+  updateMetaProperty('og:description', to.meta.description || '')
+  updateMetaProperty('og:url', SITE_URL ? `${SITE_URL}${to.path}` : '')
+  updateMetaProperty('og:type', 'website')
+}
+
+router.afterEach(syncMeta)
+
+onMounted(() => {
+  syncMeta(route)
+  document.dispatchEvent(new Event('x-app-rendered'))
+})
 </script>
