@@ -77,45 +77,48 @@ describe('computeHmac', () => {
   })
 })
 
+// Use low iterations for AES tests to avoid CI timeout
+const TEST_ITERATIONS = 1000
+
 describe('AES encrypt/decrypt', () => {
   it('AES-CBC roundtrip', async () => {
-    const ciphertext = await aesEncrypt('AES-CBC', 'mypassword', 'Hello, World!')
-    const decrypted = await aesDecrypt('AES-CBC', 'mypassword', ciphertext)
+    const ciphertext = await aesEncrypt('AES-CBC', 'mypassword', 'Hello, World!', TEST_ITERATIONS)
+    const decrypted = await aesDecrypt('AES-CBC', 'mypassword', ciphertext, TEST_ITERATIONS)
     expect(decrypted).toBe('Hello, World!')
   })
 
   it('AES-GCM roundtrip', async () => {
-    const ciphertext = await aesEncrypt('AES-GCM', 'mypassword', 'Hello, World!')
-    const decrypted = await aesDecrypt('AES-GCM', 'mypassword', ciphertext)
+    const ciphertext = await aesEncrypt('AES-GCM', 'mypassword', 'Hello, World!', TEST_ITERATIONS)
+    const decrypted = await aesDecrypt('AES-GCM', 'mypassword', ciphertext, TEST_ITERATIONS)
     expect(decrypted).toBe('Hello, World!')
   })
 
   it('AES-CBC roundtrip with Unicode', async () => {
-    const ciphertext = await aesEncrypt('AES-CBC', '密码', '你好世界 🌍')
-    const decrypted = await aesDecrypt('AES-CBC', '密码', ciphertext)
+    const ciphertext = await aesEncrypt('AES-CBC', '密码', '你好世界 🌍', TEST_ITERATIONS)
+    const decrypted = await aesDecrypt('AES-CBC', '密码', ciphertext, TEST_ITERATIONS)
     expect(decrypted).toBe('你好世界 🌍')
   })
 
   it('AES-GCM roundtrip with empty string', async () => {
-    const ciphertext = await aesEncrypt('AES-GCM', 'pass', '')
-    const decrypted = await aesDecrypt('AES-GCM', 'pass', ciphertext)
+    const ciphertext = await aesEncrypt('AES-GCM', 'pass', '', TEST_ITERATIONS)
+    const decrypted = await aesDecrypt('AES-GCM', 'pass', ciphertext, TEST_ITERATIONS)
     expect(decrypted).toBe('')
   })
 
   it('wrong passphrase fails to decrypt', async () => {
-    const ciphertext = await aesEncrypt('AES-GCM', 'correct', 'secret')
-    await expect(aesDecrypt('AES-GCM', 'wrong', ciphertext)).rejects.toThrow()
+    const ciphertext = await aesEncrypt('AES-GCM', 'correct', 'secret', TEST_ITERATIONS)
+    await expect(aesDecrypt('AES-GCM', 'wrong', ciphertext, TEST_ITERATIONS)).rejects.toThrow()
   })
 
   it('each encryption produces different ciphertext (random salt+iv)', async () => {
-    const a = await aesEncrypt('AES-CBC', 'pass', 'same text')
-    const b = await aesEncrypt('AES-CBC', 'pass', 'same text')
+    const a = await aesEncrypt('AES-CBC', 'pass', 'same text', TEST_ITERATIONS)
+    const b = await aesEncrypt('AES-CBC', 'pass', 'same text', TEST_ITERATIONS)
     expect(a).not.toBe(b)
   })
 
   it('ciphertext hex string has expected minimum length', async () => {
     // AES-CBC: salt(16) + iv(16) + at least one block(16) = 48 bytes = 96 hex chars
-    const ciphertext = await aesEncrypt('AES-CBC', 'pass', 'hi')
+    const ciphertext = await aesEncrypt('AES-CBC', 'pass', 'hi', TEST_ITERATIONS)
     expect(ciphertext.length).toBeGreaterThanOrEqual(96)
   })
 })
