@@ -110,6 +110,20 @@
             :class="{ '-rotate-90': !expandedFiles.has(fi) }"
           />
           <span class="font-mono text-sm font-semibold truncate">{{ getFileDisplayName(file) }}</span>
+          <button
+            class="btn btn-ghost btn-xs btn-square shrink-0"
+            :title="copiedFileIndex === fi ? '已复制！' : '复制文件名'"
+            @click.stop="copyFileName(fi)"
+          >
+            <CheckIcon
+              v-if="copiedFileIndex === fi"
+              class="w-3.5 h-3.5 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-3.5 h-3.5"
+            />
+          </button>
           <span class="ml-auto text-xs opacity-60 shrink-0">
             <span
               v-if="file.from === '/dev/null'"
@@ -148,6 +162,8 @@ import {
   TrashIcon,
   ArrowLeftIcon,
   ChevronDownIcon,
+  ClipboardDocumentIcon,
+  CheckIcon,
 } from '@heroicons/vue/24/outline'
 import { parsePatch, getFileDisplayName, computeTotalStats } from '../utils/patch.js'
 import UnifiedView from './patch/UnifiedView.vue'
@@ -158,6 +174,7 @@ const parsed = ref(null)
 const viewMode = ref('unified')
 const expandedFiles = reactive(new Set())
 const allExpanded = ref(true)
+const copiedFileIndex = ref(-1)
 
 const totalStats = computed(() => computeTotalStats(parsed.value || []))
 
@@ -201,6 +218,14 @@ function backToInput() {
 function clear() {
   patchText.value = ''
   parsed.value = null
+}
+
+function copyFileName(fi) {
+  const name = getFileDisplayName(parsed.value[fi])
+  navigator.clipboard.writeText(name).then(() => {
+    copiedFileIndex.value = fi
+    setTimeout(() => { copiedFileIndex.value = -1 }, 1500)
+  })
 }
 
 function onFileUpload(event) {
