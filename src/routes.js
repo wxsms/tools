@@ -35,4 +35,5 @@ export default [
   { path: '/triangle', meta: { title: '三角形', description: 'CSS border 三角形生成' } },
   { path: '/css-animation', meta: { title: 'CSS 动画', description: 'CSS animation 可视化生成' } },
   { path: '/code-screenshot', meta: { title: '代码截图', description: '代码语法高亮截图，支持多语言与主题' } },
+  { path: '/patch-viewer', meta: { title: 'Patch 查看', description: '可视化查看 git diff / unified patch 文件' } },
 ]

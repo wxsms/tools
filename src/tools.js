@@ -34,6 +34,7 @@ import {
   PlayIcon,
   FilmIcon,
   CameraIcon,
+  CodeBracketIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -215,6 +216,12 @@ export const toolGroups = [
         path: '/case',
         desc: '大小写转换与编程命名风格转换',
         icon: AdjustmentsHorizontalIcon,
+      },
+      {
+        name: 'Patch 查看',
+        path: '/patch-viewer',
+        desc: '可视化查看 git diff / unified patch 文件',
+        icon: CodeBracketIcon,
       },
     ],
   },

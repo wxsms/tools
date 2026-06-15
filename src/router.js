@@ -36,6 +36,7 @@ import BorderRadius from './views/BorderRadius.vue'
 import Triangle from './views/Triangle.vue'
 import CssAnimation from './views/CssAnimation.vue'
 import CodeScreenshot from './views/CodeScreenshot.vue'
+import PatchViewer from './views/PatchViewer.vue'
 
 const components = {
   '/': Home,
@@ -74,6 +75,7 @@ const components = {
   '/triangle': Triangle,
   '/css-animation': CssAnimation,
   '/code-screenshot': CodeScreenshot,
+  '/patch-viewer': PatchViewer,
 }
 
 const routes = routeDefs.map(r => ({
