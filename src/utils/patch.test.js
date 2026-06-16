@@ -172,6 +172,74 @@ diff --git a/d.py b/d.py
     expect(files[3].deleted).toBe(1)
   })
 
+  it('parses CRLF line endings (Windows patch file)', () => {
+    // Simulate a Windows patch file with \r\n line endings
+    const patch = 'diff --git a/hello.txt b/hello.txt\r\n' +
+      'index abc1234..def5678 100644\r\n' +
+      '--- a/hello.txt\r\n' +
+      '+++ b/hello.txt\r\n' +
+      '@@ -1,3 +1,4 @@\r\n' +
+      ' Hello\r\n' +
+      '-World\r\n' +
+      '+Beautiful World\r\n' +
+      '+Nice to see you\r\n' +
+      ' Goodbye\r\n'
+    const files = parsePatch(patch)
+    expect(files).toHaveLength(1)
+    expect(files[0].from).toBe('hello.txt')
+    expect(files[0].to).toBe('hello.txt')
+    expect(files[0].added).toBe(2)
+    expect(files[0].deleted).toBe(1)
+    expect(files[0].hunks).toHaveLength(1)
+    expect(files[0].hunks[0].lines).toHaveLength(5)
+    // Verify line content has no trailing \r
+    expect(files[0].hunks[0].lines[0].text).toBe('Hello')
+    expect(files[0].hunks[0].lines[1].text).toBe('World')
+  })
+
+  it('parses multi-file patch with CRLF line endings', () => {
+    const patch = 'diff --git a/a.py b/a.py\r\n' +
+      'new file mode 100644\r\n' +
+      '--- /dev/null\r\n' +
+      '+++ b/a.py\r\n' +
+      '@@ -0,0 +1,2 @@\r\n' +
+      '+line1\r\n' +
+      '+line2\r\n' +
+      'diff --git a/b.js b/b.js\r\n' +
+      '--- a/b.js\r\n' +
+      '+++ b/b.js\r\n' +
+      '@@ -1,2 +1,2 @@\r\n' +
+      ' const x = 1\r\n' +
+      '-const y = 2\r\n' +
+      '+const y = 3\r\n'
+    const files = parsePatch(patch)
+    expect(files).toHaveLength(2)
+    expect(files[0].from).toBe('/dev/null')
+    expect(files[0].to).toBe('a.py')
+    expect(files[0].added).toBe(2)
+    expect(files[1].from).toBe('b.js')
+    expect(files[1].to).toBe('b.js')
+    expect(files[1].added).toBe(1)
+    expect(files[1].deleted).toBe(1)
+  })
+
+  it('parses mixed LF and CRLF line endings', () => {
+    const patch = 'diff --git a/foo.txt b/foo.txt\n' +   // LF
+      '--- a/foo.txt\r\n' +                                // CRLF
+      '+++ b/foo.txt\n' +                                  // LF
+      '@@ -1,2 +1,2 @@\r\n' +                              // CRLF
+      ' aaa\n' +                                           // LF
+      '-bbb\r\n' +                                         // CRLF
+      '+BBB\n'                                             // LF
+    const files = parsePatch(patch)
+    expect(files).toHaveLength(1)
+    expect(files[0].from).toBe('foo.txt')
+    expect(files[0].added).toBe(1)
+    expect(files[0].deleted).toBe(1)
+    expect(files[0].hunks[0].lines[1].text).toBe('bbb')
+    expect(files[0].hunks[0].lines[2].text).toBe('BBB')
+  })
+
   it('does not split on --- / +++ inside hunk content', () => {
     const patch = `diff --git a/test.patch b/test.patch
 --- a/test.patch

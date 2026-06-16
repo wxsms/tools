@@ -4,6 +4,7 @@
  * Returns an array of file diffs, each containing hunks with line-level changes.
  */
 export function parsePatch(text) {
+  text = text.replace(/\r\n?/g, '\n')
   const lines = text.split('\n')
   const files = []
   let currentFile = null
