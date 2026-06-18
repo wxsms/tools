@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: browser-actions/setup-chromium@v1
+      - uses: browser-actions/setup-chromium@v2
       - run: echo "PUPPETEER_EXECUTABLE_PATH=$(which chromium)" >> "$GITHUB_ENV"
       - run: npm ci
         env:
