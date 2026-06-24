@@ -29,7 +29,7 @@ jobs:
           VITE_SITE_URL: https://tools.wxsm.space
       - run: cp dist/index.html dist/404.html
       - name: GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v4
+        uses: crazy-max/ghaction-github-pages@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
