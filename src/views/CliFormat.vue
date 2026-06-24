@@ -4,43 +4,29 @@
       命令行格式转换
     </h1>
 
-    <!-- Direction + options toolbar -->
+    <!-- Options toolbar (only affects single -> multi output) -->
     <div class="flex flex-wrap items-center gap-4 mb-4">
-      <div class="join">
-        <button
-          :class="['btn btn-sm join-item', direction === 'to-multi' ? 'btn-primary' : '']"
-          @click="setDirection('to-multi')"
-        >
-          单行 → 多行
-        </button>
-        <button
-          :class="['btn btn-sm join-item', direction === 'to-single' ? 'btn-primary' : '']"
-          @click="setDirection('to-single')"
-        >
-          多行 → 单行
-        </button>
-      </div>
-
-      <div
-        v-if="direction === 'to-multi'"
-        class="flex items-center gap-3"
-      >
+      <div class="flex items-center gap-2">
+        <span class="text-sm opacity-70">续行符</span>
         <div class="join">
           <button
             v-for="opt in [true, false]"
             :key="opt"
             :class="['btn btn-sm join-item', continuation === opt ? 'btn-primary' : '']"
-            @click="continuation = opt"
+            @click="setContinuation(opt)"
           >
             {{ opt ? '带 \\' : '无 \\' }}
           </button>
         </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm opacity-70">缩进</span>
         <div class="join">
           <button
             v-for="ind in [0, 2, 4]"
             :key="ind"
             :class="['btn btn-sm join-item', indent === ind ? 'btn-primary' : '']"
-            @click="indent = ind"
+            @click="setIndent(ind)"
           >
             {{ ind }} 空格
           </button>
@@ -56,7 +42,7 @@
             v-model="singleLine"
             class="textarea textarea-bordered w-full font-mono text-sm"
             placeholder="command --flag1 value1 --flag2 value2"
-            rows="4"
+            rows="5"
             @input="onSingleChange"
           />
           <button
@@ -88,7 +74,7 @@
             v-model="multiLine"
             class="textarea textarea-bordered w-full font-mono text-sm"
             placeholder="command \&#10;  --flag1 value1 \&#10;  --flag2 value2"
-            rows="6"
+            rows="9"
             @input="onMultiChange"
           />
           <button
@@ -133,9 +119,10 @@ import { ref } from 'vue'
 import { ArrowsUpDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { toSingleLine, toMultiLine } from '../utils/cli-format.js'
 
-const singleLine = ref('command --flag1 value1 --flag2 value2')
+const DEFAULT_SINGLE = 'docker run --name "my container" -v /host/path:/container/path -e KEY=value --restart always alpine'
+
+const singleLine = ref(DEFAULT_SINGLE)
 const multiLine = ref('')
-const direction = ref('to-multi')
 const continuation = ref(true)
 const indent = ref(2)
 const error = ref('')
@@ -143,7 +130,6 @@ const singleCopied = ref(false)
 const multiCopied = ref(false)
 
 function onSingleChange() {
-  if (direction.value !== 'to-multi') return
   error.value = ''
   if (!singleLine.value.trim()) {
     multiLine.value = ''
@@ -161,7 +147,6 @@ function onSingleChange() {
 }
 
 function onMultiChange() {
-  if (direction.value !== 'to-single') return
   error.value = ''
   if (!multiLine.value.trim()) {
     singleLine.value = ''
@@ -175,13 +160,15 @@ function onMultiChange() {
   }
 }
 
-function setDirection(d) {
-  direction.value = d
-  if (d === 'to-multi') {
-    onSingleChange()
-  } else {
-    onMultiChange()
-  }
+function setContinuation(opt) {
+  continuation.value = opt
+  // 选项变化时,以单行框为源重新转换多行框
+  onSingleChange()
+}
+
+function setIndent(ind) {
+  indent.value = ind
+  onSingleChange()
 }
 
 function clear() {

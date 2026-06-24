@@ -20,10 +20,8 @@ describe('CliFormat', () => {
     expect(textareas[1].element.value).toBe('cmd \\\n  --a 1 \\\n  --b 2')
   })
 
-  it('converts multi-line to single-line when direction = to-single', async () => {
+  it('converts multi-line to single-line (bidirectional auto-sync)', async () => {
     const wrapper = mountComponent()
-    const dirBtn = wrapper.findAll('button').find(b => b.text().includes('多行 → 单行'))
-    await dirBtn.trigger('click')
     const textareas = wrapper.findAll('textarea')
     await textareas[1].setValue('cmd \\\n  --a 1 \\\n  --b 2')
     await textareas[1].trigger('input')
