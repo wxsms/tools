@@ -223,6 +223,12 @@ export const toolGroups = [
         desc: '可视化查看 git diff / unified patch 文件',
         icon: CodeBracketIcon,
       },
+      {
+        name: '命令行格式转换',
+        path: '/cli-format',
+        desc: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义',
+        icon: CommandLineIcon,
+      },
     ],
   },
   {

@@ -37,6 +37,7 @@ import Triangle from './views/Triangle.vue'
 import CssAnimation from './views/CssAnimation.vue'
 import CodeScreenshot from './views/CodeScreenshot.vue'
 import PatchViewer from './views/PatchViewer.vue'
+import CliFormat from './views/CliFormat.vue'
 
 const components = {
   '/': Home,
@@ -76,6 +77,7 @@ const components = {
   '/css-animation': CssAnimation,
   '/code-screenshot': CodeScreenshot,
   '/patch-viewer': PatchViewer,
+  '/cli-format': CliFormat,
 }
 
 const routes = routeDefs.map(r => ({
