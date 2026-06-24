@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tokenize } from './cli-format.js'
+import { tokenize, toSingleLine } from './cli-format.js'
 
 describe('tokenize', () => {
   it('splits on whitespace', () => {
@@ -85,5 +85,32 @@ describe('tokenize', () => {
       { raw: 'echo' },
       { raw: '"hello"world\'foo\'' },
     ])
+  })
+})
+
+describe('toSingleLine', () => {
+  it('joins multi-line with backslash continuation into one line', () => {
+    const input = 'command \\\n  --flag1 value1 \\\n  --flag2 value2'
+    expect(toSingleLine(input)).toBe('command --flag1 value1 --flag2 value2')
+  })
+
+  it('joins tokens already on one line', () => {
+    expect(toSingleLine('command --flag value')).toBe('command --flag value')
+  })
+
+  it('preserves quoted values with spaces', () => {
+    expect(toSingleLine('docker run --name "my container"')).toBe('docker run --name "my container"')
+  })
+
+  it('returns empty string for empty input', () => {
+    expect(toSingleLine('')).toBe('')
+  })
+
+  it('returns empty string for whitespace-only input', () => {
+    expect(toSingleLine('   \n  ')).toBe('')
+  })
+
+  it('throws on unterminated quote (propagates from tokenize)', () => {
+    expect(() => toSingleLine("echo 'unterminated")).toThrow(/引号未闭合/)
   })
 })

@@ -80,3 +80,13 @@ export function tokenize(input) {
   }
   return tokens
 }
+
+/**
+ * 多行 → 单行:解析 tokens,用单空格重新拼接(原引号保留)。
+ * @param {string} input
+ * @returns {string}
+ */
+export function toSingleLine(input) {
+  const tokens = tokenize(input)
+  return tokens.map(t => t.raw).join(' ')
+}
