@@ -90,3 +90,51 @@ export function toSingleLine(input) {
   const tokens = tokenize(input)
   return tokens.map(t => t.raw).join(' ')
 }
+
+/**
+ * 单行 → 多行:解析 tokens,按 flag+值 启发式分组,生成多行字符串。
+ *
+ * 分组规则:
+ * - 第 0 个 token(命令)单独一行,无缩进无续行符
+ * - 后续 token:
+ *   - 若以 - 开头,视为 flag;若下一个 token 不以 - 开头,则两 token 同行,否则单独成行
+ *   - 不以 - 开头(位置参数)单独成行
+ * - 每行(除命令行)前加 indent 个空格
+ * - 若 continuation=true,每行(除最后一行)末尾追加 ' \'
+ *
+ * @param {string} input
+ * @param {{indent?: number, continuation?: boolean}} [opts]
+ * @returns {string}
+ */
+export function toMultiLine(input, opts = {}) {
+  const indent = opts.indent ?? 2
+  const continuation = opts.continuation ?? true
+  const tokens = tokenize(input)
+  if (tokens.length === 0) return ''
+  if (tokens.length === 1) return tokens[0].raw
+
+  const pad = ' '.repeat(indent)
+  const lines = [tokens[0].raw]
+  let i = 1
+  while (i < tokens.length) {
+    const t = tokens[i].raw
+    if (t.startsWith('-')) {
+      const next = tokens[i + 1]?.raw
+      if (next !== undefined && !next.startsWith('-')) {
+        lines.push(pad + t + ' ' + next)
+        i += 2
+      } else {
+        lines.push(pad + t)
+        i += 1
+      }
+    } else {
+      lines.push(pad + t)
+      i += 1
+    }
+  }
+
+  if (!continuation) {
+    return lines.join('\n')
+  }
+  return lines.map((ln, idx) => (idx < lines.length - 1 ? ln + ' \\' : ln)).join('\n')
+}

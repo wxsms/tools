@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tokenize, toSingleLine } from './cli-format.js'
+import { tokenize, toSingleLine, toMultiLine } from './cli-format.js'
 
 describe('tokenize', () => {
   it('splits on whitespace', () => {
@@ -112,5 +112,68 @@ describe('toSingleLine', () => {
 
   it('throws on unterminated quote (propagates from tokenize)', () => {
     expect(() => toSingleLine("echo 'unterminated")).toThrow(/引号未闭合/)
+  })
+})
+
+describe('toMultiLine', () => {
+  it('splits single-line command into multi-line with default (2-space indent, backslash continuation)', () => {
+    const input = 'command --flag1 value1 --flag2 value2'
+    const expected = 'command \\\n  --flag1 value1 \\\n  --flag2 value2'
+    expect(toMultiLine(input)).toBe(expected)
+  })
+
+  it('places flag and value on same line, positional arg alone', () => {
+    const input = 'git commit -m "msg" file.txt'
+    // commit 是位置参数(不以 - 开头),单独成行;-m 是 flag,"msg" 同行;file.txt 单独
+    const expected = 'git \\\n  commit \\\n  -m "msg" \\\n  file.txt'
+    expect(toMultiLine(input)).toBe(expected)
+  })
+
+  it('flag whose next token starts with - goes alone', () => {
+    const input = 'cmd --output -v'
+    const expected = 'cmd \\\n  --output \\\n  -v'
+    expect(toMultiLine(input)).toBe(expected)
+  })
+
+  it('single token (command only) has no continuation', () => {
+    expect(toMultiLine('command')).toBe('command')
+  })
+
+  it('respects indent=0 option', () => {
+    const input = 'command --flag value'
+    expect(toMultiLine(input, { indent: 0 })).toBe('command \\\n--flag value')
+  })
+
+  it('respects indent=4 option', () => {
+    const input = 'command --flag value'
+    expect(toMultiLine(input, { indent: 4 })).toBe('command \\\n    --flag value')
+  })
+
+  it('respects continuation=false option (no backslash)', () => {
+    const input = 'command --flag value'
+    expect(toMultiLine(input, { continuation: false })).toBe('command\n  --flag value')
+  })
+
+  it('combines indent=0 and continuation=false', () => {
+    const input = 'command --flag1 value1 --flag2 value2'
+    expect(toMultiLine(input, { indent: 0, continuation: false })).toBe(
+      'command\n--flag1 value1\n--flag2 value2',
+    )
+  })
+
+  it('handles = in flag as single token', () => {
+    const input = 'cmd --output=/path --flag'
+    expect(toMultiLine(input)).toBe('cmd \\\n  --output=/path \\\n  --flag')
+  })
+
+  it('returns empty string for empty input', () => {
+    expect(toMultiLine('')).toBe('')
+  })
+
+  it('last line has no trailing backslash', () => {
+    const input = 'command --a 1 --b 2'
+    const result = toMultiLine(input)
+    expect(result.endsWith('--b 2')).toBe(true)
+    expect(result.endsWith('\\')).toBe(false)
   })
 })
