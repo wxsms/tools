@@ -29,7 +29,7 @@ export function tokenize(input) {
         if (i + 1 < n) {
           if (s[i + 1] === '\n') {
             // 续行:吃掉 \ 换行,以及下一行前导空白,继续累积当前 token
-            raw += '\\\n'
+            // 注意:不把 \<newline> 计入 raw(等价于空白分隔)
             i += 2
             while (i < n && /[ \t]/.test(s[i])) i++
             continue
