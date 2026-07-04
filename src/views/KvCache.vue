@@ -65,8 +65,8 @@
           <option value="float32">
             float32 (FP32)
           </option>
-          <option value="int8">
-            int8 (INT8)
+          <option value="fp8">
+            fp8 (FP8)
           </option>
         </select>
         <p
@@ -142,22 +142,19 @@
       class="mt-4 max-w-3xl"
     >
       <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Token 数</span></label>
+        <label class="label"><span class="label-text font-semibold">Token 数 (K)</span></label>
         <input
-          v-model.number="tokens"
+          v-model.number="tokensK"
           type="number"
-          min="1"
-          placeholder="e.g. 1000"
+          min="0.001"
+          step="1"
+          placeholder="e.g. 1 (= 1024 tokens)"
           class="input input-bordered w-full font-mono"
-          @keydown.enter="computeForward"
         >
+        <p class="text-xs opacity-60 mt-1">
+          以 K 为单位，1K = 1024 tokens
+        </p>
       </div>
-      <button
-        class="btn btn-primary mt-4"
-        @click="computeForward"
-      >
-        计算 KV Cache 尺寸
-      </button>
     </div>
 
     <!-- Reverse mode -->
@@ -174,15 +171,8 @@
           step="0.1"
           placeholder="e.g. 20"
           class="input input-bordered w-full font-mono"
-          @keydown.enter="computeReverse"
         >
       </div>
-      <button
-        class="btn btn-primary mt-4"
-        @click="computeReverse"
-      >
-        计算最大 Token 数
-      </button>
     </div>
 
     <!-- Result -->
@@ -228,13 +218,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const DTYPE_SIZES = {
   float32: 4,
   float16: 2,
   bfloat16: 2,
-  int8: 1,
+  fp8: 1,
 }
 
 // Model configs — verbatim copy from LMCache's modelconfig.json (dev branch).
@@ -337,7 +327,7 @@ const nopeBytes = ref(1)
 const ropeBytes = ref(2)
 const indexerBytes = ref(0.5)
 
-const tokens = ref(1000)
+const tokensK = ref(1)
 const gpuRam = ref(20)
 const result = ref(null)
 
@@ -393,9 +383,14 @@ function arcLabel() {
 
 function computeForward() {
   const cfg = config.value
-  const n = tokens.value
-  if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
-    result.value = { error: '请输入有效的 token 数（正整数）' }
+  const k = tokensK.value
+  if (!Number.isFinite(k) || k <= 0) {
+    result.value = { error: '请输入有效的 Token 数 (K,正数)' }
+    return
+  }
+  const n = Math.round(k * 1024)
+  if (n <= 0) {
+    result.value = { error: '请输入有效的 Token 数 (K,正数)' }
     return
   }
   const dtypeSize = DTYPE_SIZES[dtype.value]
@@ -528,6 +523,8 @@ function computeForward() {
     details.push(['KV Cache Size', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
   }
 
+  details.unshift(['Token 数', `${k} K (${n.toLocaleString()} tokens)`])
+
   result.value = {
     headline,
     details: details.map(([k, v]) => ({ k, v: String(v) })),
@@ -561,7 +558,6 @@ function computeReverse() {
     const numLayers = cfg.compress_ratios.length
     const windowBytes = numLayers * cfg.sliding_window * kvBytesPerEntry
     maxTokens = Math.max(0, Math.floor((totalBytes - windowBytes) / bytesPerToken))
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
     details.push(['Hidden Layers', cfg.num_hidden_layers])
@@ -583,7 +579,6 @@ function computeReverse() {
     const elementsPerToken = cfg.num_hidden_layers * (latentDim + indexerDim)
     const bytesPerToken = elementsPerToken * dtypeSize
     maxTokens = Math.floor(totalBytes / bytesPerToken)
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
     details.push(['Hidden Layers', cfg.num_hidden_layers])
@@ -604,7 +599,6 @@ function computeReverse() {
     const availElements = totalBytes / dtypeSize
     maxTokens = Math.max(0, Math.floor(availElements / (perLayer * nFull)))
     const linType = typeof cfg.linear_attention_type === 'string' ? cfg.linear_attention_type : 'Gated DeltaNet'
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     note = `仅按 full-attention 层计算；${linType} 循环状态尚未计入`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
@@ -629,7 +623,6 @@ function computeReverse() {
       regime = 'tokens > window (sliding layers capped)'
     }
     maxTokens = Math.max(0, n)
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
     details.push(['Hidden Layers', cfg.num_hidden_layers])
@@ -645,7 +638,6 @@ function computeReverse() {
     const elementsPerToken = 2 * cfg.num_hidden_layers * cfg.num_key_value_heads * cfg.head_dim
     const bytesPerToken = elementsPerToken * dtypeSize
     maxTokens = Math.floor(totalBytes / bytesPerToken)
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
     details.push(['Hidden Size', cfg.hidden_size])
@@ -662,7 +654,6 @@ function computeReverse() {
     const elementsPerToken = 2 * cfg.num_hidden_layers * cfg.num_key_value_heads * headSize
     const bytesPerToken = elementsPerToken * dtypeSize
     maxTokens = Math.floor(totalBytes / bytesPerToken)
-    headline = `Maximum Tokens: ${maxTokens.toLocaleString()}`
     details.push(['架构', arcLabel()])
     details.push(['GPU RAM Size', `${ram} GB`])
     details.push(['Hidden Size', cfg.hidden_size])
@@ -676,12 +667,22 @@ function computeReverse() {
     details.push(['Maximum Tokens', `${totalBytes} / ${bytesPerToken} = ${maxTokens} tokens`])
   }
 
+  const maxTokensK = (maxTokens / 1024).toFixed(maxTokens % 1024 === 0 ? 0 : 2)
+  headline = `Maximum Tokens: ${maxTokensK}K (${maxTokens.toLocaleString()})`
+
   result.value = {
     headline,
     details: details.map(([k, v]) => ({ k, v: String(v) })),
     note,
   }
 }
+
+watch(mode, m => m === 'forward' ? computeForward() : computeReverse())
+watch(
+  [model, dtype, precisionMode, nopeBytes, ropeBytes, indexerBytes, tokensK, gpuRam],
+  () => mode.value === 'forward' ? computeForward() : computeReverse(),
+  { immediate: true },
+)
 </script>
 
 <style scoped>
