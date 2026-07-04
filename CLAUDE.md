@@ -90,17 +90,29 @@ wxsm's Kit — personal toolset built with Vue 3 + Vite + Tailwind CSS + DaisyUI
 │   ├── style.css            # Global styles
 │   ├── composables/
 │   │   └── useTheme.js      # Dark/light theme toggle
-│   └── views/               # One .vue file per tool
-│       ├── Home.vue
-│       ├── Base64.vue
-│       ├── Gzip.vue
-│       ├── MD5.vue
-│       └── Diff.vue
+│   └── tools/               # One folder per tool
+│       ├── home/
+│       │   └── Home.vue
+│       ├── base64/
+│       │   ├── Base64.vue
+│       │   ├── base64.js              # pure functions for this tool
+│       │   ├── base64.test.js         # unit tests for the pure functions
+│       │   └── Base64.component.test.js  # component tests for the .vue
+│       ├── gzip/
+│       │   └── Gzip.vue
+│       └── diff/
+│           ├── Diff.vue
+│           └── diff.js
 ```
+
+Each tool lives in its own `src/tools/<kebab-name>/` folder. The `.vue` view keeps its
+PascalCase filename; pure-function modules use kebab-case. When a tool has both
+component tests and pure-function tests, suffix the component test with
+`.component.test.js` so the two can coexist on case-insensitive filesystems.
 
 ### How to Add a New Tool
 
-1. **Create view** — Add `ToolName.vue` under `src/views/`, follow existing tool patterns
+1. **Create folder + view** — Add `src/tools/<tool-name>/ToolName.vue`, following existing tool patterns. Put any pure functions / helpers the tool needs alongside the `.vue` file in the same folder.
 2. **Register route** — Import and add route in `src/router.js`: `{ path: '/tool-name', component: ToolName }`
 3. **Add sidebar entry** — Append to `tools` array in `src/App.vue`: `{ name: 'Tool Name', path: '/tool-name', icon: XxxIcon }`, and import the icon
 
@@ -108,7 +120,7 @@ All three steps are required.
 
 ### Layout Reference for Converter Tools
 
-When implementing a bidirectional converter tool (e.g. encode/decode, timestamp/datetime), prioritize referencing `src/views/UrlEncode.vue` for layout and interaction patterns.
+When implementing a bidirectional converter tool (e.g. encode/decode, timestamp/datetime), prioritize referencing `src/tools/url-encode/UrlEncode.vue` for layout and interaction patterns.
 
 ### Icon Source
 
