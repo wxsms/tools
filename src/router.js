@@ -38,6 +38,7 @@ import CssAnimation from './views/CssAnimation.vue'
 import CodeScreenshot from './views/CodeScreenshot.vue'
 import PatchViewer from './views/PatchViewer.vue'
 import CliFormat from './views/CliFormat.vue'
+import KvCache from './views/KvCache.vue'
 
 const components = {
   '/': Home,
@@ -78,6 +79,7 @@ const components = {
   '/code-screenshot': CodeScreenshot,
   '/patch-viewer': PatchViewer,
   '/cli-format': CliFormat,
+  '/kv-cache': KvCache,
 }
 
 const routes = routeDefs.map(r => ({

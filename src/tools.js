@@ -35,6 +35,7 @@ import {
   FilmIcon,
   CameraIcon,
   CodeBracketIcon,
+  CpuChipIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -292,6 +293,17 @@ export const toolGroups = [
         path: '/mime-types',
         desc: 'MIME 类型与文件扩展名速查',
         icon: TagIcon,
+      },
+    ],
+  },
+  {
+    name: 'LLM',
+    tools: [
+      {
+        name: 'KV Cache 计算器',
+        path: '/kv-cache',
+        desc: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数',
+        icon: CpuChipIcon,
       },
     ],
   },
