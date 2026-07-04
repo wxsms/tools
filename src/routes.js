@@ -37,4 +37,5 @@ export default [
   { path: '/code-screenshot', meta: { title: '代码截图', description: '代码语法高亮截图，支持多语言与主题' } },
   { path: '/patch-viewer', meta: { title: 'Patch 查看', description: '可视化查看 git diff / unified patch 文件' } },
   { path: '/cli-format', meta: { title: '命令行格式转换', description: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义' } },
+  { path: '/kv-cache', meta: { title: 'KV Cache 计算器', description: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数' } },
 ]
