@@ -355,6 +355,19 @@ describe('computeReverse — Hybrid SWA (gemma-4)', () => {
   })
 })
 
+describe('computeReverse — Standard Transformer (Llama-3.1-8B)', () => {
+  it('uses head_size = hidden_size / num_attention_heads', () => {
+    const cfg = MODELS['meta-llama/Llama-3.1-8B-Instruct']
+    // head_size = 4096/32 = 128; layers=32; kv_heads=8
+    // bytes_per_token = 2 × 32 × 8 × 128 × 2 = 65,536
+    // 5 GB → 5 × 1024^3 / 65536 = 81,920 tokens
+    const res = computeReverse({ config: cfg, gpuRamGB: 5, dtype: 'bfloat16' })
+    expect(res.maxTokens).toBe(Math.floor(5 * 1024 ** 3 / (2 * 32 * 8 * (4096 / 32) * 2)))
+    const headSizeLine = res.details.find(([k]) => k === 'Head Size')
+    expect(headSizeLine[1]).toContain('128')
+  })
+})
+
 describe('computeReverse — DSA (V4-Pro)', () => {
   it('subtracts sliding-window floor before dividing', () => {
     const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
