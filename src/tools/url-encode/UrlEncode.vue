@@ -102,6 +102,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ArrowsUpDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { encodeLines, decodeLines } from './url-encode.js'
 
 const input = ref('https://example.com/path?name=张三&lang=中文')
 const output = ref('')
@@ -110,9 +111,6 @@ const error = ref('')
 const inputCopied = ref(false)
 const outputCopied = ref(false)
 
-const encodeFn = () => method.value === 'component' ? encodeURIComponent : encodeURI
-const decodeFn = () => method.value === 'component' ? decodeURIComponent : decodeURI
-
 function onInputChange() {
   error.value = ''
   if (!input.value) {
@@ -120,7 +118,7 @@ function onInputChange() {
     return
   }
   try {
-    output.value = input.value.split('\n').map(encodeFn()).join('\n')
+    output.value = encodeLines(input.value, method.value)
   } catch (e) {
     error.value = '编码失败：' + e.message
   }
@@ -133,7 +131,7 @@ function onOutputChange() {
     return
   }
   try {
-    input.value = output.value.split('\n').map(decodeFn()).join('\n')
+    input.value = decodeLines(output.value, method.value)
   } catch (e) {
     error.value = '解码失败：' + e.message
   }

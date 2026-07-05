@@ -184,8 +184,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { ClipboardDocumentIcon, CheckIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
-
-const IMAGE_MIMES = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/webp', 'image/bmp', 'image/x-icon']
+import { IMAGE_MIMES, formatSize, mimeToExt, parseDataUrl, buildImageSrc } from './file-base64.js'
 
 // --- Shared ---
 const activeTab = ref('to-base64')
@@ -196,12 +195,6 @@ const base64Output = ref('')
 const fileInfo = ref(null)
 const imagePreviewUrl = ref('')
 const encodeCopied = ref(false)
-
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-}
 
 function onFileChange(e) {
   const file = e.target.files[0]
@@ -243,50 +236,22 @@ const fileMime = ref('')
 const decodeError = ref('')
 
 const decodedImageSrc = computed(() => {
-  if (!base64Input.value) return ''
-  const raw = base64Input.value.trim()
-  if (raw.startsWith('data:image/')) return raw
-  if (IMAGE_MIMES.includes(fileMime.value)) {
-    return `data:${fileMime.value};base64,${raw}`
-  }
-  return ''
+  return buildImageSrc(base64Input.value, fileMime.value)
 })
-
-function mimeToExt(mime) {
-  const map = {
-    'image/png': '.png',
-    'image/jpeg': '.jpg',
-    'image/gif': '.gif',
-    'image/svg+xml': '.svg',
-    'image/webp': '.webp',
-    'image/bmp': '.bmp',
-    'image/x-icon': '.ico',
-    'application/pdf': '.pdf',
-    'text/plain': '.txt',
-    'application/json': '.json',
-  }
-  return map[mime] || '.bin'
-}
 
 function parseBase64Input() {
   const raw = base64Input.value.trim()
-  if (!raw) return null
-
-  let mime = fileMime.value
-  let base64 = raw
+  const parsed = parseDataUrl(raw)
+  if (parsed === null) {
+    if (raw) decodeError.value = '无效的 data URL 格式'
+    return null
+  }
+  const { base64, mime } = parsed
 
   if (raw.startsWith('data:')) {
-    const match = raw.match(/^data:([^;]+);base64,(.+)$/)
-    if (match) {
-      mime = match[1]
-      base64 = match[2]
-      if (!fileMime.value) fileMime.value = mime
-      if (!fileName.value) {
-        fileName.value = 'decoded' + mimeToExt(mime)
-      }
-    } else {
-      decodeError.value = '无效的 data URL 格式'
-      return null
+    if (!fileMime.value && mime) fileMime.value = mime
+    if (!fileName.value) {
+      fileName.value = 'decoded' + mimeToExt(mime)
     }
   }
 

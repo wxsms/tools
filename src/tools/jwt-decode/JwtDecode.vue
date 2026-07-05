@@ -112,6 +112,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
+import { decodeJwt } from './jwt-decode.js'
 
 const token = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IuW8oOS4iSIsImlhdCI6MTczMjg2NDAwMCwiZXhwIjoxNzY0NDAwMDAwfQ.4DLecMqe5D8R8F64fF8LZ9Kq3VK7nJaPENPK9xXkx6Y')
 const error = ref('')
@@ -122,82 +123,12 @@ const headerCopied = ref(false)
 const payloadCopied = ref(false)
 const signatureCopied = ref(false)
 
-function decodeBase64url(str) {
-  let s = str.replace(/-/g, '+').replace(/_/g, '/')
-  const pad = s.length % 4
-  if (pad) {
-    s += '='.repeat(4 - pad)
-  }
-  return atob(s)
-}
-
-function annotateTimeFields(obj) {
-  const timeKeys = new Set(['exp', 'iat', 'nbf'])
-  for (const key of Object.keys(obj)) {
-    if (timeKeys.has(key) && typeof obj[key] === 'number' && obj[key] > 1000000000 && obj[key] < 9999999999) {
-      const date = new Date(obj[key] * 1000)
-      const y = date.getUTCFullYear()
-      const m = String(date.getUTCMonth() + 1).padStart(2, '0')
-      const d = String(date.getUTCDate()).padStart(2, '0')
-      const h = String(date.getUTCHours()).padStart(2, '0')
-      const min = String(date.getUTCMinutes()).padStart(2, '0')
-      const sec = String(date.getUTCSeconds()).padStart(2, '0')
-      obj[key] = `${obj[key]} // ${y}-${m}-${d} ${h}:${min}:${sec} UTC`
-    }
-  }
-}
-
 function parse() {
-  error.value = ''
-  header.value = null
-  payload.value = null
-  signature.value = null
-
-  const trimmed = token.value.trim()
-  if (!trimmed) return
-
-  const parts = trimmed.split('.')
-  if (parts.length !== 3) {
-    error.value = '无效的 JWT：必须由 3 个以 . 分隔的部分组成'
-    return
-  }
-
-  // Header
-  try {
-    const decoded = decodeBase64url(parts[0])
-    try {
-      const obj = JSON.parse(decoded)
-      annotateTimeFields(obj)
-      header.value = JSON.stringify(obj, null, 2)
-    } catch {
-      header.value = decoded
-    }
-  } catch (e) {
-    header.value = '[解码失败：' + e.message + ']'
-  }
-
-  // Payload
-  try {
-    const decoded = decodeBase64url(parts[1])
-    try {
-      const obj = JSON.parse(decoded)
-      annotateTimeFields(obj)
-      payload.value = JSON.stringify(obj, null, 2)
-    } catch {
-      payload.value = decoded
-    }
-  } catch (e) {
-    payload.value = '[解码失败：' + e.message + ']'
-  }
-
-  // Signature
-  try {
-    const raw = decodeBase64url(parts[2])
-    const hex = Array.from(raw, c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
-    signature.value = hex
-  } catch (e) {
-    signature.value = '[解码失败：' + e.message + ']'
-  }
+  const result = decodeJwt(token.value)
+  header.value = result.header
+  payload.value = result.payload
+  signature.value = result.signature
+  error.value = result.error
 }
 
 async function copyText(text, flag) {
