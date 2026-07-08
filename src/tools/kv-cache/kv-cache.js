@@ -13,11 +13,15 @@
  */
 
 // Bytes per element for each selectable KV dtype.
+// 4-bit formats (mxfp4 / nvfp4) use 0.5 byte per element.
 export const DTYPE_SIZES = {
-  float32: 4,
-  float16: 2,
-  bfloat16: 2,
+  fp32: 4,
+  fp16: 2,
+  bf16: 2,
   fp8: 1,
+  int8: 1,
+  mxfp4: 0.5,
+  nvfp4: 0.5,
 }
 
 // Model configs — verbatim copy from LMCache's modelconfig.json (dev branch).
@@ -181,6 +185,9 @@ export function computeForward({ config, tokens, dtype, prec }) {
     return { error: '请输入有效的 Token 数（正整数）' }
   }
   const dtypeSize = DTYPE_SIZES[dtype]
+  if (dtypeSize === undefined) {
+    return { error: `未知的数据类型：${dtype}` }
+  }
   const arch = detectArch(cfg)
   const details = []
   let totalBytes
@@ -335,6 +342,9 @@ export function computeReverse({ config, gpuRamGB, dtype, prec }) {
     return { error: '请输入有效的 GPU 显存（大于 0）' }
   }
   const dtypeSize = DTYPE_SIZES[dtype]
+  if (dtypeSize === undefined) {
+    return { error: `未知的数据类型：${dtype}` }
+  }
   const totalBytes = gpuRamGB * 1024 ** 3
   const arch = detectArch(cfg)
   const details = []

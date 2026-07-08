@@ -14,21 +14,25 @@
 
     <!-- Mode switch -->
     <div
-      role="tablist"
-      class="tabs tabs-boxed mb-6 w-fit"
+      role="group"
+      class="join mb-6 w-fit"
     >
-      <a
-        role="tab"
-        class="tab"
-        :class="{ 'tab-active': mode === 'forward' }"
+      <button
+        type="button"
+        class="btn join-item"
+        :class="mode === 'forward' ? 'btn-primary' : ''"
         @click="mode = 'forward'"
-      >正向：tokens → 显存</a>
-      <a
-        role="tab"
-        class="tab"
-        :class="{ 'tab-active': mode === 'reverse' }"
+      >
+        正向：tokens → 显存
+      </button>
+      <button
+        type="button"
+        class="btn join-item"
+        :class="mode === 'reverse' ? 'btn-primary' : ''"
         @click="mode = 'reverse'"
-      >反算：显存 → tokens</a>
+      >
+        反算：显存 → tokens
+      </button>
     </div>
 
     <!-- Shared model + dtype selectors -->
@@ -56,17 +60,12 @@
           class="select select-bordered w-full"
           :disabled="isDSA"
         >
-          <option value="float16">
-            float16 (FP16)
-          </option>
-          <option value="bfloat16">
-            bfloat16 (BF16)
-          </option>
-          <option value="float32">
-            float32 (FP32)
-          </option>
-          <option value="fp8">
-            fp8 (FP8)
+          <option
+            v-for="opt in dtypeOptions"
+            :key="opt.value"
+            :value="opt.value"
+          >
+            {{ opt.label }}
           </option>
         </select>
         <p
@@ -219,11 +218,11 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { MODELS, MODEL_NAMES, detectArch, computeForward, computeReverse } from './kv-cache.js'
+import { MODELS, MODEL_NAMES, DTYPE_SIZES, detectArch, computeForward, computeReverse } from './kv-cache.js'
 
 const mode = ref('forward')
 const model = ref('Qwen/Qwen3-8B')
-const dtype = ref('bfloat16')
+const dtype = ref('bf16')
 
 // DSA / V4 precision state
 const precisionMode = ref('default')
@@ -238,6 +237,11 @@ const result = ref(null)
 const modelNames = MODEL_NAMES
 const config = computed(() => MODELS[model.value] || {})
 const isDSA = computed(() => detectArch(config.value) === 'dsa')
+
+const dtypeOptions = Object.keys(DTYPE_SIZES).map(value => {
+  const bits = DTYPE_SIZES[value] * 8
+  return { value, label: `${value} (${bits}-bit)` }
+})
 
 const dsaPrec = computed(() => precisionMode.value === 'custom'
   ? { mode: 'custom', nope: nopeBytes.value, rope: ropeBytes.value, indexer: indexerBytes.value }

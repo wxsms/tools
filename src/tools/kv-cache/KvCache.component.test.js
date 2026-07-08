@@ -20,7 +20,10 @@ describe('KvCache view — main interaction flow', () => {
 
   it('has no compute buttons — auto-trigger only', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.findAll('button.btn-primary').length).toBe(0)
+    // Mode switch exists (forward / reverse), but no explicit "compute" button
+    const buttons = wrapper.findAll('button')
+    expect(buttons.length).toBe(2) // only the two mode-switch buttons
+    expect(buttons.some(b => b.text().includes('计算'))).toBe(false)
   })
 
   it('auto-computes on mount with default values', async () => {
@@ -61,7 +64,7 @@ describe('KvCache view — main interaction flow', () => {
 
   it('switches to reverse mode via tab and shows Maximum Tokens', async () => {
     const wrapper = await mountComponent()
-    const reverseTab = wrapper.findAll('[role="tab"]').find(t => t.text().includes('反算'))
+    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
     await reverseTab.trigger('click')
     await nextTick()
     expect(wrapper.text()).toContain('Maximum Tokens')
@@ -70,7 +73,7 @@ describe('KvCache view — main interaction flow', () => {
 
   it('rejects 0 / negative GPU RAM in reverse mode', async () => {
     const wrapper = await mountComponent()
-    const reverseTab = wrapper.findAll('[role="tab"]').find(t => t.text().includes('反算'))
+    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
     await reverseTab.trigger('click')
     await nextTick()
     const input = wrapper.find('input[type="number"]')
@@ -113,11 +116,11 @@ describe('KvCache view — main interaction flow', () => {
     await input.setValue('100')
     await nextTick()
 
-    const reverseTab = wrapper.findAll('[role="tab"]').find(t => t.text().includes('反算'))
+    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
     await reverseTab.trigger('click')
     await nextTick()
 
-    const fwdTab = wrapper.findAll('[role="tab"]').find(t => t.text().includes('正向'))
+    const fwdTab = wrapper.findAll('button').find(t => t.text().includes('正向'))
     await fwdTab.trigger('click')
     await nextTick()
     expect(wrapper.text()).toContain('KV Cache Size')
