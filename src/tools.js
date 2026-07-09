@@ -301,16 +301,16 @@ export const toolGroups = [
     name: 'LLM',
     tools: [
       {
-        name: 'KV Cache 计算器',
-        path: '/kv-cache',
-        desc: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数',
-        icon: CpuChipIcon,
-      },
-      {
         name: 'Token 计数器',
         path: '/token-counter',
         desc: '估算 LLM 提示词 token 数，支持纯文本与 messages 模式，可视化分词',
         icon: ChatBubbleBottomCenterTextIcon,
+      },
+      {
+        name: 'KV Cache 计算器',
+        path: '/kv-cache',
+        desc: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数',
+        icon: CpuChipIcon,
       },
     ],
   },
