@@ -47,7 +47,7 @@ function stubDeepSeekFixture() {
 describe('MODEL_CONFIGS (orchestrator)', () => {
   it('aggregates all model config entries', () => {
     const ids = MODEL_CONFIGS.map((m) => m.id)
-    expect(ids).toEqual(['kimi-k2', 'deepseek-v4-pro'])
+    expect(ids).toEqual(['kimi-k2', 'deepseek-v4-pro', 'deepseek-v4-flash'])
   })
 })
 
