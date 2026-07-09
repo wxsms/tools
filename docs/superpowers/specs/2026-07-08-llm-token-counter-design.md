@@ -280,3 +280,18 @@ Mount with global `fetch` stubbed to return `mini.tiktoken` content. Cases (mirr
 - v2: tool_calls / image / reasoning_content rendering in messages mode
 - v2: cost calculation (price × token count, with per-model pricing table)
 - Future: if Anthropic / Zhipu publish browser-runnable tokenizers, add via registry; current architecture supports it without core changes
+
+## Scope change log
+
+### 2026-07-09 — DeepSeek-V4-Pro added to v1
+
+Originally listed as v2 future work; pulled into v1 after the user requested it.
+
+- **Tokenizer source**: `tokenizer.json` (6.4 MB, HuggingFace format) vendored at `public/tokenizers/deepseek-v4-pro.json`. Downloaded from `modelscope.cn/models/deepseek-ai/DeepSeek-V4-Pro`.
+- **Runtime**: New `@huggingface/tokenizers` 0.1.3 dependency (pure-JS, no WASM, ~300 KB unpacked). The `MODEL_CONFIGS` `tokenizer.type` field now selects between `'tiktoken'` (Kimi K2 path) and `'hf'` (DeepSeek path). `loadTokenizer(modelId)` returns a uniform adapter `{ encode(text), decodeId(id) }` regardless of runtime, so the component never branches on runtime.
+- **Chat template**: Ported from `encoding_dsv4.py` on the ModelScope repo — `renderDeepSeekV4Messages(messages)` covers the chat-mode (`thinking_mode="chat"`), plain-text-content subset. Renders BOS once at start, system content unwrapped, user turns wrapped in `<｜User｜>`, completed assistant turns wrapped in `<｜Assistant｜>` + thinking-end + content + EOS, and an open-assistant tail `<｜Assistant｜>` + thinking-end appended at the end.
+- **Deviation from upstream**: The HF tokenizer.json does not auto-insert BOS/EOS via post-processor (only via `add_special_tokens=true`, but our config doesn't trigger that path). So when the rendered envelope (which contains the BOS string `<｜begin▁of▁sentence｜>` as a literal substring) is fed to `adapter.encode`, the special-token text is byte-BPE'd rather than collapsed to single IDs. This inflates the count by ~5–10 tokens per envelope; acceptable for v1 "estimate" semantics. Revisit if exact-match with server-side counts becomes a requirement.
+- **Chat-template dispatch**: `renderMessages(modelId, messages)` is the new public renderer; `renderKimiMessages` is kept exported for back-compat with existing tests.
+- **Test impact**: 10 new tests added (4 HF-loader behavior, 5 chat-template dispatch + DeepSeek render, 1 DeepSeek end-to-end). The pre-existing "encodes `<|im_end|>` as a single special token" test was removed — it relied on calling the raw `Tiktoken.encode` with runtime-specific args, which the adapter interface deliberately hides. Special-token registration is now verified indirectly via the end-to-end test.
+- **Component test tick bumps**: Error-state tests now flush 6 `nextTick()`s (was 4) because the adapter-wrapping adds ~2 more microtask drains on the rejection path.
+

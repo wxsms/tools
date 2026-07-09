@@ -4,7 +4,7 @@ import {
   MODEL_CONFIGS,
   loadTokenizer,
   countTokens,
-  renderKimiMessages,
+  renderMessages,
 } from './token-counter.js'
 
 const mode = ref('plain') // 'plain' | 'messages'
@@ -123,15 +123,13 @@ function rebuildPreview() {
   previewTokens.value = []
   overflowCount.value = 0
   if (!encoderReady.value || !encoder) return
-  const source = mode.value === 'plain' ? text.value : renderKimiMessages(messages.value)
+  const source = mode.value === 'plain' ? text.value : renderMessages(activeModelId.value, messages.value)
   if (!source) return
-  const ids = encoder.encode(source, [], [])
+  const ids = encoder.encode(source)
   overflowCount.value = Math.max(0, ids.length - PREVIEW_CAP)
   const shown = ids.slice(0, PREVIEW_CAP)
   previewTokens.value = shown.map((id) => {
-    // js-tiktoken 1.0.21 Tiktoken has no decode_single_token_bytes; decode([id])
-    // returns the piece as a UTF-8 string directly (see chunk-VL2OQCWN.js:135).
-    const piece = encoder.decode([id])
+    const piece = encoder.decodeId(id)
     return { id, piece, type: classifyToken(piece) }
   })
 }
@@ -142,7 +140,7 @@ onMounted(schedulePreview)
 const tokenCount = computed(() => {
   if (!encoderReady.value || !encoder) return 0
   if (mode.value === 'plain') return countTokens(text.value, encoder)
-  return countTokens(renderKimiMessages(messages.value), encoder)
+  return countTokens(renderMessages(activeModelId.value, messages.value), encoder)
 })
 
 const charCount = computed(() => {
@@ -152,7 +150,7 @@ const charCount = computed(() => {
 
 // UTF-8 byte length — distinct from char count for non-ASCII text (spec §Result area).
 const sourceText = computed(() =>
-  mode.value === 'plain' ? text.value : renderKimiMessages(messages.value),
+  mode.value === 'plain' ? text.value : renderMessages(activeModelId.value, messages.value),
 )
 const byteCount = computed(() =>
   new TextEncoder().encode(sourceText.value).length,

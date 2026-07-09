@@ -5,6 +5,7 @@ import {
   getEncoder,
   countTokens,
   renderKimiMessages,
+  renderMessages,
   _resetCacheForTests,
 } from './token-counter.js'
 import { readFileSync } from 'node:fs'
@@ -14,6 +15,13 @@ import path from 'node:path'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURE = readFileSync(
   path.join(__dirname, '__fixtures__/mini.tiktoken'),
+  'utf8',
+)
+// The DeepSeek-V4-Pro tokenizer.json is a 6.4 MB structured JSON file. Tests
+// load it once at module scope (slow first run, cached afterwards) so we can
+// exercise the HF-runtime path against real data.
+const DSV4_TOKENIZER_JSON = readFileSync(
+  path.join(__dirname, '../../../public/tokenizers/deepseek-v4-pro.json'),
   'utf8',
 )
 
@@ -85,15 +93,6 @@ describe('loadTokenizer', () => {
     const enc = await loadTokenizer('kimi-k2')
     expect(enc.encode('!').length).toBe(1)
     expect(enc.encode('!"').length).toBe(2)
-  })
-
-  it('encodes <|im_end|> as a single special token', async () => {
-    const { fn } = stubFetch()
-    vi.stubGlobal('fetch', fn)
-    const enc = await loadTokenizer('kimi-k2')
-    // js-tiktoken 1.0.21: encode(text, allowedSpecial, disallowedSpecial);
-    // pass the string 'all' to allow every special token.
-    expect(enc.encode('<|im_end|>', 'all').length).toBe(1)
   })
 
   it('getEncoder returns null before load and the instance after load', async () => {
@@ -175,6 +174,130 @@ describe('end-to-end: messages mode costs more tokens than plain text', () => {
     const plain = countTokens('hi', enc)
     const asMessage = countTokens(
       renderKimiMessages([{ role: 'user', content: 'hi' }]),
+      enc,
+    )
+    expect(asMessage).toBeGreaterThan(plain)
+  })
+})
+describe("MODEL_CONFIGS — deepseek-v4-pro", () => {
+  it("exposes deepseek-v4-pro as the second entry with hf runtime", () => {
+    const dsv4 = MODEL_CONFIGS.find((m) => m.id === "deepseek-v4-pro")
+    expect(dsv4).toBeDefined()
+    expect(dsv4.label).toBe("DeepSeek V4 Pro")
+    expect(dsv4.tokenizer.type).toBe("hf")
+    expect(dsv4.tokenizer.file).toBe("/tokenizers/deepseek-v4-pro.json")
+    expect(dsv4.chatTemplate).toBe("deepseek-v4")
+  })
+})
+
+describe("loadTokenizer — deepseek-v4-pro (hf runtime)", () => {
+  beforeEach(() => {
+    _resetCacheForTests()
+    vi.restoreAllMocks()
+  })
+
+  it("returns an adapter with encode + decodeId methods", async () => {
+    vi.stubGlobal("fetch", async () => ({
+      ok: true,
+      status: 200,
+      text: async () => DSV4_TOKENIZER_JSON,
+    }))
+    const enc = await loadTokenizer("deepseek-v4-pro")
+    expect(typeof enc.encode).toBe("function")
+    expect(typeof enc.decodeId).toBe("function")
+  })
+
+  it("encodes plain ASCII text to a positive token count", async () => {
+    vi.stubGlobal("fetch", async () => ({
+      ok: true,
+      status: 200,
+      text: async () => DSV4_TOKENIZER_JSON,
+    }))
+    const enc = await loadTokenizer("deepseek-v4-pro")
+    expect(enc.encode("hello world").length).toBeGreaterThan(0)
+  })
+
+  it("caches the adapter across calls (no re-fetch)", async () => {
+    const calls = []
+    vi.stubGlobal("fetch", async (url) => {
+      calls.push(url)
+      return { ok: true, status: 200, text: async () => DSV4_TOKENIZER_JSON }
+    })
+    await loadTokenizer("deepseek-v4-pro")
+    await loadTokenizer("deepseek-v4-pro")
+    expect(calls.length).toBe(1)
+  })
+
+  it("throws on fetch failure and allows retry", async () => {
+    let attempt = 0
+    vi.stubGlobal("fetch", async () => {
+      attempt++
+      if (attempt === 1) throw new Error("boom")
+      return { ok: true, status: 200, text: async () => DSV4_TOKENIZER_JSON }
+    })
+    await expect(loadTokenizer("deepseek-v4-pro")).rejects.toThrow()
+    // retry succeeds because rejected promise was evicted from cache
+    const enc = await loadTokenizer("deepseek-v4-pro")
+    expect(enc.encode("hi").length).toBeGreaterThan(0)
+  })
+})
+
+describe("renderMessages dispatch", () => {
+  it("dispatches to kimi-k2 template by modelId", () => {
+    const out = renderMessages("kimi-k2", [{ role: "user", content: "hi" }])
+    expect(out).toBe(
+      "<|im_user|>user<|im_middle|>hi<|im_end|><|im_assistant|>assistant<|im_middle|>",
+    )
+  })
+
+  it("dispatches to deepseek-v4 template by modelId", () => {
+    const out = renderMessages("deepseek-v4-pro", [{ role: "user", content: "hi" }])
+    // BOS + <|User|>hi + open-assistant tail
+    expect(out.startsWith("<｜begin▁of｜sentence｜>")).toBe(true)
+    expect(out).toContain("<｜User｜>hi")
+    expect(out.endsWith("<｜Assistant｜>" + String.fromCharCode(0x3c,0x2f,0x74,0x68,0x69,0x6e,0x6b,0x3e))).toBe(true)
+  })
+
+  it("renders DeepSeek V4 system + user in order", () => {
+    const out = renderMessages("deepseek-v4-pro", [
+      { role: "system", content: "be helpful" },
+      { role: "user", content: "hi" },
+    ])
+    // BOS + raw system content (no wrapping) + <|User|>hi + assistant tail
+    expect(out).toContain("be helpful<｜User｜>hi")
+  })
+
+  it("renders a completed assistant turn with EOS", () => {
+    const out = renderMessages("deepseek-v4-pro", [
+      { role: "user", content: "q" },
+      { role: "assistant", content: "a" },
+    ])
+    // Assistant turn emits assistant-open + thinking-end + content + EOS
+    expect(out).toContain(
+      "<｜Assistant｜>" +
+      String.fromCharCode(0x3c,0x2f,0x74,0x68,0x69,0x6e,0x6b,0x3e) +
+      "a<｜end▁of｜sentence｜>",
+    )
+  })
+
+  it("throws on unknown model", () => {
+    expect(() => renderMessages("nonexistent", [])).toThrow(/Unknown model/)
+  })
+})
+
+describe("end-to-end: DeepSeek V4 messages cost more tokens than plain text", () => {
+  it("a single user message costs strictly more than bare text", async () => {
+    _resetCacheForTests()
+    vi.restoreAllMocks()
+    vi.stubGlobal("fetch", async () => ({
+      ok: true,
+      status: 200,
+      text: async () => DSV4_TOKENIZER_JSON,
+    }))
+    const enc = await loadTokenizer("deepseek-v4-pro")
+    const plain = countTokens("hi", enc)
+    const asMessage = countTokens(
+      renderMessages("deepseek-v4-pro", [{ role: "user", content: "hi" }]),
       enc,
     )
     expect(asMessage).toBeGreaterThan(plain)

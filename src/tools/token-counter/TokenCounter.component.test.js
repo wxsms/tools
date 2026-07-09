@@ -132,6 +132,8 @@ describe('TokenCounter.vue — error state', () => {
     await nextTick()
     await nextTick()
     await nextTick()
+    await nextTick()
+    await nextTick()
     expect(wrapper.text()).toContain('分词器加载失败')
     const retryBtn = wrapper.findAll('button').find((b) => b.text().includes('重试'))
     expect(retryBtn).toBeTruthy()
@@ -146,6 +148,8 @@ describe('TokenCounter.vue — error state', () => {
       return { ok: true, status: 200, text: async () => FIXTURE }
     })
     const wrapper = mount(TokenCounter)
+    await nextTick()
+    await nextTick()
     await nextTick()
     await nextTick()
     await nextTick()
