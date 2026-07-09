@@ -23,7 +23,7 @@ describe('kimi-k2 module — config shape', () => {
   it('exposes the kimi-k2 config entry with the required fields', () => {
     const cfg = kimiK2.config
     expect(cfg.id).toBe('kimi-k2')
-    expect(cfg.label).toBe('Kimi K2 (K2.7-Code)')
+    expect(cfg.label).toBe('Kimi K2.7-Code')
     expect(cfg.tokenizer.type).toBe('tiktoken')
     expect(cfg.tokenizer.file).toBe('/tokenizers/kimi-k2.tiktoken')
     expect(cfg.tokenizer.specialTokens).toBeInstanceOf(Object)

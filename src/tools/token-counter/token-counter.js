@@ -2,13 +2,13 @@
 // exports a default { config, load, renderMessages }. New models = add a
 // file + register it in MODELS below; no other edits needed here.
 
+import kimiK2_5 from './tokenizers/kimi-k2-5.js'
+import kimiK2_6 from './tokenizers/kimi-k2-6.js'
 import kimiK2 from './tokenizers/kimi-k2.js'
 import deepseekV4 from './tokenizers/deepseek-v4.js'
 import deepseekV4Flash from './tokenizers/deepseek-v4-flash.js'
-import kimiK2_5 from './tokenizers/kimi-k2-5.js'
-import kimiK2_6 from './tokenizers/kimi-k2-6.js'
 
-const MODELS = [kimiK2, deepseekV4, deepseekV4Flash, kimiK2_5, kimiK2_6]
+const MODELS = [kimiK2_5, kimiK2_6, kimiK2, deepseekV4, deepseekV4Flash]
 
 export const MODEL_CONFIGS = MODELS.map((m) => m.config)
 

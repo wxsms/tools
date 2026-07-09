@@ -105,7 +105,7 @@ async function load() {
 // the config off it.
 const KIMI_K2_CONFIG = {
   id: 'kimi-k2',
-  label: 'Kimi K2 (K2.7-Code)',
+  label: 'Kimi K2.7-Code',
   tokenizer: {
     type: 'tiktoken',
     file: '/tokenizers/kimi-k2.tiktoken',
