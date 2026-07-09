@@ -50,6 +50,50 @@ function deleteMessage(i) {
   messages.value.splice(i, 1)
 }
 
+const PREVIEW_CAP = 500
+const previewTokens = ref([]) // array of { id, piece, type }
+const overflowCount = ref(0)
+
+let debounceTimer = null
+function schedulePreview() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(rebuildPreview, 200)
+}
+
+function classifyToken(piece) {
+  if (/^\s+$/.test(piece)) return 'whitespace'
+  if (/^<\|.*\|>$/.test(piece)) return 'special'
+  if (/^\d+$/.test(piece)) return 'numeric'
+  return 'normal'
+}
+
+function whitespaceDisplay(s) {
+  return s
+    .replace(/ /g, '·')
+    .replace(/\n/g, '⏎')
+    .replace(/\t/g, '\\t')
+}
+
+function rebuildPreview() {
+  previewTokens.value = []
+  overflowCount.value = 0
+  if (!encoderReady.value || !encoder) return
+  const source = mode.value === 'plain' ? text.value : renderKimiMessages(messages.value)
+  if (!source) return
+  const ids = encoder.encode(source, [], [])
+  overflowCount.value = Math.max(0, ids.length - PREVIEW_CAP)
+  const shown = ids.slice(0, PREVIEW_CAP)
+  previewTokens.value = shown.map((id) => {
+    // js-tiktoken 1.0.21 Tiktoken has no decode_single_token_bytes; decode([id])
+    // returns the piece as a UTF-8 string directly (see chunk-VL2OQCWN.js:135).
+    const piece = encoder.decode([id])
+    return { id, piece, type: classifyToken(piece) }
+  })
+}
+
+watch([text, messages, mode, encoderReady], schedulePreview, { deep: true })
+onMounted(schedulePreview)
+
 const tokenCount = computed(() => {
   if (!encoderReady.value || !encoder) return 0
   if (mode.value === 'plain') return countTokens(text.value, encoder)
@@ -197,6 +241,37 @@ watch(activeModelId, () => {
           <div class="text-sm opacity-70">
             字符: {{ charCount }}
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-200">
+      <div class="card-body">
+        <h2 class="card-title text-lg">
+          Token 预览
+        </h2>
+        <div class="flex flex-wrap gap-1">
+          <span
+            v-for="(t, i) in previewTokens"
+            :key="i"
+            data-testid="token-chip"
+            class="px-1 py-0.5 rounded text-xs font-mono cursor-help"
+            :class="{
+              'bg-blue-200/40 text-blue-900': t.type === 'normal',
+              'bg-orange-200/60 text-orange-900': t.type === 'special',
+              'bg-gray-300/50 text-gray-700': t.type === 'whitespace',
+              'bg-green-200/40 text-green-900': t.type === 'numeric',
+            }"
+            :title="`rank: ${t.id}, bytes: ${t.piece.length}`"
+          >
+            {{ t.type === 'whitespace' ? whitespaceDisplay(t.piece) : t.piece }}
+          </span>
+        </div>
+        <div
+          v-if="overflowCount > 0"
+          class="text-sm opacity-70 mt-2"
+        >
+          ... 还有 {{ overflowCount }} 个 token 未显示
         </div>
       </div>
     </div>

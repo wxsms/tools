@@ -95,3 +95,28 @@ describe('TokenCounter.vue — messages mode', () => {
     expect(wrapper.findAll('textarea').length).toBe(before - 1)
   })
 })
+
+describe('TokenCounter.vue — preview', () => {
+  it('renders colored chips for each token, capped at 500', async () => {
+    const wrapper = await mountLoaded()
+    await nextTick()
+    const textarea = wrapper.find('textarea')
+    await textarea.setValue('hello world this is a test')
+    // rebuildPreview is debounced on a 200ms real timer (per spec); flush it
+    // with a real-time wait, mirroring the overflow test below.
+    await new Promise((r) => setTimeout(r, 250))
+    await nextTick()
+    const chips = wrapper.findAll('[data-testid="token-chip"]')
+    expect(chips.length).toBeGreaterThan(0)
+    expect(chips.length).toBeLessThanOrEqual(500)
+  })
+
+  it('shows an overflow note when tokens exceed 500', async () => {
+    const wrapper = await mountLoaded()
+    const longText = 'hello '.repeat(1000)
+    await wrapper.find('textarea').setValue(longText)
+    await new Promise((r) => setTimeout(r, 250))
+    await nextTick()
+    expect(wrapper.text()).toMatch(/还有 \d+ 个 token 未显示/)
+  })
+})
