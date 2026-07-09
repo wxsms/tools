@@ -2,7 +2,7 @@ import { Tiktoken } from 'js-tiktoken'
 
 // Special-token IDs copied from Kimi K2.7-Code tokenizer_config.json
 // (added_tokens_decoder — full set; see spec for the verified subset).
-const KIMI_K2_SPECIAL_TOKENS = {
+export const KIMI_K2_SPECIAL_TOKENS = {
   '<|im_end|>': 163586,
   '<|im_user|>': 163587,
   '<|im_assistant|>': 163588,
