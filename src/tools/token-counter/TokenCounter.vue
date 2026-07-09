@@ -9,7 +9,12 @@ import {
 
 const mode = ref('plain') // 'plain' | 'messages'
 const activeModelId = ref(MODEL_CONFIGS[0].id)
-const text = ref('')
+const DEFAULT_PLAIN_TEXT =
+  'Token 计数器用来估算提示词的 token 数量。\n' +
+  'Kimi K2 uses a 128k ChatML-style BPE vocabulary, so 中英混合的文本也能正确分词。\n' +
+  'Try editing this text or switching to Messages mode 验证对话模板的开销。'
+
+const text = ref(DEFAULT_PLAIN_TEXT)
 const loading = ref(false)
 const error = ref(null)
 const encoderReady = ref(false)
@@ -54,13 +59,29 @@ function clearAll() {
   text.value = ''
   messages.value =
     mode.value === 'messages' ? [{ role: 'system', content: '' }] : []
+  previewTokens.value = []
+  overflowCount.value = 0
 }
+
+const DEFAULT_MESSAGES = [
+  {
+    role: 'system',
+    content:
+      '你是一个双语助手 / You are a bilingual assistant. 用简洁的中文或英文回答问题。',
+  },
+  {
+    role: 'user',
+    content:
+      '请用一句话总结这句话 / Summarize this sentence in one line:\n' +
+      '"Token 计数器 helps estimate prompt cost before sending to an LLM API."',
+  },
+]
 
 const messages = ref([])
 
 function ensureMessagesSeed() {
   if (mode.value === 'messages' && messages.value.length === 0) {
-    messages.value = [{ role: 'system', content: '' }]
+    messages.value = DEFAULT_MESSAGES.map((m) => ({ ...m }))
   }
 }
 
