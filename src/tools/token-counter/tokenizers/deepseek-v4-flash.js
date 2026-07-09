@@ -1,4 +1,6 @@
-import { load, renderMessages } from './deepseek-v4.js'
+import deepseekV4 from './deepseek-v4.js'
+
+const { load, renderMessages } = deepseekV4
 
 // DeepSeek V4 Flash (https://modelscope.cn/models/deepseek-ai/DeepSeek-V4-Flash)
 // shares the V4 Pro tokenizer byte-for-byte — the repo ships only safetensors
