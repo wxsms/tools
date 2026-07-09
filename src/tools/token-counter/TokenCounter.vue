@@ -107,7 +107,9 @@ function schedulePreview() {
 
 function classifyToken(piece) {
   if (/^\s+$/.test(piece)) return 'whitespace'
-  if (/^<\|.*\|>$/.test(piece)) return 'special'
+  // Special-token envelope: <...> with either regular "|" (U+007C, Kimi K2
+  // style) or fullwidth "｜" (U+FF5C, DeepSeek V4 style) at the boundaries.
+  if (/^<[|\uff5c].*[|\uff5c]>$/.test(piece)) return 'special'
   if (/^\d+$/.test(piece)) return 'numeric'
   return 'normal'
 }
