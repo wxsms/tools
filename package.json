@@ -30,6 +30,7 @@
     "codemirror": "^6.0.2",
     "diff": "^9.0.0",
     "html-to-image": "^1.11.13",
+    "js-tiktoken": "^1.0.14",
     "marked": "^18.0.5",
     "qrcode": "^1.5.4",
     "vue": "^3.5.35",
