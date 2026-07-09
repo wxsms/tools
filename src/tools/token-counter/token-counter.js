@@ -4,8 +4,9 @@
 
 import kimiK2 from './tokenizers/kimi-k2.js'
 import deepseekV4 from './tokenizers/deepseek-v4.js'
+import deepseekV4Flash from './tokenizers/deepseek-v4-flash.js'
 
-const MODELS = [kimiK2, deepseekV4]
+const MODELS = [kimiK2, deepseekV4, deepseekV4Flash]
 
 export const MODEL_CONFIGS = MODELS.map((m) => m.config)
 
