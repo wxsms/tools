@@ -64,6 +64,21 @@ export function renderMessages(modelId, messages) {
   return mod.renderMessages(messages)
 }
 
+// Per-id piece list for the preview. Prefers the adapter's `tokens(source)`
+// (which returns the real per-token strings the tokenizer emits) when
+// available — used by GLM-5.2 / DeepSeek (HF `tokenizers` backend) so the
+// chip count matches the token count exactly. Falls back to a per-id
+// `decodeId` loop for adapters that don't implement `tokens()` (Kimi K2 uses
+// `js-tiktoken` which exposes no such field).
+export function tokenPieces(adapter, source) {
+  if (adapter && typeof adapter.tokens === 'function') {
+    const pieces = adapter.tokens(source)
+    return pieces.map((piece, i) => ({ id: i, piece }))
+  }
+  const ids = adapter.encode(source)
+  return ids.map((id) => ({ id, piece: adapter.decodeId(id) }))
+}
+
 // Back-compat: existing tests import renderKimiMessages directly. Re-export
 // from the per-model module so they keep working.
 export { renderKimiMessages } from './tokenizers/kimi-k2.js'

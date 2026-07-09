@@ -16,13 +16,31 @@ function makeAdapter(tok) {
   return {
     encode(text) {
       // add_special_tokens=true lets the encoder collapse role-tag literals
-      // (e.g. USER, built from 3c 7c 75 73 65 72 7c 3e) to their registered
-      // ids. Mirrors deepseek-v4.js.
-      const out = tok.encode(text, { add_special_tokens: true })
-      return out.ids
+      // (e.g. USER) to their registered ids. Mirrors deepseek-v4.js.
+      return tok.encode(text, { add_special_tokens: true }).ids
     },
     decodeId(id) {
-      return tok.decode([id], { skip_special_tokens: false })
+      // Decode a single id. For byte-fragment ids this returns U+FFFD, as
+      // the standalone byte is not a complete UTF-8 sequence. The preview
+      // uses `tokens()` instead, so a chip is exactly one tokenizer token.
+      const tokenStr = tok.id_to_token(id)
+      if (tokenStr === undefined) return ''
+      let bytes = ''
+      for (const c of tokenStr) bytes += String.fromCharCode(c.charCodeAt(0) & 0xff)
+      try {
+        return decodeURIComponent(escape(bytes))
+      } catch {
+        return '\uFFFD'
+      }
+    },
+    // Returns the tokenizer's per-id strings as emitted by HF's encode()
+    // (the "tokens" field). Each entry is one real token; the preview shows
+    // one chip per entry. Byte-fragment tokens (e.g. `Ġè®` for a 3-byte CJK
+    // split) keep their byte-level form. This is the tokenizer's own
+    // ground-truth representation — no merging or guessing.
+    tokens(text) {
+      const out = tok.encode(text, { add_special_tokens: true })
+      return out.tokens
     },
   }
 }

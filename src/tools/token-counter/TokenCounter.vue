@@ -5,6 +5,7 @@ import {
   loadTokenizer,
   countTokens,
   renderMessages,
+  tokenPieces,
 } from './token-counter.js'
 
 const mode = ref('plain') // 'plain' | 'messages'
@@ -127,13 +128,14 @@ function rebuildPreview() {
   if (!encoderReady.value || !encoder) return
   const source = mode.value === 'plain' ? text.value : renderMessages(activeModelId.value, messages.value)
   if (!source) return
-  const ids = encoder.encode(source)
-  overflowCount.value = Math.max(0, ids.length - PREVIEW_CAP)
-  const shown = ids.slice(0, PREVIEW_CAP)
-  previewTokens.value = shown.map((id) => {
-    const piece = encoder.decodeId(id)
-    return { id, piece, type: classifyToken(piece) }
-  })
+  const pieces = tokenPieces(encoder, source)
+  overflowCount.value = Math.max(0, pieces.length - PREVIEW_CAP)
+  const shown = pieces.slice(0, PREVIEW_CAP)
+  previewTokens.value = shown.map(({ id, piece }) => ({
+    id,
+    piece,
+    type: classifyToken(piece),
+  }))
 }
 
 watch([text, messages, mode, encoderReady], schedulePreview, { deep: true })

@@ -66,6 +66,20 @@ describe('glm-5-2 module — load() adapter (mini fixture)', () => {
     const adapter = await glm5_2.load()
     expect(adapter.decodeId(1)).toBe(USER)
   })
+
+  it('masks byte-fragment ids that do not round-trip via HF decode', async () => {
+    // The mini fixture encodes 'x' (0x78) at vocab id 24; that's a valid
+    // single-byte ASCII and decodes to 'x', not U+FFFD — so this also guards
+    // that the masking branch leaves valid decodes alone. The real GLM file
+    // has Latin-1 byte-fragment ids (e.g. 94) that do produce U+FFFD; those
+    // are covered by the integration test in token-counter.test.js.
+    stubFixture()
+    const adapter = await glm5_2.load()
+    // 'h' is in the mini vocab (id 7) — round-trip must succeed, no U+FFFD.
+    const decoded = adapter.decodeId(7)
+    expect(decoded).toBe('h')
+    expect(decoded).not.toContain('\uFFFD')
+  })
 })
 
 describe('glm-5-2 module — renderMessages (instant-mode template)', () => {

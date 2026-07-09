@@ -216,6 +216,14 @@ describe('end-to-end: GLM-5.2 with the real tokenizer file', () => {
     expect(enc.encode(USER).length).toBe(1)
   })
 
+  it('decodeId returns U+FFFD for standalone byte-fragment ids', () => {
+    // GLM-5.2's BPE splits CJK chars across multiple byte-level ids; an id
+    // like 94 (one byte of a UTF-8 sequence) by itself is invalid UTF-8, so
+    // decodeId returns U+FFFD. The preview uses `tokens()` for the chips
+    // directly, so this is purely informational.
+    expect(enc.decodeId(94)).toBe('\uFFFD')
+  })
+
   it('a single user "hi" costs strictly more as a message than as bare text', () => {
     const plain = countTokens('hi', enc)
     const asMessage = countTokens(
