@@ -239,15 +239,22 @@ function renderKimiMessages(messages) {
 // encoding/encoding_dsv4.py render_message(). v1 drops: tools, reasoning_content,
 // latest_reminder, developer, task, response_format; only system/user/assistant
 // with plain-text content are rendered.
-const DSV4_BOS = "<｜begin▁of｜sentence｜>"
-const DSV4_EOS = "<｜end▁of｜sentence｜>"
+// DeepSeek-V4 chat-template token strings. The separators inside are:
+//   "｜"   U+FF5C (fullwidth vertical line) at the angle-bracket boundaries
+//   "▁"    U+2581 (lower-one-eighth-block, SentencePiece space marker) between words
+// Verified byte-exact against tokenizer.json added_tokens entries:
+//   id=0      <｜begin▁of▁sentence｜>     (BOS)
+//   id=1      <｜end▁of▁sentence｜>       (EOS)
+//   id=128803 <｜User｜>
+//   id=128804 <｜Assistant｜>
+//   id=128822 </think>                   (thinking-end, closes the thinking block)
+const DSV4_BOS = "<｜begin▁of▁sentence｜>"
+const DSV4_EOS = "<｜end▁of▁sentence｜>"
 const DSV4_USER = "<｜User｜>"
 const DSV4_ASSISTANT = "<｜Assistant｜>"
-
-// DeepSeek-V4 thinking-mode token strings, built via String.fromCharCode so the
-// literal angle-bracket tag bytes do not appear in source (an editor / pipeline
-// layer was rewriting them). Verified bytes from encoding_dsv4.py:
-//   thinking_end_token = 3c 2f 74 68 69 6e 6b 3e
+// Built via String.fromCharCode to keep the literal angle-bracket tag bytes
+// out of source (some editor/pipeline layer was rewriting </think> into
+// other text). Bytes: 3c 2f 74 68 69 6e 6b 3e.
 const DSV4_THINKING_END = String.fromCharCode(0x3c, 0x2f, 0x74, 0x68, 0x69, 0x6e, 0x6b, 0x3e)
 const DSV4_ASSISTANT_TAIL = DSV4_ASSISTANT + DSV4_THINKING_END
 

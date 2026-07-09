@@ -253,7 +253,7 @@ describe("renderMessages dispatch", () => {
   it("dispatches to deepseek-v4 template by modelId", () => {
     const out = renderMessages("deepseek-v4-pro", [{ role: "user", content: "hi" }])
     // BOS + <|User|>hi + open-assistant tail
-    expect(out.startsWith("<｜begin▁of｜sentence｜>")).toBe(true)
+    expect(out.startsWith("<｜begin▁of▁sentence｜>")).toBe(true)
     expect(out).toContain("<｜User｜>hi")
     expect(out.endsWith("<｜Assistant｜>" + String.fromCharCode(0x3c,0x2f,0x74,0x68,0x69,0x6e,0x6b,0x3e))).toBe(true)
   })
@@ -276,7 +276,7 @@ describe("renderMessages dispatch", () => {
     expect(out).toContain(
       "<｜Assistant｜>" +
       String.fromCharCode(0x3c,0x2f,0x74,0x68,0x69,0x6e,0x6b,0x3e) +
-      "a<｜end▁of｜sentence｜>",
+      "a<｜end▁of▁sentence｜>",
     )
   })
 

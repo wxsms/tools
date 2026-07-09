@@ -318,7 +318,10 @@ watch(activeModelId, () => {
       </div>
     </div>
 
-    <div class="card bg-base-200">
+    <div
+      v-if="!loading && !error"
+      class="card bg-base-200"
+    >
       <div class="card-body">
         <h2 class="card-title text-lg">
           Token 预览
