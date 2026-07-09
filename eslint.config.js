@@ -17,6 +17,14 @@ export default [
     },
   },
   {
+    files: ['scripts/**/*.cjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     ignores: ['dist/**', 'coverage/**'],
   },
 ]

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "minify:tokenizers": "node scripts/minify-tokenizers.cjs"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
