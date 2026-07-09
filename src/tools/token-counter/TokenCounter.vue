@@ -32,6 +32,30 @@ async function ensureLoaded() {
 
 onMounted(ensureLoaded)
 
+function retry() {
+  encoder = null
+  encoderReady.value = false
+  error.value = null
+  ensureLoaded()
+}
+
+const copied = ref(false)
+async function copyCount() {
+  try {
+    await navigator.clipboard.writeText(String(tokenCount.value))
+    copied.value = true
+    setTimeout(() => (copied.value = false), 1500)
+  } catch {
+    // silent — matches Base64.vue pattern
+  }
+}
+
+function clearAll() {
+  text.value = ''
+  messages.value =
+    mode.value === 'messages' ? [{ role: 'system', content: '' }] : []
+}
+
 const messages = ref([])
 
 function ensureMessagesSeed() {
@@ -229,13 +253,35 @@ watch(activeModelId, () => {
         </div>
         <div
           v-else-if="error"
-          class="alert alert-error"
+          class="alert alert-error flex flex-col items-start"
         >
-          分词器加载失败:{{ error }}
+          <span>分词器加载失败:{{ error }}</span>
+          <button
+            class="btn btn-sm btn-ghost mt-1"
+            @click="retry"
+          >
+            重试
+          </button>
         </div>
         <div v-else>
-          <div class="text-2xl font-bold text-primary">
-            Token 数: {{ tokenCount }}
+          <div class="flex items-center justify-between">
+            <div class="text-2xl font-bold text-primary">
+              Token 数: {{ tokenCount }}
+            </div>
+            <div class="flex gap-1">
+              <button
+                class="btn btn-ghost btn-xs"
+                @click="copyCount"
+              >
+                {{ copied ? '已复制' : '复制' }}
+              </button>
+              <button
+                class="btn btn-ghost btn-xs"
+                @click="clearAll"
+              >
+                清空
+              </button>
+            </div>
           </div>
           <div class="divider my-1" />
           <div class="text-sm opacity-70">

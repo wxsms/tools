@@ -120,3 +120,40 @@ describe('TokenCounter.vue — preview', () => {
     expect(wrapper.text()).toMatch(/还有 \d+ 个 token 未显示/)
   })
 })
+
+describe('TokenCounter.vue — error state', () => {
+  it('shows error text and a retry button when fetch fails', async () => {
+    _resetCacheForTests()
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('boom')
+    })
+    const wrapper = mount(TokenCounter)
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    expect(wrapper.text()).toContain('分词器加载失败')
+    const retryBtn = wrapper.findAll('button').find((b) => b.text().includes('重试'))
+    expect(retryBtn).toBeTruthy()
+  })
+
+  it('retry re-invokes loadTokenizer and clears error on success', async () => {
+    _resetCacheForTests()
+    let attempt = 0
+    vi.stubGlobal('fetch', async () => {
+      attempt++
+      if (attempt === 1) throw new Error('boom')
+      return { ok: true, status: 200, text: async () => FIXTURE }
+    })
+    const wrapper = mount(TokenCounter)
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    await nextTick()
+    const retryBtn = wrapper.findAll('button').find((b) => b.text().includes('重试'))
+    await retryBtn.trigger('click')
+    await nextTick()
+    await nextTick()
+    expect(wrapper.text()).not.toContain('分词器加载失败')
+  })
+})
