@@ -1,6 +1,11 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
-import { MODEL_CONFIGS, loadTokenizer, countTokens } from './token-counter.js'
+import {
+  MODEL_CONFIGS,
+  loadTokenizer,
+  countTokens,
+  renderKimiMessages,
+} from './token-counter.js'
 
 const mode = ref('plain') // 'plain' | 'messages'
 const activeModelId = ref(MODEL_CONFIGS[0].id)
@@ -27,13 +32,34 @@ async function ensureLoaded() {
 
 onMounted(ensureLoaded)
 
+const messages = ref([])
+
+function ensureMessagesSeed() {
+  if (mode.value === 'messages' && messages.value.length === 0) {
+    messages.value = [{ role: 'system', content: '' }]
+  }
+}
+
+watch(mode, ensureMessagesSeed, { immediate: true })
+
+function addMessage() {
+  messages.value.push({ role: 'user', content: '' })
+}
+
+function deleteMessage(i) {
+  messages.value.splice(i, 1)
+}
+
 const tokenCount = computed(() => {
   if (!encoderReady.value || !encoder) return 0
-  if (mode.value !== 'plain') return 0
-  return countTokens(text.value, encoder)
+  if (mode.value === 'plain') return countTokens(text.value, encoder)
+  return countTokens(renderKimiMessages(messages.value), encoder)
 })
 
-const charCount = computed(() => text.value.length)
+const charCount = computed(() => {
+  if (mode.value === 'plain') return text.value.length
+  return messages.value.reduce((n, m) => n + (m.content?.length || 0), 0)
+})
 
 watch(activeModelId, () => {
   encoder = null
@@ -88,6 +114,64 @@ watch(activeModelId, () => {
         rows="10"
         placeholder="输入文本..."
       />
+
+      <div
+        v-else
+        class="flex flex-col gap-2"
+      >
+        <div
+          v-for="(msg, i) in messages"
+          :key="i"
+          class="flex gap-2 items-start"
+        >
+          <select
+            v-model="msg.role"
+            class="select select-bordered select-sm w-32"
+          >
+            <option value="system">
+              system
+            </option>
+            <option value="user">
+              user
+            </option>
+            <option value="assistant">
+              assistant
+            </option>
+          </select>
+          <textarea
+            v-model="msg.content"
+            class="textarea textarea-bordered w-full font-mono text-sm"
+            rows="2"
+            placeholder="消息内容..."
+          />
+          <button
+            class="btn btn-ghost btn-sm btn-square"
+            title="删除"
+            @click="deleteMessage(i)"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <button
+          class="btn btn-sm btn-ghost w-fit"
+          @click="addMessage"
+        >
+          + 添加消息
+        </button>
+      </div>
     </div>
 
     <div class="card bg-base-200 mb-4">
