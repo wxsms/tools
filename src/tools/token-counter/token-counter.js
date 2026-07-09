@@ -96,3 +96,37 @@ export async function loadTokenizer(modelId) {
 export function getEncoder(modelId) {
   return encoderCache.get(modelId) ?? null
 }
+
+export function countTokens(text, encoder) {
+  if (!encoder) return 0
+  // js-tiktoken's default disallowedSpecial='all' THROWS when text contains
+  // special-token substrings (e.g. <|im_end|> embedded in the rendered ChatML
+  // envelope). We want such substrings counted as their constituent byte-tokens,
+  // not collapsed to one special id and not thrown on. Passing an empty
+  // disallowedSpecial set disables the throw; since they're also not in
+  // allowedSpecial, the encoder falls back to byte-BPE-encoding them.
+  return encoder.encode(text, [], []).length
+}
+
+const ROLE_OPEN_TOKEN = {
+  user: '<|im_user|>',
+  assistant: '<|im_assistant|>',
+  system: '<|im_system|>',
+}
+const MIDDLE = '<|im_middle|>'
+const END = '<|im_end|>'
+const ASSISTANT_TAIL = '<|im_assistant|>assistant<|im_middle|>'
+
+export function renderKimiMessages(messages) {
+  let out = ''
+  for (const msg of messages) {
+    const open = ROLE_OPEN_TOKEN[msg.role]
+    if (!open) {
+      throw new Error(`Unknown role: ${msg.role}`)
+    }
+    const name = msg.name || msg.role
+    out += open + name + MIDDLE + msg.content + END
+  }
+  out += ASSISTANT_TAIL
+  return out
+}

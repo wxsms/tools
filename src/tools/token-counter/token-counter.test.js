@@ -3,6 +3,8 @@ import {
   MODEL_CONFIGS,
   loadTokenizer,
   getEncoder,
+  countTokens,
+  renderKimiMessages,
   _resetCacheForTests,
 } from './token-counter.js'
 import { readFileSync } from 'node:fs'
@@ -100,5 +102,81 @@ describe('loadTokenizer', () => {
     vi.stubGlobal('fetch', fn)
     const enc = await loadTokenizer('kimi-k2')
     expect(getEncoder('kimi-k2')).toBe(enc)
+  })
+})
+
+describe('countTokens', () => {
+  let enc
+  beforeEach(async () => {
+    _resetCacheForTests()
+    vi.restoreAllMocks()
+    const { fn } = stubFetch()
+    vi.stubGlobal('fetch', fn)
+    enc = await loadTokenizer('kimi-k2')
+  })
+
+  it('returns 0 for the empty string', () => {
+    expect(countTokens('', enc)).toBe(0)
+  })
+
+  it('returns a positive count for non-empty text', () => {
+    expect(countTokens('hello world', enc)).toBeGreaterThan(0)
+  })
+
+  it('counts more tokens for longer text', () => {
+    const small = countTokens('hello', enc)
+    const large = countTokens('hello '.repeat(50), enc)
+    expect(large).toBeGreaterThan(small)
+  })
+})
+
+describe('renderKimiMessages', () => {
+  it('renders a single user message with the full ChatML envelope', () => {
+    expect(renderKimiMessages([{ role: 'user', content: 'hi' }])).toBe(
+      '<|im_user|>user<|im_middle|>hi<|im_end|><|im_assistant|>assistant<|im_middle|>',
+    )
+  })
+
+  it('renders system + user in order', () => {
+    expect(
+      renderKimiMessages([
+        { role: 'system', content: 'be helpful' },
+        { role: 'user', content: 'hi' },
+      ]),
+    ).toBe(
+      '<|im_system|>system<|im_middle|>be helpful<|im_end|>' +
+        '<|im_user|>user<|im_middle|>hi<|im_end|>' +
+        '<|im_assistant|>assistant<|im_middle|>',
+    )
+  })
+
+  it('uses an explicit name when provided', () => {
+    expect(
+      renderKimiMessages([{ role: 'user', name: 'alice', content: 'hi' }]),
+    ).toBe('<|im_user|>alice<|im_middle|>hi<|im_end|><|im_assistant|>assistant<|im_middle|>')
+  })
+
+  it('appends the open assistant tail exactly once', () => {
+    const out = renderKimiMessages([{ role: 'user', content: 'x' }])
+    const tail = '<|im_assistant|>assistant<|im_middle|>'
+    expect(out.endsWith(tail)).toBe(true)
+    expect(out.indexOf(tail)).toBe(out.length - tail.length)
+  })
+})
+
+describe('end-to-end: messages mode costs more tokens than plain text', () => {
+  it('a single user "hi" costs strictly more tokens as a message than as bare text', async () => {
+    _resetCacheForTests()
+    vi.restoreAllMocks()
+    const { fn } = stubFetch()
+    vi.stubGlobal('fetch', fn)
+    const enc = await loadTokenizer('kimi-k2')
+
+    const plain = countTokens('hi', enc)
+    const asMessage = countTokens(
+      renderKimiMessages([{ role: 'user', content: 'hi' }]),
+      enc,
+    )
+    expect(asMessage).toBeGreaterThan(plain)
   })
 })
