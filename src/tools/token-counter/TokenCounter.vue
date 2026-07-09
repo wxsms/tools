@@ -106,6 +106,18 @@ function schedulePreview() {
   debounceTimer = setTimeout(rebuildPreview, 200)
 }
 
+// When the encoder (re)loads, clear stale chips immediately and skip the
+// debounce so the preview doesn't briefly show the previous model's tokens.
+watch(encoderReady, (ready) => {
+  if (!ready) {
+    previewTokens.value = []
+    overflowCount.value = 0
+  } else {
+    clearTimeout(debounceTimer)
+    rebuildPreview()
+  }
+})
+
 function classifyToken(piece) {
   if (/^\s+$/.test(piece)) return 'whitespace'
   // Special-token envelope: <...> with either regular "|" (U+007C, Kimi K2
@@ -138,7 +150,7 @@ function rebuildPreview() {
   }))
 }
 
-watch([text, messages, mode, encoderReady], schedulePreview, { deep: true })
+watch([text, messages, mode], schedulePreview, { deep: true })
 onMounted(schedulePreview)
 
 const tokenCount = computed(() => {
