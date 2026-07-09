@@ -56,14 +56,16 @@ export const MODEL_CONFIGS = [
 //   encode(text) → number[]         raw token IDs for `text`
 //   decodeId(id) → string           decode a single token's bytes back to text
 //
-function makeTiktokenAdapter(enc) {
+function makeTiktokenAdapter(enc, specialTokenNames) {
+  // allowedSpecial = the set of special-token strings the encoder is allowed to
+  // recognize and collapse to single ids (rather than byte-BPE'ing them). We
+  // pass ALL the registered specials so the rendered ChatML envelope tokens
+  // (e.g. <|im_end|>) collapse to their registered ids; ordinary text passes
+  // through byte-BPE as before. disallowedSpecial = [] disables the default
+  // throw-on-special behavior for any other special-looking substrings.
   return {
     encode(text) {
-      // js-tiktoken's default disallowedSpecial='all' throws on special-token
-      // substrings (e.g. <|im_end|> embedded in the rendered ChatML envelope).
-      // Empty allowed+disallowed sets disable both the throw and special-token
-      // collapsing, so specials are counted as their constituent byte-tokens.
-      return enc.encode(text, [], [])
+      return enc.encode(text, specialTokenNames, [])
     },
     decodeId(id) {
       // js-tiktoken 1.0.21 only exposes encode/decode on the Tiktoken class
@@ -135,7 +137,10 @@ async function loadTiktokenAdapter(config) {
     special_tokens: config.tokenizer.specialTokens,
     bpe_ranks: toCompressedBPE(text),
   })
-  return makeTiktokenAdapter(enc)
+  return makeTiktokenAdapter(
+    enc,
+    Object.keys(config.tokenizer.specialTokens || {}),
+  )
 }
 
 async function loadHfAdapter(config) {

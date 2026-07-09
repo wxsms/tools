@@ -102,6 +102,18 @@ describe('loadTokenizer', () => {
     const enc = await loadTokenizer('kimi-k2')
     expect(getEncoder('kimi-k2')).toBe(enc)
   })
+  it('collapses registered special-token strings to single ids', async () => {
+    const { fn } = stubFetch()
+    vi.stubGlobal('fetch', fn)
+    const enc = await loadTokenizer('kimi-k2')
+    // <|im_end|> is registered as id 163586. With allowedSpecial=list, the
+    // adapter should collapse the literal to a single id rather than byte-BPE.
+    expect(enc.encode('<|im_end|>')).toEqual([163586])
+    expect(enc.encode('<|im_user|>')).toEqual([163587])
+    expect(enc.encode('<|im_system|>')).toEqual([163594])
+    // Ordinary text still byte-BPEs to multiple ids.
+    expect(enc.encode('hello').length).toBeGreaterThan(1)
+  })
 })
 
 describe('countTokens', () => {
