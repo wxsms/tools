@@ -129,6 +129,14 @@ const charCount = computed(() => {
   return messages.value.reduce((n, m) => n + (m.content?.length || 0), 0)
 })
 
+// UTF-8 byte length — distinct from char count for non-ASCII text (spec §Result area).
+const sourceText = computed(() =>
+  mode.value === 'plain' ? text.value : renderKimiMessages(messages.value),
+)
+const byteCount = computed(() =>
+  new TextEncoder().encode(sourceText.value).length,
+)
+
 watch(activeModelId, () => {
   encoder = null
   encoderReady.value = false
@@ -285,7 +293,7 @@ watch(activeModelId, () => {
           </div>
           <div class="divider my-1" />
           <div class="text-sm opacity-70">
-            字符: {{ charCount }}
+            字符: {{ charCount }} · 字节: {{ byteCount }}
           </div>
         </div>
       </div>
