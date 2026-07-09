@@ -4,7 +4,7 @@
 // the getEncoder sync accessor, countTokens, renderMessages(modelId, ...)
 // dispatch, and the end-to-end "messages cost more than bare text" invariant.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest'
 import {
   MODEL_CONFIGS,
   loadTokenizer,
@@ -53,6 +53,7 @@ describe('MODEL_CONFIGS (orchestrator)', () => {
       'kimi-k2',
       'deepseek-v4-pro',
       'deepseek-v4-flash',
+      'glm-5-2',
     ])
   })
 })
@@ -186,6 +187,39 @@ describe('end-to-end: messages cost more tokens than plain text', () => {
     const plain = countTokens('hi', enc)
     const asMessage = countTokens(
       renderMessages('deepseek-v4-pro', [{ role: 'user', content: 'hi' }]),
+      enc,
+    )
+    expect(asMessage).toBeGreaterThan(plain)
+  })
+})
+
+describe('end-to-end: GLM-5.2 with the real tokenizer file', () => {
+  let enc
+  beforeAll(async () => {
+    _resetCacheForTests()
+    vi.restoreAllMocks()
+    const GLM_JSON = readFileSync(
+      path.join(__dirname, '../../../public/tokenizers/glm-5-2.json'),
+      'utf8',
+    )
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      status: 200,
+      text: async () => GLM_JSON,
+    }))
+    enc = await loadTokenizer('glm-5-2')
+  })
+
+  it('collapses the real user-tag to a single id', () => {
+    const LT = String.fromCharCode(0x3c), GT = String.fromCharCode(0x3e), PIPE = String.fromCharCode(0x7c)
+    const USER = LT + PIPE + 'user' + PIPE + GT
+    expect(enc.encode(USER).length).toBe(1)
+  })
+
+  it('a single user "hi" costs strictly more as a message than as bare text', () => {
+    const plain = countTokens('hi', enc)
+    const asMessage = countTokens(
+      renderMessages('glm-5-2', [{ role: 'user', content: 'hi' }]),
       enc,
     )
     expect(asMessage).toBeGreaterThan(plain)
