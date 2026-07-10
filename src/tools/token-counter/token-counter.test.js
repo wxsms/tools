@@ -48,6 +48,7 @@ describe('MODEL_CONFIGS (orchestrator)', () => {
   it('aggregates all model config entries', () => {
     const ids = MODEL_CONFIGS.map((m) => m.id)
     expect(ids).toEqual([
+      'gpt-3.5-turbo',
       'gpt-4',
       'gpt-4o',
       'kimi-k2-5',

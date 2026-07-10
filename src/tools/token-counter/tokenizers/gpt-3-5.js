@@ -1,12 +1,12 @@
 import { getEncoding } from 'js-tiktoken'
 
-// GPT-4 / GPT-4-turbo use the cl100k_base BPE vocabulary (shared with
-// GPT-3.5-turbo / text-embedding-3-*). The ChatML envelope tokens
-// <|im_start|> / <|im_end|> are NOT registered specials in cl100k_base
-// itself (they encode to 6 byte-BPE ids each); we register them via
-// getEncoding's extendSpecialTokens at the official ids the OpenAI API
+// GPT-3.5-turbo uses the cl100k_base BPE vocabulary (shared with GPT-4 /
+// GPT-4-turbo / text-embedding-3-*, which have their own entry). The ChatML
+// envelope tokens <|im_start|> / <|im_end|> are NOT registered specials in
+// cl100k_base itself (they encode to 6 byte-BPE ids each); we register them
+// via getEncoding's extendSpecialTokens at the official ids the OpenAI API
 // uses (100264 / 100265), so the envelope collapses to single tokens —
-// matching what the API actually counts (cookbook GPT-4 rules: +3 per
+// matching what the API actually counts (cookbook GPT-3.5/4 rules: +3 per
 // message, +1 if name, +3 priming at end).
 const CHATML_SPECIAL_TOKENS = {
   '<|im_start|>': 100264,
@@ -70,17 +70,17 @@ async function load() {
   return makeAdapter(enc, Object.keys(CHATML_SPECIAL_TOKENS))
 }
 
-const GPT_4_CONFIG = {
-  id: 'gpt-4',
-  label: 'GPT-4',
+const GPT_3_5_CONFIG = {
+  id: 'gpt-3.5-turbo',
+  label: 'GPT-3.5',
   tokenizer: {
     type: 'tiktoken-builtin',
   },
-  chatTemplate: 'gpt-4-chatml',
+  chatTemplate: 'gpt-3.5-chatml',
 }
 
 export default {
-  config: GPT_4_CONFIG,
+  config: GPT_3_5_CONFIG,
   load,
   renderMessages,
 }

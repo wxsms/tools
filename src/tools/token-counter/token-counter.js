@@ -2,6 +2,7 @@
 // exports a default { config, load, renderMessages }. New models = add a
 // file + register it in MODELS below; no other edits needed here.
 
+import gpt3_5 from './tokenizers/gpt-3-5.js'
 import gpt4 from './tokenizers/gpt-4.js'
 import gpt4o from './tokenizers/gpt-4o.js'
 import kimiK2_5 from './tokenizers/kimi-k2-5.js'
@@ -11,7 +12,7 @@ import deepseekV4 from './tokenizers/deepseek-v4.js'
 import deepseekV4Flash from './tokenizers/deepseek-v4-flash.js'
 import glm5_2 from './tokenizers/glm-5-2.js'
 
-const MODELS = [gpt4, gpt4o, kimiK2_5, kimiK2_6, kimiK2, deepseekV4, deepseekV4Flash, glm5_2]
+const MODELS = [gpt3_5, gpt4, gpt4o, kimiK2_5, kimiK2_6, kimiK2, deepseekV4, deepseekV4Flash, glm5_2]
 
 export const MODEL_CONFIGS = MODELS.map((m) => m.config)
 
