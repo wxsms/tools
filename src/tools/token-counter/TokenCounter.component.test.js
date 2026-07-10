@@ -122,6 +122,9 @@ describe('TokenCounter.vue — preview', () => {
 })
 
 describe('TokenCounter.vue — error state', () => {
+  // GPT-3.5 is the default model and loads without fetching, so to exercise
+  // the fetch-failure path we switch the dropdown to a fetch-based model
+  // (kimi-k2-5) after mount; the activeModelId watch triggers its load().
   it('shows error text and a retry button when fetch fails', async () => {
     _resetCacheForTests()
     vi.stubGlobal('fetch', async () => {
@@ -130,6 +133,9 @@ describe('TokenCounter.vue — error state', () => {
     const wrapper = mount(TokenCounter)
     await nextTick()
     await nextTick()
+    // Switch to a fetch-based model to trigger the failing fetch.
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('kimi-k2-5')
     await nextTick()
     await nextTick()
     await nextTick()
@@ -150,6 +156,8 @@ describe('TokenCounter.vue — error state', () => {
     const wrapper = mount(TokenCounter)
     await nextTick()
     await nextTick()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('kimi-k2-5')
     await nextTick()
     await nextTick()
     await nextTick()
