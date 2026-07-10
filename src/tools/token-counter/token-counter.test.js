@@ -49,6 +49,7 @@ describe('MODEL_CONFIGS (orchestrator)', () => {
     const ids = MODEL_CONFIGS.map((m) => m.id)
     expect(ids).toEqual([
       'gpt-4o',
+      'gpt-4',
       'kimi-k2-5',
       'kimi-k2-6',
       'kimi-k2',
