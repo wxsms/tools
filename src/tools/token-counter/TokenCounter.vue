@@ -342,6 +342,11 @@ watch(activeModelId, () => {
         <h2 class="card-title text-lg">
           Token 预览
         </h2>
+        <p class="text-xs opacity-60 -mt-1">
+          部分模型(GPT / Kimi 等基于字节 BPE 的分词器)会把一个多字节字符切到相邻 token 上,
+          此时单个 token 单独解码会显示为 <span class="font-mono">�</span> ——
+          这是预期行为,不影响Token 总数。
+        </p>
         <div class="flex flex-wrap gap-1">
           <span
             v-for="(t, i) in previewTokens"
