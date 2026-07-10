@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
+import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 import {
   MODEL_CONFIGS,
   loadTokenizer,
@@ -348,20 +349,7 @@ watch(activeModelId, () => {
             data-testid="preview-tip"
             data-tip="部分模型(GPT / Kimi 等基于字节 BPE 的分词器)会把一个多字节字符切到相邻 token 上，单个 token 单独解码会显示为 � —— 这是预期行为，不影响 Token 总数。"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 opacity-60 cursor-help"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M11 17a1 1 0 1 1 2 0 1 1 0 0 1-2 0m0-4V9.5a1 1 0 0 1 1-1 1 1 0 0 1 1 1m-9 3.5a9 9 0 1 1 18 0 9 9 0 0 1-18 0"
-              />
-            </svg>
+            <InformationCircleIcon class="h-4 w-4 opacity-60 cursor-help" />
           </span>
         </div>
         <div class="flex flex-wrap gap-1">
