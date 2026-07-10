@@ -149,15 +149,15 @@
                   <td class="px-3 py-0.5 whitespace-pre-wrap break-all">
                     <span
                       v-if="item.type === 'add'"
-                      class="text-success"
+                      class="text-success inline-block w-4 select-none"
                     >+</span>
                     <span
                       v-else-if="item.type === 'delete'"
-                      class="text-error"
+                      class="text-error inline-block w-4 select-none"
                     >-</span>
                     <span
                       v-else
-                      class="text-base-content/30"
+                      class="inline-block w-4"
                     />
                     <template v-if="item.segments">
                       <span
