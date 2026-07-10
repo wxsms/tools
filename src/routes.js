@@ -38,4 +38,11 @@ export default [
   { path: '/patch-viewer', meta: { title: 'Patch 查看', description: '可视化查看 git diff / unified patch 文件' } },
   { path: '/cli-format', meta: { title: '命令行格式转换', description: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义' } },
   { path: '/kv-cache', meta: { title: 'KV Cache 计算器', description: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数' } },
+  {
+    path: '/token-counter',
+    meta: {
+      title: 'Token 计数器',
+      description: '估算 LLM 提示词的 token 数量，支持纯文本与 messages 对话结构，可视化展示分词结果',
+    },
+  },
 ]

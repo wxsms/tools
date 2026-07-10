@@ -18,6 +18,7 @@ import {
   FingerPrintIcon,
   EyeDropperIcon,
   CalendarDaysIcon,
+  ChatBubbleBottomCenterTextIcon,
   CommandLineIcon,
   AdjustmentsHorizontalIcon,
   SignalIcon,
@@ -299,6 +300,12 @@ export const toolGroups = [
   {
     name: 'LLM',
     tools: [
+      {
+        name: 'Token 计数器',
+        path: '/token-counter',
+        desc: '估算 LLM 提示词 token 数，支持纯文本与 messages 模式，可视化分词',
+        icon: ChatBubbleBottomCenterTextIcon,
+      },
       {
         name: 'KV Cache 计算器',
         path: '/kv-cache',

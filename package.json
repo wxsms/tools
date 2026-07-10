@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "minify:tokenizers": "node scripts/minify-tokenizers.cjs"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
@@ -25,11 +26,13 @@
     "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@heroicons/vue": "^2.2.0",
+    "@huggingface/tokenizers": "^0.1.3",
     "@noble/ciphers": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "codemirror": "^6.0.2",
     "diff": "^9.0.0",
     "html-to-image": "^1.11.13",
+    "js-tiktoken": "^1.0.14",
     "marked": "^18.0.5",
     "qrcode": "^1.5.4",
     "vue": "^3.5.35",
