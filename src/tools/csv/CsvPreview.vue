@@ -99,8 +99,34 @@
               清除
             </button>
           </div>
-          <div class="opacity-70">
-            显示 {{ displayedRows.length }} 行 / 共 {{ dataRows.length }} 行
+          <div class="flex items-center gap-3">
+            <div class="dropdown dropdown-end">
+              <button
+                class="btn btn-sm gap-1"
+                @click="toggleExportMenu"
+              >
+                导出
+                <ChevronDownIcon class="w-4 h-4" />
+              </button>
+              <ul
+                v-if="showExportMenu"
+                class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow z-20 w-40"
+              >
+                <li>
+                  <button @click="doExport('json')">
+                    JSON
+                  </button>
+                </li>
+                <li>
+                  <button @click="doExport('markdown')">
+                    Markdown
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="opacity-70">
+              显示 {{ displayedRows.length }} 行 / 共 {{ dataRows.length }} 行
+            </div>
           </div>
         </div>
         <div
@@ -157,6 +183,14 @@
         </div>
       </template>
     </div>
+    <div
+      v-if="copyToast"
+      class="toast toast-top toast-center z-50"
+    >
+      <div class="alert alert-success">
+        已复制
+      </div>
+    </div>
   </div>
 </template>
 
@@ -168,8 +202,16 @@ import {
   ArrowUpTrayIcon,
   TrashIcon,
   ArrowLeftIcon,
+  ChevronDownIcon,
 } from '@heroicons/vue/24/outline'
-import { inferColumnType, columnStats, sortRows, filterRows } from './csv.js'
+import {
+  inferColumnType,
+  columnStats,
+  sortRows,
+  filterRows,
+  toJson,
+  toMarkdown,
+} from './csv.js'
 
 const input = ref('')
 const fileName = ref('')
@@ -234,6 +276,27 @@ function sortIcon(colIndex) {
 
 function clearFilters() {
   filters.value = {}
+}
+
+const showExportMenu = ref(false)
+const copyToast = ref(false)
+
+async function doExport(format) {
+  const text = format === 'json'
+    ? toJson(displayedRows.value, headers.value)
+    : toMarkdown(displayedRows.value, headers.value)
+  try {
+    await navigator.clipboard.writeText(text)
+    copyToast.value = true
+    setTimeout(() => { copyToast.value = false }, 1500)
+  } catch {
+    // clipboard 不可用，忽略
+  }
+  showExportMenu.value = false
+}
+
+function toggleExportMenu() {
+  showExportMenu.value = !showExportMenu.value
 }
 
 const ROW_HEIGHT = 36

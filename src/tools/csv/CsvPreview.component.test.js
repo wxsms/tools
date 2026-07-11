@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { nextTick } from 'vue'
 
 // 默认 mock；具体用例可覆盖
 vi.mock('papaparse', () => ({
@@ -362,5 +363,105 @@ describe('CsvPreview - sort and filter', () => {
     expect(rows[0].text()).toContain('Carol')
     expect(rows[1].text()).toContain('Alice')
     expect(rows.length).toBe(2)
+  })
+})
+
+describe('CsvPreview - export', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // stub clipboard
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  async function mountLoaded() {
+    Papa.parse.mockReturnValue({
+      data: [
+        ['name', 'age'],
+        ['Alice', '30'],
+        ['Bob', '25'],
+      ],
+      errors: [],
+    })
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('name,age\nAlice,30\nBob,25')
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+    return wrapper
+  }
+
+  it('has 导出 dropdown button', async () => {
+    const wrapper = await mountLoaded()
+    const btn = wrapper.findAll('button').find(b => b.text().includes('导出'))
+    expect(btn.exists()).toBe(true)
+  })
+
+  it('exports JSON to clipboard', async () => {
+    const wrapper = await mountLoaded()
+    // 展开 dropdown
+    const dropdownBtn = wrapper.findAll('button').find(b => b.text().includes('导出'))
+    await dropdownBtn.trigger('click')
+    await nextTick()
+    // 点击 JSON 选项
+    const jsonBtn = wrapper.findAll('button').find(b => b.text().trim() === 'JSON')
+    await jsonBtn.trigger('click')
+    await nextTick()
+    expect(navigator.clipboard.writeText).toHaveBeenCalled()
+    const calledWith = navigator.clipboard.writeText.mock.calls[0][0]
+    const parsed = JSON.parse(calledWith)
+    expect(parsed).toEqual([
+      { name: 'Alice', age: '30' },
+      { name: 'Bob', age: '25' },
+    ])
+  })
+
+  it('exports Markdown to clipboard', async () => {
+    const wrapper = await mountLoaded()
+    const dropdownBtn = wrapper.findAll('button').find(b => b.text().includes('导出'))
+    await dropdownBtn.trigger('click')
+    await nextTick()
+    const mdBtn = wrapper.findAll('button').find(b => b.text().trim() === 'Markdown')
+    await mdBtn.trigger('click')
+    await nextTick()
+    expect(navigator.clipboard.writeText).toHaveBeenCalled()
+    const calledWith = navigator.clipboard.writeText.mock.calls[0][0]
+    expect(calledWith).toContain('| name | age |')
+    expect(calledWith).toContain('| --- | --- |')
+    expect(calledWith).toContain('| Alice | 30 |')
+  })
+
+  it('exports filtered+sorted result (not original)', async () => {
+    const wrapper = await mountLoaded()
+    // 筛 name 含 'B'
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('b')
+    const dropdownBtn = wrapper.findAll('button').find(b => b.text().includes('导出'))
+    await dropdownBtn.trigger('click')
+    await nextTick()
+    const jsonBtn = wrapper.findAll('button').find(b => b.text().trim() === 'JSON')
+    await jsonBtn.trigger('click')
+    await nextTick()
+    const calledWith = navigator.clipboard.writeText.mock.calls[0][0]
+    const parsed = JSON.parse(calledWith)
+    expect(parsed).toEqual([{ name: 'Bob', age: '25' }])
+  })
+
+  it('shows 已复制 toast after export', async () => {
+    const wrapper = await mountLoaded()
+    const dropdownBtn = wrapper.findAll('button').find(b => b.text().includes('导出'))
+    await dropdownBtn.trigger('click')
+    await nextTick()
+    const jsonBtn = wrapper.findAll('button').find(b => b.text().trim() === 'JSON')
+    await jsonBtn.trigger('click')
+    await nextTick()
+    expect(wrapper.text()).toContain('已复制')
   })
 })
