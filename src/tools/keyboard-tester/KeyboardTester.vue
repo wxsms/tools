@@ -175,12 +175,12 @@ function onKeyDown(e) {
   // 让用户在这页测试键盘时按键不会触发浏览器/页面副作用。
   // 仅影响 keydown 不影响 keyup,不影响 OS 级或浏览器 chrome 快捷键
   // (如 Ctrl+W / Ctrl+N / Alt+Tab 等本就拿不到事件)。
-  e.preventDefault()
   if (e.repeat) return
   const code = e.code
   if (!code) return
   lastKey.value = `${e.key} (${code}${e.location ? ` loc=${e.location}` : ''})`
   state[code] = 'active'
+  e.preventDefault()
 }
 
 function onKeyUp(e) {
@@ -204,15 +204,16 @@ function reset() {
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', onKeyDown)
-  window.addEventListener('keyup', onKeyUp)
+  // modifier 键(尤其右 Shift)在部分浏览器/IME 组合下,window 阶段
+  // 可能拿不到事件,改用 document + capture 阶段尽早截获
+  document.addEventListener('keydown', onKeyDown, true)
+  document.addEventListener('keyup', onKeyUp, true)
   window.addEventListener('blur', onBlur)
-  kbEl.value?.focus?.()
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeyDown)
-  window.removeEventListener('keyup', onKeyUp)
+  document.removeEventListener('keydown', onKeyDown, true)
+  document.removeEventListener('keyup', onKeyUp, true)
   window.removeEventListener('blur', onBlur)
 })
 </script>
