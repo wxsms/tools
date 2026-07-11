@@ -150,6 +150,16 @@ describe('sortRows', () => {
     expect(sorted.map(r => r[0])).toEqual(['1', '3', ''])
   })
 
+  it('pushes empty values to end on descending sort too', () => {
+    const rowsWithEmpty = [
+      ['3', 'a'],
+      ['', 'b'],
+      ['1', 'c'],
+    ]
+    const sorted = sortRows(rowsWithEmpty, 0, 'desc', ['integer', 'string'])
+    expect(sorted.map(r => r[0])).toEqual(['3', '1', ''])
+  })
+
   it('sorts float column numerically (not as string)', () => {
     const fRows = [['10.5'], ['2.1'], ['100.0']]
     const sorted = sortRows(fRows, 0, 'asc', ['float'])

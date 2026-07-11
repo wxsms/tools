@@ -79,12 +79,6 @@ export function columnStats(values, type) {
 }
 
 function compareValues(a, b, type) {
-  const aEmpty = a === '' || a == null
-  const bEmpty = b === '' || b == null
-  if (aEmpty && bEmpty) return 0
-  if (aEmpty) return 1   // 空值始终排到末尾
-  if (bEmpty) return -1
-
   if (type === 'integer' || type === 'float') {
     return Number(a) - Number(b)
   }
@@ -105,7 +99,14 @@ export function sortRows(rows, columnIndex, direction, types) {
   const type = types ? types[columnIndex] : 'string'
   const sign = direction === 'asc' ? 1 : -1
   const copy = [...rows]
-  copy.sort((a, b) => sign * compareValues(a[columnIndex], b[columnIndex], type))
+  copy.sort((a, b) => {
+    const aEmpty = a[columnIndex] === '' || a[columnIndex] == null
+    const bEmpty = b[columnIndex] === '' || b[columnIndex] == null
+    if (aEmpty && bEmpty) return 0
+    if (aEmpty) return 1   // 空值始终排末尾，不受 sign 影响
+    if (bEmpty) return -1
+    return sign * compareValues(a[columnIndex], b[columnIndex], type)
+  })
   return copy
 }
 
