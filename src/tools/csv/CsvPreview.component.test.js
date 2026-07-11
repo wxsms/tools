@@ -167,19 +167,22 @@ describe('CsvPreview - table rendering', () => {
     const wrapper = await mountLoaded()
     const text = wrapper.text()
     expect(text).toContain('name')
-    expect(text).toContain('integer')
-    expect(text).toContain('float')
-    expect(text).toContain('string')
+    // 类型在筛选 input 的 placeholder 中
+    const placeholders = wrapper.findAll('.csv-filter-input').map(i => i.attributes('placeholder'))
+    expect(placeholders.join(' ')).toContain('integer')
+    expect(placeholders.join(' ')).toContain('float')
+    expect(placeholders.join(' ')).toContain('string')
   })
 
-  it('renders column stats in header row', async () => {
+  it('renders column stats in header row title attribute', async () => {
     const wrapper = await mountLoaded()
-    const text = wrapper.text()
+    const titles = wrapper.findAll('.csv-filter-input').map(i => i.attributes('title'))
+    const joined = titles.join('\n')
     // age 30, 25 → min:25 max:30
-    expect(text).toContain('25')
-    expect(text).toContain('30')
+    expect(joined).toContain('25')
+    expect(joined).toContain('30')
     // score avg = (85.5+90.2)/2 = 87.85
-    expect(text).toContain('87.85')
+    expect(joined).toContain('87.85')
   })
 
   it('renders data rows in body', async () => {

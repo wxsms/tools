@@ -138,23 +138,18 @@
             <div
               v-for="(h, i) in headers"
               :key="i"
-              class="csv-header-cell flex-1 px-2 py-1 border-b border-base-content/10 align-top cursor-pointer select-none"
+              class="csv-header-cell flex-1 min-w-0 px-2 py-1 border-b border-base-content/10 cursor-pointer select-none"
               @click="toggleSort(i)"
             >
-              <div class="font-semibold text-sm">
-                {{ h }}
-                <span class="opacity-70">{{ sortIcon(i) }}</span>
-              </div>
-              <div class="text-xs opacity-60">
-                {{ types[i] }}
-              </div>
-              <div class="text-xs opacity-50">
-                {{ formatStats(columnStatsList[i], types[i]) }}
+              <div class="flex items-center justify-between gap-1">
+                <span class="font-semibold text-sm truncate">{{ h }}</span>
+                <span class="text-xs opacity-70 shrink-0">{{ sortIcon(i) }}</span>
               </div>
               <input
                 v-model="filters[i]"
                 class="csv-filter-input input input-xs input-bordered mt-1 w-full"
-                placeholder="筛选..."
+                :placeholder="`筛选 ${types[i]}`"
+                :title="formatStats(columnStatsList[i], types[i])"
                 @click.stop
               >
             </div>
@@ -173,7 +168,7 @@
               <div
                 v-for="(cell, ci) in item.row"
                 :key="ci"
-                class="flex-1 px-2 truncate max-w-[200px] text-sm flex items-center"
+                class="flex-1 min-w-0 px-2 truncate text-sm flex items-center"
                 :title="String(cell ?? '')"
               >
                 {{ cell }}
