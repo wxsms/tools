@@ -53,33 +53,54 @@
       已按 {{ pressedCount }} / {{ totalKeys }} 键
     </div>
 
-    <!-- Keyboard -->
-    <div class="overflow-x-auto">
-      <div
-        ref="kbEl"
-        class="relative bg-base-200 rounded-lg p-3"
-        tabindex="0"
-        :style="kbStyle"
+    <!-- Keyboard (SVG so layout is reliably sized inside any parent) -->
+    <div
+      ref="kbEl"
+      class="bg-base-200 rounded-lg p-3 overflow-x-auto"
+      tabindex="0"
+    >
+      <svg
+        :viewBox="`0 0 ${svgSize.width} ${svgSize.height}`"
+        :style="{ width: svgSize.width + 'px', height: svgSize.height + 'px', display: 'block' }"
       >
-        <div
-          v-for="key in currentLayout"
-          :key="key.code"
-          class="absolute rounded flex flex-col items-center justify-center text-xs select-none transition-colors"
-          :style="keyStyle(key)"
-          :class="keyClass(key)"
-        >
-          <span class="font-semibold leading-tight">{{ key.label }}</span>
-          <span
-            v-if="key.sub"
-            class="opacity-60 leading-tight"
-          >{{ key.sub }}</span>
-          <span
-            v-if="isLimited(key.code)"
-            class="absolute top-0.5 right-1 text-[10px] opacity-50"
-            title="浏览器可能无法稳定捕获"
-          >⚠</span>
-        </div>
-      </div>
+        <g :transform="`translate(${PAD} ${PAD})`">
+          <g
+            v-for="key in currentLayout"
+            :key="key.code"
+          >
+            <rect
+              :x="key.x * UNIT + GAP"
+              :y="key.y * UNIT + GAP"
+              :width="key.w * UNIT - GAP * 2"
+              :height="key.h * UNIT - GAP * 2"
+              :rx="4"
+              :class="keyRectClass(key)"
+            />
+            <text
+              :x="(key.x + key.w / 2) * UNIT"
+              :y="(key.y + key.h / 2) * UNIT"
+              text-anchor="middle"
+              dominant-baseline="central"
+              :class="['key-label', (state[key.code] || 'idle') === 'active' ? 'key-label-active' : '']"
+            >{{ key.label }}</text>
+            <text
+              v-if="key.sub"
+              :x="(key.x + key.w / 2) * UNIT"
+              :y="(key.y + key.h / 2 + 0.32) * UNIT"
+              text-anchor="middle"
+              dominant-baseline="central"
+              class="key-sub"
+            >{{ key.sub }}</text>
+            <text
+              v-if="isLimited(key.code)"
+              :x="(key.x + key.w) * UNIT - GAP - 4"
+              :y="key.y * UNIT + GAP + 8"
+              text-anchor="end"
+              class="key-warn"
+            >⚠</text>
+          </g>
+        </g>
+      </svg>
     </div>
 
     <!-- Tips -->
@@ -100,45 +121,37 @@ const currentLayout = computed(() => layout.value === '104' ? layout104 : layout
 const totalKeys = computed(() => currentLayout.value.length)
 
 // 状态:每个 code -> 'idle' | 'pressed' | 'active'
-// active 是 keys 当前正在按下(瞬时);pressed 是本次会话按过(累计)
+// active 是当前正在按下(瞬时);pressed 是本次会话按过(累计)
 const state = reactive({})
 
 const kbEl = ref(null)
 
-// 键盘整体尺寸:1u = 52px
+// 1u = 52px,键之间留 4px 视觉间距
 const UNIT = 52
-const PAD = 12 // 容器内边距(px),对应 p-3(0.75rem≈12px)
+const GAP = 2
+const PAD = 12 // 容器内边距 p-3
 
 const limitedSet = new Set(limitedCodes)
 function isLimited(code) { return limitedSet.has(code) }
 
-const kbStyle = computed(() => {
-  // 计算最大 x+w 和 y+h
+const svgSize = computed(() => {
   let maxX = 0, maxY = 0
   for (const k of currentLayout.value) {
     maxX = Math.max(maxX, k.x + k.w)
     maxY = Math.max(maxY, k.y + k.h)
   }
   return {
-    width: (maxX * UNIT + PAD * 2) + 'px',
-    height: (maxY * UNIT + PAD * 2) + 'px',
+    width: maxX * UNIT + PAD * 2,
+    height: maxY * UNIT + PAD * 2,
   }
 })
 
-function keyStyle(key) {
-  return {
-    left: (key.x * UNIT + PAD) + 'px',
-    top: (key.y * UNIT + PAD) + 'px',
-    width: (key.w * UNIT - 4) + 'px',
-    height: (key.h * UNIT - 4) + 'px',
-  }
-}
-
-function keyClass(key) {
+// SVG 内部坐标:用像素,通过 <g transform="translate(PAD PAD)"> 偏移内边距
+function keyRectClass(key) {
   const s = state[key.code] || 'idle'
-  if (s === 'active') return 'bg-success text-success-content z-10'
-  if (s === 'pressed') return 'bg-info/30 border border-info/40'
-  return 'bg-base-100 border border-base-300'
+  if (s === 'active') return 'key-rect-active'
+  if (s === 'pressed') return 'key-rect-pressed'
+  return 'key-rect-idle'
 }
 
 const pressedCount = computed(() => {
@@ -151,13 +164,9 @@ const pressedCount = computed(() => {
 })
 
 function onKeyDown(e) {
-  // 忽略浏览器自动重复的 keydown(只在首次按下时记录)
   if (e.repeat) return
-  // 防止浏览器快捷键抢占(可阻止的部分):阻止 F5、Ctrl+R 等
-  // 但很多快捷键无法阻止;我们不阻止默认行为,只记录
   const code = e.code
   if (!code) return
-  // 如果该 code 在当前布局中存在,标记并阻止默认(避免页面滚动等)
   if (currentLayout.value.some(k => k.code === code)) {
     e.preventDefault()
     state[code] = 'active'
@@ -172,7 +181,6 @@ function onKeyUp(e) {
   }
 }
 
-// 失焦时把所有 active 重置为 pressed(防止 keyup 漏掉)
 function onBlur() {
   for (const k of Object.keys(state)) {
     if (state[k] === 'active') state[k] = 'pressed'
@@ -187,7 +195,6 @@ onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   window.addEventListener('blur', onBlur)
-  // 自动聚焦键盘容器
   kbEl.value?.focus?.()
 })
 
@@ -197,3 +204,47 @@ onBeforeUnmount(() => {
   window.removeEventListener('blur', onBlur)
 })
 </script>
+
+<style scoped>
+.key-rect-idle {
+  fill: var(--b1);
+  stroke: var(--bc);
+  stroke-width: 0.5;
+  stroke-opacity: 0.3;
+}
+.key-rect-pressed {
+  fill: oklch(var(--in) / 0.3);
+  stroke: var(--in);
+  stroke-width: 1;
+  stroke-opacity: 0.4;
+}
+.key-rect-active {
+  fill: var(--su);
+  stroke: var(--su);
+  stroke-width: 1;
+}
+.key-label {
+  fill: var(--bc);
+  font-size: 12px;
+  font-weight: 600;
+  user-select: none;
+  pointer-events: none;
+}
+.key-label-active {
+  fill: var(--suc);
+}
+.key-sub {
+  fill: var(--bc);
+  font-size: 10px;
+  opacity: 0.6;
+  user-select: none;
+  pointer-events: none;
+}
+.key-warn {
+  fill: var(--wa);
+  font-size: 10px;
+  opacity: 0.6;
+  user-select: none;
+  pointer-events: none;
+}
+</style>
