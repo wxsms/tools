@@ -173,9 +173,9 @@ describe('CsvPreview - table rendering', () => {
     expect(placeholders.join(' ')).toContain('string')
   })
 
-  it('renders column stats in header row title attribute', async () => {
+  it('renders column stats in header cell title attribute', async () => {
     const wrapper = await mountLoaded()
-    const titles = wrapper.findAll('.csv-filter-input').map(i => i.attributes('title'))
+    const titles = wrapper.findAll('.csv-header-cell').map(c => c.attributes('title'))
     const joined = titles.join('\n')
     // age 30, 25 → min:25 max:30
     expect(joined).toContain('25')

@@ -129,6 +129,7 @@
             v-for="(h, i) in headers"
             :key="i"
             class="csv-header-cell flex-1 min-w-0 px-2 py-1 border-b border-base-content/10 cursor-pointer select-none"
+            :title="headerTitle(h, i)"
             @click="toggleSort(i)"
           >
             <div class="flex items-center justify-between gap-1">
@@ -139,7 +140,6 @@
               v-model="filters[i]"
               class="csv-filter-input input input-xs input-bordered mt-1 w-full"
               :placeholder="`筛选 ${types[i]}`"
-              :title="formatStats(columnStatsList[i], types[i])"
               @click.stop
             >
           </div>
@@ -332,6 +332,12 @@ function formatStats(stats, type) {
   if (type === 'date') return `min:${stats.min} max:${stats.max}`
   if (type === 'boolean') return `T:${stats.true} F:${stats.false}`
   return `unique:${stats.unique}`
+}
+
+function headerTitle(h, i) {
+  const type = types.value[i]
+  const stats = formatStats(columnStatsList.value[i], type)
+  return [h, type, stats].filter(Boolean).join(' · ')
 }
 
 function parse() {
