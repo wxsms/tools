@@ -54,29 +54,31 @@
     </div>
 
     <!-- Keyboard -->
-    <div
-      ref="kbEl"
-      class="relative bg-base-200 rounded-lg p-3 overflow-x-auto"
-      tabindex="0"
-      :style="kbStyle"
-    >
+    <div class="overflow-x-auto">
       <div
-        v-for="key in currentLayout"
-        :key="key.code"
-        class="absolute rounded flex flex-col items-center justify-center text-xs select-none transition-colors"
-        :style="keyStyle(key)"
-        :class="keyClass(key)"
+        ref="kbEl"
+        class="relative bg-base-200 rounded-lg p-3"
+        tabindex="0"
+        :style="kbStyle"
       >
-        <span class="font-semibold leading-tight">{{ key.label }}</span>
-        <span
-          v-if="key.sub"
-          class="opacity-60 leading-tight"
-        >{{ key.sub }}</span>
-        <span
-          v-if="isLimited(key.code)"
-          class="absolute top-0.5 right-1 text-[10px] opacity-50"
-          title="浏览器可能无法稳定捕获"
-        >⚠</span>
+        <div
+          v-for="key in currentLayout"
+          :key="key.code"
+          class="absolute rounded flex flex-col items-center justify-center text-xs select-none transition-colors"
+          :style="keyStyle(key)"
+          :class="keyClass(key)"
+        >
+          <span class="font-semibold leading-tight">{{ key.label }}</span>
+          <span
+            v-if="key.sub"
+            class="opacity-60 leading-tight"
+          >{{ key.sub }}</span>
+          <span
+            v-if="isLimited(key.code)"
+            class="absolute top-0.5 right-1 text-[10px] opacity-50"
+            title="浏览器可能无法稳定捕获"
+          >⚠</span>
+        </div>
       </div>
     </div>
 

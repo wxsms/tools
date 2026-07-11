@@ -64,6 +64,7 @@ export default [
     meta: {
       title: '键盘测试',
       description: '在线键盘按键检测，支持 ANSI 104 全键盘与 87 TKL 布局切换，实时高亮按键状态',
+      wide: true,
     },
   },
 ]
