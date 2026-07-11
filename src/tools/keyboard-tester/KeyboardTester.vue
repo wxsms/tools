@@ -12,14 +12,14 @@
           :class="layout === '104' ? 'btn-primary' : 'btn-outline'"
           @click="layout = '104'"
         >
-          104键
+          104 键
         </button>
         <button
           class="btn btn-sm join-item"
           :class="layout === '87' ? 'btn-primary' : 'btn-outline'"
           @click="layout = '87'"
         >
-          87键
+          87 键
         </button>
       </div>
       <button
