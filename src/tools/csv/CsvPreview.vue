@@ -150,7 +150,8 @@
         >
           <div
             v-if="displayedRows.length === 0"
-            class="flex items-center justify-center text-base-content/40 text-sm py-4"
+            class="flex absolute left-0 right-0 items-center justify-center text-base-content/40 text-sm"
+            style="top: 0; height: 36px;"
           >
             无匹配数据
           </div>
@@ -326,8 +327,8 @@ const visibleRows = computed(() => {
 
 const bodyHeight = computed(() => {
   const rows = displayedRows.value.length
-  // 筛选无结果时给 body 一个最小高度,让"无匹配数据"占位可见
-  if (rows === 0) return 64
+  // 筛选无结果时给 body 一个单行高度,让"无匹配数据"占位可见
+  if (rows === 0) return ROW_HEIGHT
   return rows * ROW_HEIGHT
 })
 
