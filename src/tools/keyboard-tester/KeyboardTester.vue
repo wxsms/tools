@@ -120,7 +120,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
-import { layout104, layout87, limitedCodes } from './layout.js'
+import { layout104, layout87, limitedCodes, normalizeKeyCode } from './layout.js'
 
 const layout = ref('104')
 const currentLayout = computed(() => layout.value === '104' ? layout104 : layout87)
@@ -170,13 +170,16 @@ const pressedCount = computed(() => {
   return n
 })
 
+// 当前布局所有合法 code 的集合,用于 normalize 时判断
+const knownCodes = computed(() => new Set(currentLayout.value.map(k => k.code)))
+
 function onKeyDown(e) {
   // 阻断默认行为(F5 刷新、Ctrl+R、Tab 切焦点、Backspace 后退等),
   // 让用户在这页测试键盘时按键不会触发浏览器/页面副作用。
   // 仅影响 keydown 不影响 keyup,不影响 OS 级或浏览器 chrome 快捷键
   // (如 Ctrl+W / Ctrl+N / Alt+Tab 等本就拿不到事件)。
   if (e.repeat) return
-  const code = e.code
+  const code = normalizeKeyCode(e, knownCodes.value)
   if (!code) return
   lastKey.value = `${e.key} (${code}${e.location ? ` loc=${e.location}` : ''})`
   state[code] = 'active'
@@ -184,12 +187,12 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
-  e.preventDefault()
-  const code = e.code
+  const code = normalizeKeyCode(e, knownCodes.value)
   if (!code) return
   if (state[code] === 'active') {
     state[code] = 'pressed'
   }
+  e.preventDefault()
 }
 
 function onBlur() {
