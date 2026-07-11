@@ -38,6 +38,7 @@ import {
   CameraIcon,
   CodeBracketIcon,
   CpuChipIcon,
+  BeakerIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -143,6 +144,12 @@ export const toolGroups = [
         path: '/md-html',
         desc: 'Markdown ↔ HTML 双向转换',
         icon: DocumentTextIcon,
+      },
+      {
+        name: 'SVG 预览',
+        path: '/svg-preview',
+        desc: 'SVG 代码实时预览，支持美化 / 压缩、Data URI、颜色覆盖与下载',
+        icon: BeakerIcon,
       },
       {
         name: 'Cron 解析',

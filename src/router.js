@@ -41,6 +41,7 @@ import CliFormat from './tools/cli-format/CliFormat.vue'
 import KvCache from './tools/kv-cache/KvCache.vue'
 import TokenCounter from './tools/token-counter/TokenCounter.vue'
 import CsvPreview from './tools/csv/CsvPreview.vue'
+import SvgPreview from './tools/svg-preview/SvgPreview.vue'
 
 const components = {
   '/': Home,
@@ -84,6 +85,7 @@ const components = {
   '/kv-cache': KvCache,
   '/token-counter': TokenCounter,
   '/csv': CsvPreview,
+  '/svg-preview': SvgPreview,
 }
 
 const routes = routeDefs.map(r => ({
