@@ -56,6 +56,7 @@ describe('inferColumnType', () => {
 
 import { columnStats } from './csv.js'
 import { sortRows } from './csv.js'
+import { filterRows } from './csv.js'
 
 describe('columnStats', () => {
   it('returns empty object for empty values', () => {
@@ -170,5 +171,42 @@ describe('sortRows', () => {
     const before = rows.map(r => [...r])
     sortRows(rows, 0, 'asc', types)
     expect(rows).toEqual(before)
+  })
+})
+
+describe('filterRows', () => {
+  const rows = [
+    ['apple', 'red', '1'],
+    ['banana', 'yellow', '2'],
+    ['APPLE', 'green', '3'],
+    ['grape', 'red', '4'],
+  ]
+
+  it('returns original rows when filters is empty', () => {
+    expect(filterRows(rows, {})).toBe(rows)
+  })
+
+  it('returns original rows when all filter values are empty', () => {
+    expect(filterRows(rows, { 0: '', 1: '' })).toBe(rows)
+  })
+
+  it('filters by single column (case-insensitive contains)', () => {
+    const result = filterRows(rows, { 0: 'ap' })
+    expect(result.map(r => r[0])).toEqual(['apple', 'APPLE', 'grape'])
+  })
+
+  it('filters by multiple columns with AND', () => {
+    const result = filterRows(rows, { 0: 'a', 1: 'red' })
+    expect(result.map(r => r[0])).toEqual(['apple', 'grape'])
+  })
+
+  it('returns empty when no row matches', () => {
+    const result = filterRows(rows, { 0: 'zzz' })
+    expect(result).toEqual([])
+  })
+
+  it('skips empty filter values (treats as no filter)', () => {
+    const result = filterRows(rows, { 0: 'apple', 1: '' })
+    expect(result.map(r => r[0])).toEqual(['apple', 'APPLE'])
   })
 })

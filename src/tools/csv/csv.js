@@ -110,8 +110,18 @@ export function sortRows(rows, columnIndex, direction, types) {
   return copy
 }
 
-export function filterRows(rows, _filters) {
-  return rows
+export function filterRows(rows, filters) {
+  // 收集非空条件
+  const conds = []
+  for (const key of Object.keys(filters)) {
+    const v = (filters[key] || '').trim().toLowerCase()
+    if (v) conds.push({ idx: Number(key), v })
+  }
+  if (conds.length === 0) return rows
+
+  return rows.filter(row =>
+    conds.every(c => String(row[c.idx] ?? '').toLowerCase().includes(c.v))
+  )
 }
 
 export function toJson(_rows, _headers) {
