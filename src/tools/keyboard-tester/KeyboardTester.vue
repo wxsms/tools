@@ -56,13 +56,13 @@
     <!-- Keyboard (SVG with viewBox → auto-scales, no horizontal scrollbar) -->
     <div
       ref="kbEl"
-      class="bg-base-200 rounded-lg p-3"
+      class="bg-base-200 rounded-lg p-3 w-fit max-w-full"
       tabindex="0"
     >
       <svg
         :viewBox="`0 0 ${svgSize.width} ${svgSize.height}`"
-        class="w-full h-auto block"
-        :style="{ maxWidth: svgSize.width + 'px' }"
+        class="block h-auto max-w-full"
+        :style="{ width: svgSize.width + 'px' }"
       >
         <g :transform="`translate(${PAD} ${PAD})`">
           <g
