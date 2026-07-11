@@ -40,6 +40,7 @@ import PatchViewer from './tools/patch-viewer/PatchViewer.vue'
 import CliFormat from './tools/cli-format/CliFormat.vue'
 import KvCache from './tools/kv-cache/KvCache.vue'
 import TokenCounter from './tools/token-counter/TokenCounter.vue'
+import CsvPreview from './tools/csv/CsvPreview.vue'
 
 const components = {
   '/': Home,
@@ -82,6 +83,7 @@ const components = {
   '/cli-format': CliFormat,
   '/kv-cache': KvCache,
   '/token-counter': TokenCounter,
+  '/csv': CsvPreview,
 }
 
 const routes = routeDefs.map(r => ({
