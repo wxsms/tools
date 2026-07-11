@@ -166,29 +166,47 @@ export const limitedCodes = ['MetaLeft', 'MetaRight', 'ContextMenu']
 // 而是 undefined / 退化值。这里把已知的退化形式归一到 layout 里的标准 code。
 // zfrontier 的 KeyEventMap 用了 t.code || t.key 兜底,我们也用同思路。
 //
-// 例如:右 Shift 在某些 Chromium 版本下 e.code 可能为 "" / undefined,
-// 此时 e.key 才是 "Shift";为区分左右,借助 e.location(1=left, 2=right)。
-const aliases = {
+// 已知问题的具体表现(实测):
+//   某些 Chromium 版本按右 Shift 时 e.code = "" 且 e.location = 0(违反 spec,
+//   spec 规定 left=1 / right=2,location=0 应只用于标准位置如字母),e.key="Shift"。
+//   左 Shift 一律能拿到 e.code="ShiftLeft" location=1。
+//
+// 因此:只有启用 fallback(e.code 不在布局)时,e.key="Shift" 缺失 location 信息
+// 就默认按"右 Shift"(zfrontier 用的同款 hack)。其他 modifier 行为正常,
+// 用 location 区分左右。
+const aliasesGeneric = {
+  // e.code 完全缺失 / 退化 → 默认按右(基于实测规则)
+  Shift: 'ShiftRight',
+  Control: 'ControlRight',
+  Alt: 'AltRight',
+  Meta: 'MetaRight',
+  OS: 'MetaRight', // 旧版 Firefox 用 OS 替代 Meta
+}
+const aliasesByLocation = {
   Shift: { 1: 'ShiftLeft', 2: 'ShiftRight' },
   Control: { 1: 'ControlLeft', 2: 'ControlRight' },
   Alt: { 1: 'AltLeft', 2: 'AltRight' },
   Meta: { 1: 'MetaLeft', 2: 'MetaRight' },
-  OS: { 1: 'MetaLeft', 2: 'MetaRight' }, // 旧版 Firefox 用 OSLeft/OSRight
+  OS: { 1: 'MetaLeft', 2: 'MetaRight' },
 }
 
 // 把 KeyboardEvent 归一到 layout 里使用的 code。
-// 优先用 e.code,若与 layout code 不匹配但 e.key 在 alias 表中,
-// 则按 e.location(1=左 / 2=右 / 3=numpad)选对应 physical code。
+// 优先用 e.code,若 e.code 不在 layout 中则按 e.key + e.location 兜底。
 export function normalizeKeyCode(e, knownCodes) {
   const code = e.code
   if (code && knownCodes.has(code)) return code
-  // fallback:按 e.key + location 找左右
-  const alias = aliases[e.key]
-  if (alias) {
-    const loc = e.location || 1
-    const mapped = alias[loc] || alias[1]
+
+  const key = e.key
+  // location == 1 / 2 → 用 left/right 别名表
+  if (key && aliasesByLocation[key]) {
+    const mapped = aliasesByLocation[key][e.location]
     if (mapped && knownCodes.has(mapped)) return mapped
   }
-  // 仍找不到,返回原始 code 或 e.key,作为"未知键"记录用
-  return code || e.key || ''
+  // location == 0 / 缺失(右 Shift 的实际情况)→ 用 generic 表
+  if (key && aliasesGeneric[key]) {
+    const mapped = aliasesGeneric[key]
+    if (knownCodes.has(mapped)) return mapped
+  }
+  // 仍找不到 — 返回原始 code 或 e.key 供上游记录用
+  return code || key || ''
 }
