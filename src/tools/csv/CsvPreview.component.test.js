@@ -63,11 +63,16 @@ describe('CsvPreview - idle state', () => {
 
   it('fills textarea from file upload', async () => {
     const wrapper = mountIdle()
+    // 清空组件 prefilled 的默认示例,确保后续 textarea 内容只可能来自文件上传
+    await wrapper.find('textarea').setValue('')
     const file = new File([SAMPLE_CSV], 'test.csv', { type: 'text/csv' })
     const input = wrapper.find('input[type="file"]')
     Object.defineProperty(input.element, 'files', { value: [file], writable: false })
     await input.trigger('change')
     await flushPromises()
+    // jsdom 中 FileReader.onload 通过 macrotask 触发,比单次 setTimeout(0) 更晚,
+    // 需多排一次 macrotask 才能稳定等到 onload 回调完成
+    await new Promise(resolve => setTimeout(resolve, 0))
     await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.find('textarea').element.value).toBe(SAMPLE_CSV)
   })
