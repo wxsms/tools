@@ -84,7 +84,7 @@
             />
             <text
               :x="(key.x + key.w / 2) * UNIT"
-              :y="(key.y + key.h / 2) * UNIT"
+              :y="labelY(key)"
               text-anchor="middle"
               dominant-baseline="central"
               :class="['fill-base-content text-[12px] font-semibold select-none pointer-events-none', (state[key.code] || 'idle') === 'active' ? 'fill-success-content' : '']"
@@ -92,10 +92,10 @@
             <text
               v-if="key.sub"
               :x="(key.x + key.w / 2) * UNIT"
-              :y="(key.y + key.h / 2 + 0.32) * UNIT"
+              :y="subY(key)"
               text-anchor="middle"
               dominant-baseline="central"
-              class="fill-base-content text-[10px] opacity-60 select-none pointer-events-none"
+              class="fill-base-content text-[10px] opacity-70 select-none pointer-events-none"
             >{{ key.sub }}</text>
             <text
               v-if="isLimited(key.code)"
@@ -159,6 +159,20 @@ function keyRectClass(key) {
   if (s === 'active') return 'fill-success stroke-success'
   if (s === 'pressed') return 'fill-info/30 stroke-info/40'
   return 'fill-base-100 stroke-base-300'
+}
+
+// 文字垂直位置:
+//   单标签(只有 label):居中
+//   双标签(label + sub):label 在下 2/3 处、sub 在上 1/3 处
+//      匹配真实键帽印刷习惯(shifted 在上、unshifted 在下)
+// 单位 1u;给的 y 是键左上角坐标,centre = y + h/2
+function labelY(key) {
+  const cy = key.y + key.h / 2
+  return key.sub ? (cy + 0.16) * UNIT : cy * UNIT
+}
+function subY(key) {
+  const cy = key.y + key.h / 2
+  return (cy - 0.18) * UNIT
 }
 
 const pressedCount = computed(() => {
