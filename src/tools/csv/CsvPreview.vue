@@ -61,22 +61,56 @@
       v-else
       class="flex flex-col gap-4"
     >
-      <div class="flex items-center justify-between flex-wrap gap-2 text-sm">
-        <div class="flex items-center gap-3">
-          <span class="font-semibold">{{ fileName || '已加载' }}</span>
-          <span class="opacity-70">{{ dataRows.length }} 行 × {{ headers.length }} 列</span>
+      <div class="flex items-center justify-between flex-wrap gap-2 text-sm mb-2">
+        <div class="flex items-center gap-2">
+          <button
+            class="btn btn-ghost btn-sm gap-1"
+            @click="backToInput"
+          >
+            <ArrowLeftIcon class="w-4 h-4" />
+            返回
+          </button>
           <span
-            v-if="typeSummary"
-            class="opacity-50"
-          >{{ typeSummary }}</span>
+            v-if="activeFilterCount > 0"
+            class="badge badge-sm badge-primary"
+          >筛选条件 {{ activeFilterCount }}</span>
+          <button
+            v-if="activeFilterCount > 0"
+            class="btn btn-ghost btn-xs"
+            @click="clearFilters"
+          >
+            清除
+          </button>
         </div>
-        <button
-          class="btn btn-ghost btn-sm gap-1"
-          @click="backToInput"
-        >
-          <ArrowLeftIcon class="w-4 h-4" />
-          更换
-        </button>
+        <div class="flex items-center gap-3">
+          <div class="dropdown dropdown-end">
+            <button
+              class="btn btn-sm gap-1"
+              @click="toggleExportMenu"
+            >
+              导出
+              <ChevronDownIcon class="w-4 h-4" />
+            </button>
+            <ul
+              v-if="showExportMenu"
+              class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow z-20 w-40"
+            >
+              <li>
+                <button @click="doExport('json')">
+                  JSON
+                </button>
+              </li>
+              <li>
+                <button @click="doExport('markdown')">
+                  Markdown
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div class="opacity-70">
+            显示 {{ displayedRows.length }} 行 / 共 {{ dataRows.length }} 行
+          </div>
+        </div>
       </div>
       <div
         v-if="dataRows.length === 0"
@@ -84,99 +118,54 @@
       >
         无数据行
       </div>
-      <template v-else>
-        <div class="flex items-center justify-between flex-wrap gap-2 text-sm mb-2">
-          <div class="flex items-center gap-2">
-            <span
-              v-if="activeFilterCount > 0"
-              class="badge badge-sm badge-primary"
-            >筛选条件 {{ activeFilterCount }}</span>
-            <button
-              v-if="activeFilterCount > 0"
-              class="btn btn-ghost btn-xs"
-              @click="clearFilters"
+      <div
+        v-else
+        class="border border-base-content/10 rounded-lg overflow-auto csv-scroll-container"
+        style="max-height: 600px;"
+        @scroll="onScroll"
+      >
+        <div class="sticky top-0 bg-base-100 z-10 flex">
+          <div
+            v-for="(h, i) in headers"
+            :key="i"
+            class="csv-header-cell flex-1 min-w-0 px-2 py-1 border-b border-base-content/10 cursor-pointer select-none"
+            @click="toggleSort(i)"
+          >
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-semibold text-sm truncate">{{ h }}</span>
+              <span class="text-xs opacity-70 shrink-0">{{ sortIcon(i) }}</span>
+            </div>
+            <input
+              v-model="filters[i]"
+              class="csv-filter-input input input-xs input-bordered mt-1 w-full"
+              :placeholder="`筛选 ${types[i]}`"
+              :title="formatStats(columnStatsList[i], types[i])"
+              @click.stop
             >
-              清除
-            </button>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="dropdown dropdown-end">
-              <button
-                class="btn btn-sm gap-1"
-                @click="toggleExportMenu"
-              >
-                导出
-                <ChevronDownIcon class="w-4 h-4" />
-              </button>
-              <ul
-                v-if="showExportMenu"
-                class="dropdown-content menu menu-sm bg-base-100 rounded-box shadow z-20 w-40"
-              >
-                <li>
-                  <button @click="doExport('json')">
-                    JSON
-                  </button>
-                </li>
-                <li>
-                  <button @click="doExport('markdown')">
-                    Markdown
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div class="opacity-70">
-              显示 {{ displayedRows.length }} 行 / 共 {{ dataRows.length }} 行
-            </div>
           </div>
         </div>
         <div
-          class="border border-base-content/10 rounded-lg overflow-auto csv-scroll-container"
-          style="max-height: 600px;"
-          @scroll="onScroll"
+          class="relative csv-body"
+          :style="{ height: bodyHeight + 'px' }"
         >
-          <div class="sticky top-0 bg-base-100 z-10 flex">
-            <div
-              v-for="(h, i) in headers"
-              :key="i"
-              class="csv-header-cell flex-1 min-w-0 px-2 py-1 border-b border-base-content/10 cursor-pointer select-none"
-              @click="toggleSort(i)"
-            >
-              <div class="flex items-center justify-between gap-1">
-                <span class="font-semibold text-sm truncate">{{ h }}</span>
-                <span class="text-xs opacity-70 shrink-0">{{ sortIcon(i) }}</span>
-              </div>
-              <input
-                v-model="filters[i]"
-                class="csv-filter-input input input-xs input-bordered mt-1 w-full"
-                :placeholder="`筛选 ${types[i]}`"
-                :title="formatStats(columnStatsList[i], types[i])"
-                @click.stop
-              >
-            </div>
-          </div>
           <div
-            class="relative csv-body"
-            :style="{ height: bodyHeight + 'px' }"
+            v-for="item in visibleRows"
+            :key="item.absoluteIndex"
+            class="flex absolute left-0 right-0"
+            data-row
+            :style="{ top: (item.absoluteIndex * ROW_HEIGHT) + 'px', height: ROW_HEIGHT + 'px' }"
           >
             <div
-              v-for="item in visibleRows"
-              :key="item.absoluteIndex"
-              class="flex absolute left-0 right-0"
-              data-row
-              :style="{ top: (item.absoluteIndex * ROW_HEIGHT) + 'px', height: ROW_HEIGHT + 'px' }"
+              v-for="(cell, ci) in item.row"
+              :key="ci"
+              class="flex-1 min-w-0 px-2 truncate text-sm flex items-center"
+              :title="String(cell ?? '')"
             >
-              <div
-                v-for="(cell, ci) in item.row"
-                :key="ci"
-                class="flex-1 min-w-0 px-2 truncate text-sm flex items-center"
-                :title="String(cell ?? '')"
-              >
-                {{ cell }}
-              </div>
+              {{ cell }}
             </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
     <div
       v-if="copyToast"
@@ -344,17 +333,6 @@ function formatStats(stats, type) {
   if (type === 'boolean') return `T:${stats.true} F:${stats.false}`
   return `unique:${stats.unique}`
 }
-
-const typeSummary = computed(() => {
-  if (types.value.length === 0) return ''
-  const counts = {}
-  for (const t of types.value) {
-    counts[t] = (counts[t] || 0) + 1
-  }
-  return Object.entries(counts)
-    .map(([k, v]) => `${k} ${v}`)
-    .join(' / ')
-})
 
 function parse() {
   const result = Papa.parse(input.value, {

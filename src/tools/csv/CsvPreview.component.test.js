@@ -78,7 +78,7 @@ describe('CsvPreview - parse → loaded', () => {
     vi.clearAllMocks()
   })
 
-  it('switches to loaded view showing row/col count', async () => {
+  it('switches to loaded view showing row count', async () => {
     setPapaResult([
       ['name', 'age'],
       ['Alice', '30'],
@@ -89,26 +89,25 @@ describe('CsvPreview - parse → loaded', () => {
     const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
     await parseBtn.trigger('click')
     expect(wrapper.text()).toContain('2 行')
-    expect(wrapper.text()).toContain('2 列')
   })
 
-  it('shows 更换 button in loaded state', async () => {
+  it('shows 返回 button in loaded state', async () => {
     setPapaResult([['a'], ['1']])
     const wrapper = mountIdle()
     await wrapper.find('textarea').setValue('a\n1')
     const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
     await parseBtn.trigger('click')
-    const swapBtn = wrapper.findAll('button').find(b => b.text().includes('更换'))
+    const swapBtn = wrapper.findAll('button').find(b => b.text().includes('返回'))
     expect(swapBtn.exists()).toBe(true)
   })
 
-  it('returns to idle (with textarea preserved) on 更换 click', async () => {
+  it('returns to idle (with textarea preserved) on 返回 click', async () => {
     setPapaResult([['a'], ['1']])
     const wrapper = mountIdle()
     await wrapper.find('textarea').setValue('a\n1')
     const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
     await parseBtn.trigger('click')
-    const swapBtn = wrapper.findAll('button').find(b => b.text().includes('更换'))
+    const swapBtn = wrapper.findAll('button').find(b => b.text().includes('返回'))
     await swapBtn.trigger('click')
     expect(wrapper.find('textarea').exists()).toBe(true)
     expect(wrapper.find('textarea').element.value).toBe('a\n1')
