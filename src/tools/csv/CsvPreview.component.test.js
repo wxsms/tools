@@ -204,3 +204,51 @@ describe('CsvPreview - table rendering', () => {
     expect(cell.classes()).toContain('truncate')
   })
 })
+
+describe('CsvPreview - virtual scroll', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders only a window of rows for large data', async () => {
+    // 造 5000 行
+    const data = [['v']]
+    for (let i = 0; i < 5000; i++) data.push([String(i)])
+    Papa.parse.mockReturnValue({ data, errors: [] })
+
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('v\n' + Array.from({ length: 5000 }, (_, i) => i).join('\n'))
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+
+    const body = wrapper.find('.csv-body')
+    const rows = body.findAll('[data-row]')
+    // 5000 行不应全部渲染；窗口 + 缓冲应在合理范围（< 100）
+    expect(rows.length).toBeLessThan(100)
+    expect(rows.length).toBeGreaterThan(5)
+  })
+
+  it('updates rendered window on scroll', async () => {
+    const data = [['v']]
+    for (let i = 0; i < 5000; i++) data.push([String(i)])
+    Papa.parse.mockReturnValue({ data, errors: [] })
+
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('v\n' + Array.from({ length: 5000 }, (_, i) => i).join('\n'))
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+
+    // 抓 firstRow 当前显示的内容
+    const body = wrapper.find('.csv-body')
+    const beforeFirst = body.find('[data-row]').text()
+
+    // 滚动到很底部
+    const scrollEl = wrapper.find('.csv-scroll-container')
+    // jsdom 不真实渲染高度，直接设 scrollTop 后触发 scroll
+    scrollEl.element.scrollTop = 5000 * 36 - 600
+    await scrollEl.trigger('scroll')
+
+    const afterFirst = body.find('[data-row]').text()
+    expect(afterFirst).not.toBe(beforeFirst)
+  })
+})

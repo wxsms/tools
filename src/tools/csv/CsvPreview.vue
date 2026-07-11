@@ -86,7 +86,9 @@
       </div>
       <div
         v-else
-        class="border border-base-content/10 rounded-lg overflow-auto"
+        class="border border-base-content/10 rounded-lg overflow-auto csv-scroll-container"
+        style="max-height: 600px;"
+        @scroll="onScroll"
       >
         <div class="sticky top-0 bg-base-100 z-10 flex">
           <div
@@ -105,15 +107,19 @@
             </div>
           </div>
         </div>
-        <div class="csv-body">
+        <div
+          class="relative csv-body"
+          :style="{ height: bodyHeight + 'px' }"
+        >
           <div
-            v-for="(row, ri) in dataRows"
-            :key="ri"
-            class="flex"
+            v-for="item in visibleRows"
+            :key="item.absoluteIndex"
+            class="flex absolute left-0 right-0"
             data-row
+            :style="{ top: (item.absoluteIndex * ROW_HEIGHT) + 'px', height: ROW_HEIGHT + 'px' }"
           >
             <div
-              v-for="(cell, ci) in row"
+              v-for="(cell, ci) in item.row"
               :key="ci"
               class="flex-1 px-2 truncate max-w-[200px] text-sm flex items-center"
               :title="String(cell ?? '')"
@@ -151,6 +157,34 @@ const columnStatsList = computed(() =>
     columnStats(dataRows.value.map(r => r[i]), types.value[i])
   )
 )
+
+const ROW_HEIGHT = 36
+const BUFFER = 5
+const VIEWPORT_HEIGHT = 600
+
+const scrollTop = ref(0)
+
+const visibleRange = computed(() => {
+  const total = dataRows.value.length
+  if (total === 0) return { start: 0, end: 0 }
+  const start = Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER)
+  const end = Math.min(total, Math.ceil((scrollTop.value + VIEWPORT_HEIGHT) / ROW_HEIGHT) + BUFFER)
+  return { start, end }
+})
+
+const visibleRows = computed(() => {
+  const { start, end } = visibleRange.value
+  return dataRows.value.slice(start, end).map((row, i) => ({
+    row,
+    absoluteIndex: start + i,
+  }))
+})
+
+const bodyHeight = computed(() => dataRows.value.length * ROW_HEIGHT)
+
+function onScroll(e) {
+  scrollTop.value = e.target.scrollTop
+}
 
 function formatStats(stats, type) {
   if (!stats || Object.keys(stats).length === 0) return ''
