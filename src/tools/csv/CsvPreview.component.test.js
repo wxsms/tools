@@ -252,3 +252,115 @@ describe('CsvPreview - virtual scroll', () => {
     expect(afterFirst).not.toBe(beforeFirst)
   })
 })
+
+describe('CsvPreview - sort and filter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  async function mountLoaded() {
+    Papa.parse.mockReturnValue({
+      data: [
+        ['name', 'age'],
+        ['Alice', '30'],
+        ['Bob', '25'],
+        ['Carol', '35'],
+      ],
+      errors: [],
+    })
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('name,age\nAlice,30\nBob,25\nCarol,35')
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+    return wrapper
+  }
+
+  it('cycles sort state on column header click', async () => {
+    const wrapper = await mountLoaded()
+    const headers = wrapper.findAll('.csv-header-cell')
+    // 点 age 列头（索引 1）→ asc
+    await headers[1].trigger('click')
+    let rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows[0].text()).toContain('Bob') // 25 最小
+
+    // 再点 → desc
+    await headers[1].trigger('click')
+    rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows[0].text()).toContain('Carol') // 35 最大
+
+    // 再点 → 回到无序（原序）
+    await headers[1].trigger('click')
+    rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows[0].text()).toContain('Alice')
+  })
+
+  it('renders a filter input per column', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    expect(inputs.length).toBe(2)
+  })
+
+  it('filters rows by single column (case-insensitive contains)', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('ali')
+    const rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows.length).toBe(1)
+    expect(rows[0].text()).toContain('Alice')
+  })
+
+  it('filters rows by multiple columns with AND', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('a')   // Alice, Carol
+    await inputs[1].setValue('3')   // age 含 3: Alice(30), Carol(35)
+    const rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows.length).toBe(2)
+    const text = rows.map(r => r.text()).join(' ')
+    expect(text).toContain('Alice')
+    expect(text).toContain('Carol')
+    expect(text).not.toContain('Bob')
+  })
+
+  it('shows filter count in toolbar', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('ali')
+    expect(wrapper.text()).toContain('筛选条件 1')
+  })
+
+  it('clears all filters on 清除 click', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('ali')
+    const clearBtn = wrapper.findAll('button').find(b => b.text().includes('清除'))
+    await clearBtn.trigger('click')
+    const rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows.length).toBe(3)
+  })
+
+  it('shows displayed/total count "显示 N 行 / 共 M 行"', async () => {
+    const wrapper = await mountLoaded()
+    expect(wrapper.text()).toContain('显示 3 行')
+    expect(wrapper.text()).toContain('共 3 行')
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('ali')
+    expect(wrapper.text()).toContain('显示 1 行')
+    expect(wrapper.text()).toContain('共 3 行')
+  })
+
+  it('combines filter + sort (filter first, then sort)', async () => {
+    const wrapper = await mountLoaded()
+    // 筛 age 含 3 → Alice(30), Carol(35)
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[1].setValue('3')
+    // 排序 age desc
+    const headers = wrapper.findAll('.csv-header-cell')
+    await headers[1].trigger('click')
+    await headers[1].trigger('click')
+    const rows = wrapper.find('.csv-body').findAll('[data-row]')
+    expect(rows[0].text()).toContain('Carol')
+    expect(rows[1].text()).toContain('Alice')
+    expect(rows.length).toBe(2)
+  })
+})

@@ -84,57 +84,84 @@
       >
         无数据行
       </div>
-      <div
-        v-else
-        class="border border-base-content/10 rounded-lg overflow-auto csv-scroll-container"
-        style="max-height: 600px;"
-        @scroll="onScroll"
-      >
-        <div class="sticky top-0 bg-base-100 z-10 flex">
-          <div
-            v-for="(h, i) in headers"
-            :key="i"
-            class="flex-1 px-2 py-1 border-b border-base-content/10 align-top"
-          >
-            <div class="font-semibold text-sm">
-              {{ h }}
-            </div>
-            <div class="text-xs opacity-60">
-              {{ types[i] }}
-            </div>
-            <div class="text-xs opacity-50">
-              {{ formatStats(columnStatsList[i], types[i]) }}
-            </div>
+      <template v-else>
+        <div class="flex items-center justify-between flex-wrap gap-2 text-sm mb-2">
+          <div class="flex items-center gap-2">
+            <span
+              v-if="activeFilterCount > 0"
+              class="badge badge-sm badge-primary"
+            >筛选条件 {{ activeFilterCount }}</span>
+            <button
+              v-if="activeFilterCount > 0"
+              class="btn btn-ghost btn-xs"
+              @click="clearFilters"
+            >
+              清除
+            </button>
+          </div>
+          <div class="opacity-70">
+            显示 {{ displayedRows.length }} 行 / 共 {{ dataRows.length }} 行
           </div>
         </div>
         <div
-          class="relative csv-body"
-          :style="{ height: bodyHeight + 'px' }"
+          class="border border-base-content/10 rounded-lg overflow-auto csv-scroll-container"
+          style="max-height: 600px;"
+          @scroll="onScroll"
         >
+          <div class="sticky top-0 bg-base-100 z-10 flex">
+            <div
+              v-for="(h, i) in headers"
+              :key="i"
+              class="csv-header-cell flex-1 px-2 py-1 border-b border-base-content/10 align-top cursor-pointer select-none"
+              @click="toggleSort(i)"
+            >
+              <div class="font-semibold text-sm">
+                {{ h }}
+                <span class="opacity-70">{{ sortIcon(i) }}</span>
+              </div>
+              <div class="text-xs opacity-60">
+                {{ types[i] }}
+              </div>
+              <div class="text-xs opacity-50">
+                {{ formatStats(columnStatsList[i], types[i]) }}
+              </div>
+              <input
+                v-model="filters[i]"
+                class="csv-filter-input input input-xs input-bordered mt-1 w-full"
+                placeholder="筛选..."
+                @click.stop
+              >
+            </div>
+          </div>
           <div
-            v-for="item in visibleRows"
-            :key="item.absoluteIndex"
-            class="flex absolute left-0 right-0"
-            data-row
-            :style="{ top: (item.absoluteIndex * ROW_HEIGHT) + 'px', height: ROW_HEIGHT + 'px' }"
+            class="relative csv-body"
+            :style="{ height: bodyHeight + 'px' }"
           >
             <div
-              v-for="(cell, ci) in item.row"
-              :key="ci"
-              class="flex-1 px-2 truncate max-w-[200px] text-sm flex items-center"
-              :title="String(cell ?? '')"
+              v-for="item in visibleRows"
+              :key="item.absoluteIndex"
+              class="flex absolute left-0 right-0"
+              data-row
+              :style="{ top: (item.absoluteIndex * ROW_HEIGHT) + 'px', height: ROW_HEIGHT + 'px' }"
             >
-              {{ cell }}
+              <div
+                v-for="(cell, ci) in item.row"
+                :key="ci"
+                class="flex-1 px-2 truncate max-w-[200px] text-sm flex items-center"
+                :title="String(cell ?? '')"
+              >
+                {{ cell }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Papa from 'papaparse'
 import {
   DocumentTextIcon,
@@ -142,7 +169,7 @@ import {
   TrashIcon,
   ArrowLeftIcon,
 } from '@heroicons/vue/24/outline'
-import { inferColumnType, columnStats } from './csv.js'
+import { inferColumnType, columnStats, sortRows, filterRows } from './csv.js'
 
 const input = ref('')
 const fileName = ref('')
@@ -158,14 +185,69 @@ const columnStatsList = computed(() =>
   )
 )
 
+const sortState = ref({ column: null, direction: null })
+const filters = ref({})
+
+const activeFilterCount = computed(() => {
+  let n = 0
+  for (const k of Object.keys(filters.value)) {
+    if ((filters.value[k] || '').trim()) n++
+  }
+  return n
+})
+
+const filteredRows = computed(() => filterRows(dataRows.value, filters.value))
+
+const displayedRows = computed(() => {
+  if (sortState.value.column === null || sortState.value.direction === null) {
+    return filteredRows.value
+  }
+  return sortRows(
+    filteredRows.value,
+    sortState.value.column,
+    sortState.value.direction,
+    types.value,
+  )
+})
+
+function toggleSort(colIndex) {
+  const cur = sortState.value
+  if (cur.column !== colIndex) {
+    sortState.value = { column: colIndex, direction: 'asc' }
+    return
+  }
+  if (cur.direction === 'asc') {
+    sortState.value = { column: colIndex, direction: 'desc' }
+  } else if (cur.direction === 'desc') {
+    sortState.value = { column: null, direction: null }
+  } else {
+    sortState.value = { column: colIndex, direction: 'asc' }
+  }
+}
+
+function sortIcon(colIndex) {
+  if (sortState.value.column !== colIndex) return ''
+  if (sortState.value.direction === 'asc') return '↑'
+  if (sortState.value.direction === 'desc') return '↓'
+  return ''
+}
+
+function clearFilters() {
+  filters.value = {}
+}
+
 const ROW_HEIGHT = 36
 const BUFFER = 5
 const VIEWPORT_HEIGHT = 600
 
 const scrollTop = ref(0)
 
+watch([filteredRows, sortState], () => {
+  scrollTop.value = 0
+})
+
 const visibleRange = computed(() => {
-  const total = dataRows.value.length
+  const total = displayedRows.value.length
   if (total === 0) return { start: 0, end: 0 }
   const start = Math.max(0, Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER)
   const end = Math.min(total, Math.ceil((scrollTop.value + VIEWPORT_HEIGHT) / ROW_HEIGHT) + BUFFER)
@@ -174,13 +256,13 @@ const visibleRange = computed(() => {
 
 const visibleRows = computed(() => {
   const { start, end } = visibleRange.value
-  return dataRows.value.slice(start, end).map((row, i) => ({
+  return displayedRows.value.slice(start, end).map((row, i) => ({
     row,
     absoluteIndex: start + i,
   }))
 })
 
-const bodyHeight = computed(() => dataRows.value.length * ROW_HEIGHT)
+const bodyHeight = computed(() => displayedRows.value.length * ROW_HEIGHT)
 
 function onScroll(e) {
   scrollTop.value = e.target.scrollTop
@@ -232,6 +314,9 @@ function parse() {
   for (const row of dataRows.value) {
     while (row.length < headers.value.length) row.push('')
   }
+  sortState.value = { column: null, direction: null }
+  filters.value = {}
+  scrollTop.value = 0
   state.value = 'loaded'
   error.value = ''
 }
@@ -248,6 +333,9 @@ function clear() {
   headers.value = []
   dataRows.value = []
   types.value = []
+  sortState.value = { column: null, direction: null }
+  filters.value = {}
+  scrollTop.value = 0
 }
 
 function onFileUpload(e) {
