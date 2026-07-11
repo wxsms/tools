@@ -181,7 +181,8 @@ function onKeyDown(e) {
   if (e.repeat) return
   const code = normalizeKeyCode(e, knownCodes.value)
   if (!code) return
-  lastKey.value = `${e.key} (${code}${e.location ? ` loc=${e.location}` : ''})`
+  // 显示原始 code/key/location,便于调试 modifier-only 事件的归一化
+  lastKey.value = `raw code=${e.code || '∅'} key=${e.key || '∅'} loc=${e.location} → ${code}`
   state[code] = 'active'
   e.preventDefault()
 }
