@@ -53,3 +53,55 @@ describe('inferColumnType', () => {
     expect(inferColumnType(['yesterday', 'today'])).toBe('string')
   })
 })
+
+import { columnStats } from './csv.js'
+
+describe('columnStats', () => {
+  it('returns empty object for empty values', () => {
+    expect(columnStats([], 'string')).toEqual({})
+  })
+
+  it('returns empty object for all-empty values', () => {
+    expect(columnStats(['', '', ''], 'integer')).toEqual({})
+  })
+
+  it('computes min/max/avg for integer column', () => {
+    expect(columnStats(['1', '2', '3'], 'integer')).toEqual({
+      min: 1, max: 3, avg: 2,
+    })
+  })
+
+  it('computes avg rounded to 2 decimals for float column', () => {
+    const stats = columnStats(['1.0', '2.5', '3.0'], 'float')
+    expect(stats.min).toBe(1)
+    expect(stats.max).toBe(3)
+    expect(stats.avg).toBe(2.17)
+  })
+
+  it('computes min/max for date column formatted as YYYY-MM-DD', () => {
+    const stats = columnStats(['2024-03-01', '2024-01-15', '2024-12-31'], 'date')
+    expect(stats.min).toBe('2024-01-15')
+    expect(stats.max).toBe('2024-12-31')
+  })
+
+  it('falls back to raw string for un-formattable date', () => {
+    const stats = columnStats(['not-a-date', '2024-01-01'], 'date')
+    expect(stats.min).toBe('not-a-date')
+  })
+
+  it('counts true/false for boolean column', () => {
+    expect(columnStats(['true', 'false', 'TRUE', 'true'], 'boolean')).toEqual({
+      true: 3, false: 1,
+    })
+  })
+
+  it('counts unique values for string column', () => {
+    expect(columnStats(['a', 'b', 'a', 'c'], 'string')).toEqual({ unique: 3 })
+  })
+
+  it('caps unique count at "100+"', () => {
+    const values = []
+    for (let i = 0; i < 150; i++) values.push(`v${i}`)
+    expect(columnStats(values, 'string')).toEqual({ unique: '100+' })
+  })
+})

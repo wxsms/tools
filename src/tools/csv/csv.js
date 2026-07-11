@@ -31,8 +31,51 @@ export function inferColumnType(values) {
   return 'string'
 }
 
-export function columnStats(_values, _type) {
-  return {}
+function toYmd(t) {
+  const d = new Date(t)
+  if (Number.isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+export function columnStats(values, type) {
+  const nonEmpty = values.filter(v => v !== '' && v != null)
+  if (nonEmpty.length === 0) return {}
+
+  if (type === 'integer' || type === 'float') {
+    const nums = nonEmpty.map(Number)
+    const min = Math.min(...nums)
+    const max = Math.max(...nums)
+    const avg = Number((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2))
+    return { min, max, avg }
+  }
+  if (type === 'date') {
+    // 不可解析的值视为最小 (-Infinity)，选中时回退为原始字符串。
+    const stamped = nonEmpty.map(v => {
+      const t = Date.parse(v)
+      return { raw: v, t: Number.isNaN(t) ? -Infinity : t }
+    })
+    const pickMin = stamped.reduce((a, b) => a.t <= b.t ? a : b)
+    const pickMax = stamped.reduce((a, b) => a.t >= b.t ? a : b)
+    return {
+      min: pickMin.t === -Infinity ? pickMin.raw : (toYmd(pickMin.t) ?? pickMin.raw),
+      max: pickMax.t === -Infinity ? pickMax.raw : (toYmd(pickMax.t) ?? pickMax.raw),
+    }
+  }
+  if (type === 'boolean') {
+    let t = 0, f = 0
+    for (const v of nonEmpty) {
+      if (/^true$/i.test(v)) t++
+      else if (/^false$/i.test(v)) f++
+    }
+    return { true: t, false: f }
+  }
+  // string
+  const unique = new Set(nonEmpty.map(String))
+  if (unique.size > 100) return { unique: '100+' }
+  return { unique: unique.size }
 }
 
 export function sortRows(rows, _columnIndex, _direction) {
