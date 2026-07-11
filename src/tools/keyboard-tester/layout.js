@@ -149,7 +149,12 @@ export const row5 = [
   { code: 'ArrowRight', label: '→', x: 17.5, y: Y_ROW1 + ROW_H * 4 },
 ]
 
-export const layout104 = [...fnRow, ...row1, ...row2, ...row3, ...row4, ...row5]
+// 统一补齐 w/h 默认值,避免消费者再写 key.w ?? 1
+function withDefaults(keys) {
+  return keys.map(k => ({ w: 1, h: 1, ...k }))
+}
+
+export const layout104 = withDefaults([...fnRow, ...row1, ...row2, ...row3, ...row4, ...row5])
 
 // 87 (TKL):去掉数字区
 export const layout87 = layout104.filter(k => k.area !== 'numpad')
