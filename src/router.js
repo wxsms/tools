@@ -42,6 +42,7 @@ import KvCache from './tools/kv-cache/KvCache.vue'
 import TokenCounter from './tools/token-counter/TokenCounter.vue'
 import CsvPreview from './tools/csv/CsvPreview.vue'
 import SvgPreview from './tools/svg-preview/SvgPreview.vue'
+import KeyboardTester from './tools/keyboard-tester/KeyboardTester.vue'
 
 const components = {
   '/': Home,
@@ -86,6 +87,7 @@ const components = {
   '/token-counter': TokenCounter,
   '/csv': CsvPreview,
   '/svg-preview': SvgPreview,
+  '/keyboard-tester': KeyboardTester,
 }
 
 const routes = routeDefs.map(r => ({
