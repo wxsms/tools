@@ -48,9 +48,13 @@
     <!-- Progress -->
     <div
       v-if="totalKeys > 0"
-      class="text-sm opacity-70 mb-2"
+      class="text-sm opacity-70 mb-2 flex flex-wrap gap-x-4"
     >
-      已按 {{ pressedCount }} / {{ totalKeys }} 键
+      <span>已按 {{ pressedCount }} / {{ totalKeys }} 键</span>
+      <span
+        v-if="lastKey"
+        class="font-mono"
+      >最近 {{ lastKey }}</span>
     </div>
 
     <!-- Keyboard (SVG with viewBox → auto-scales, no horizontal scrollbar) -->
@@ -125,6 +129,7 @@ const totalKeys = computed(() => currentLayout.value.length)
 // 状态:每个 code -> 'idle' | 'pressed' | 'active'
 // active 是当前正在按下(瞬时);pressed 是本次会话按过(累计)
 const state = reactive({})
+const lastKey = ref('')
 
 const kbEl = ref(null)
 
@@ -174,6 +179,7 @@ function onKeyDown(e) {
   if (e.repeat) return
   const code = e.code
   if (!code) return
+  lastKey.value = `${e.key} (${code}${e.location ? ` loc=${e.location}` : ''})`
   state[code] = 'active'
 }
 
@@ -194,6 +200,7 @@ function onBlur() {
 
 function reset() {
   for (const k of Object.keys(state)) delete state[k]
+  lastKey.value = ''
 }
 
 onMounted(() => {
