@@ -367,6 +367,15 @@ describe('CsvPreview - sort and filter', () => {
     expect(rows[1].text()).toContain('Alice')
     expect(rows.length).toBe(2)
   })
+
+  it('shows 无匹配数据 when filter matches nothing', async () => {
+    const wrapper = await mountLoaded()
+    const inputs = wrapper.findAll('.csv-filter-input')
+    await inputs[0].setValue('zzz-no-match')
+    const body = wrapper.find('.csv-body')
+    expect(body.text()).toContain('无匹配数据')
+    expect(body.findAll('[data-row]').length).toBe(0)
+  })
 })
 
 describe('CsvPreview - export', () => {

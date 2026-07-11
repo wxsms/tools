@@ -149,6 +149,12 @@
           :style="{ height: bodyHeight + 'px' }"
         >
           <div
+            v-if="displayedRows.length === 0"
+            class="flex items-center justify-center text-base-content/40 text-sm py-4"
+          >
+            无匹配数据
+          </div>
+          <div
             v-for="item in visibleRows"
             :key="item.absoluteIndex"
             class="flex absolute left-0 right-0"
