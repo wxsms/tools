@@ -39,6 +39,7 @@ import {
   CodeBracketIcon,
   CpuChipIcon,
   BeakerIcon,
+  BoltIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -325,6 +326,17 @@ export const toolGroups = [
         path: '/kv-cache',
         desc: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数',
         icon: CpuChipIcon,
+      },
+    ],
+  },
+  {
+    name: '硬件',
+    tools: [
+      {
+        name: '键盘测试',
+        path: '/keyboard-tester',
+        desc: '在线键盘按键检测，支持 ANSI 104 全键盘与 87 TKL 布局切换',
+        icon: BoltIcon,
       },
     ],
   },

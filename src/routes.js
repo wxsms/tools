@@ -59,4 +59,11 @@ export default [
       description: 'SVG 代码实时预览，支持美化 / 压缩、Data URI 生成、颜色覆盖与下载',
     },
   },
+  {
+    path: '/keyboard-tester',
+    meta: {
+      title: '键盘测试',
+      description: '在线键盘按键检测，支持 ANSI 104 全键盘与 87 TKL 布局切换，实时高亮按键状态',
+    },
+  },
 ]
