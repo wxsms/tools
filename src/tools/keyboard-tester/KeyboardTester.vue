@@ -53,15 +53,16 @@
       已按 {{ pressedCount }} / {{ totalKeys }} 键
     </div>
 
-    <!-- Keyboard (SVG so layout is reliably sized inside any parent) -->
+    <!-- Keyboard (SVG with viewBox → auto-scales, no horizontal scrollbar) -->
     <div
       ref="kbEl"
-      class="bg-base-200 rounded-lg p-3 overflow-x-auto"
+      class="bg-base-200 rounded-lg p-3"
       tabindex="0"
     >
       <svg
         :viewBox="`0 0 ${svgSize.width} ${svgSize.height}`"
-        :style="{ width: svgSize.width + 'px', height: svgSize.height + 'px', display: 'block' }"
+        class="w-full h-auto block"
+        :style="{ maxWidth: svgSize.width + 'px' }"
       >
         <g :transform="`translate(${PAD} ${PAD})`">
           <g
@@ -75,13 +76,14 @@
               :height="key.h * UNIT - GAP * 2"
               :rx="4"
               :class="keyRectClass(key)"
+              stroke-width="1"
             />
             <text
               :x="(key.x + key.w / 2) * UNIT"
               :y="(key.y + key.h / 2) * UNIT"
               text-anchor="middle"
               dominant-baseline="central"
-              :class="['key-label', (state[key.code] || 'idle') === 'active' ? 'key-label-active' : '']"
+              :class="['fill-base-content text-[12px] font-semibold select-none pointer-events-none', (state[key.code] || 'idle') === 'active' ? 'fill-success-content' : '']"
             >{{ key.label }}</text>
             <text
               v-if="key.sub"
@@ -89,14 +91,14 @@
               :y="(key.y + key.h / 2 + 0.32) * UNIT"
               text-anchor="middle"
               dominant-baseline="central"
-              class="key-sub"
+              class="fill-base-content text-[10px] opacity-60 select-none pointer-events-none"
             >{{ key.sub }}</text>
             <text
               v-if="isLimited(key.code)"
               :x="(key.x + key.w) * UNIT - GAP - 4"
               :y="key.y * UNIT + GAP + 8"
               text-anchor="end"
-              class="key-warn"
+              class="fill-warning text-[10px] opacity-70 select-none pointer-events-none"
             >⚠</text>
           </g>
         </g>
@@ -149,9 +151,9 @@ const svgSize = computed(() => {
 // SVG 内部坐标:用像素,通过 <g transform="translate(PAD PAD)"> 偏移内边距
 function keyRectClass(key) {
   const s = state[key.code] || 'idle'
-  if (s === 'active') return 'key-rect-active'
-  if (s === 'pressed') return 'key-rect-pressed'
-  return 'key-rect-idle'
+  if (s === 'active') return 'fill-success stroke-success'
+  if (s === 'pressed') return 'fill-info/30 stroke-info/40'
+  return 'fill-base-100 stroke-base-300'
 }
 
 const pressedCount = computed(() => {
@@ -205,46 +207,3 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
-.key-rect-idle {
-  fill: var(--b1);
-  stroke: var(--bc);
-  stroke-width: 0.5;
-  stroke-opacity: 0.3;
-}
-.key-rect-pressed {
-  fill: oklch(var(--in) / 0.3);
-  stroke: var(--in);
-  stroke-width: 1;
-  stroke-opacity: 0.4;
-}
-.key-rect-active {
-  fill: var(--su);
-  stroke: var(--su);
-  stroke-width: 1;
-}
-.key-label {
-  fill: var(--bc);
-  font-size: 12px;
-  font-weight: 600;
-  user-select: none;
-  pointer-events: none;
-}
-.key-label-active {
-  fill: var(--suc);
-}
-.key-sub {
-  fill: var(--bc);
-  font-size: 10px;
-  opacity: 0.6;
-  user-select: none;
-  pointer-events: none;
-}
-.key-warn {
-  fill: var(--wa);
-  font-size: 10px;
-  opacity: 0.6;
-  user-select: none;
-  pointer-events: none;
-}
-</style>
