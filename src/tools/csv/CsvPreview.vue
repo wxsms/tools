@@ -324,7 +324,12 @@ const visibleRows = computed(() => {
   }))
 })
 
-const bodyHeight = computed(() => displayedRows.value.length * ROW_HEIGHT)
+const bodyHeight = computed(() => {
+  const rows = displayedRows.value.length
+  // 筛选无结果时给 body 一个最小高度,让"无匹配数据"占位可见
+  if (rows === 0) return 64
+  return rows * ROW_HEIGHT
+})
 
 function onScroll(e) {
   scrollTop.value = e.target.scrollTop
