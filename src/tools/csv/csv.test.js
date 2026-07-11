@@ -58,6 +58,7 @@ import { columnStats } from './csv.js'
 import { sortRows } from './csv.js'
 import { filterRows } from './csv.js'
 import { toJson } from './csv.js'
+import { toMarkdown } from './csv.js'
 
 describe('columnStats', () => {
   it('returns empty object for empty values', () => {
@@ -243,5 +244,48 @@ describe('toJson', () => {
   it('handles duplicate headers (last wins per JS object semantics)', () => {
     const result = toJson([['1', '2']], ['k', 'k'])
     expect(JSON.parse(result)).toEqual([{ k: '2' }])
+  })
+})
+
+describe('toMarkdown', () => {
+  it('renders standard markdown table', () => {
+    const headers = ['name', 'age']
+    const rows = [['Alice', '30'], ['Bob', '25']]
+    const result = toMarkdown(rows, headers)
+    expect(result).toBe([
+      '| name | age |',
+      '| --- | --- |',
+      '| Alice | 30 |',
+      '| Bob | 25 |',
+      '',
+    ].join('\n'))
+  })
+
+  it('escapes pipe characters in cell content', () => {
+    const result = toMarkdown([['a|b']], ['col'])
+    expect(result).toContain('| a\\|b |')
+  })
+
+  it('replaces newlines in cell content with spaces', () => {
+    const result = toMarkdown([['line1\nline2']], ['col'])
+    expect(result).toContain('line1 line2')
+    expect(result).not.toContain('line1\nline2')
+  })
+
+  it('handles single column', () => {
+    const result = toMarkdown([['1'], ['2']], ['v'])
+    expect(result).toContain('| v |')
+    expect(result).toContain('| 1 |')
+    expect(result).toContain('| 2 |')
+  })
+
+  it('returns header + separator only for empty rows', () => {
+    const result = toMarkdown([], ['a', 'b'])
+    expect(result).toBe('| a | b |\n| --- | --- |\n')
+  })
+
+  it('handles empty cell values', () => {
+    const result = toMarkdown([['', 'x']], ['a', 'b'])
+    expect(result).toContain('|  | x |')
   })
 })

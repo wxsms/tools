@@ -135,6 +135,19 @@ export function toJson(rows, headers) {
   return JSON.stringify(objs, null, 2)
 }
 
-export function toMarkdown(_rows, _headers) {
-  return ''
+function escapeCell(v) {
+  return String(v ?? '')
+    .replace(/\r\n|\n|\r/g, ' ')
+    .replace(/\|/g, '\\|')
+}
+
+export function toMarkdown(rows, headers) {
+  const headerLine = '| ' + headers.map(escapeCell).join(' | ') + ' |'
+  const sepLine = '| ' + headers.map(() => '---').join(' | ') + ' |'
+  const bodyLines = rows.map(row =>
+    '| ' + headers.map((_, i) => escapeCell(row[i] ?? '')).join(' | ') + ' |'
+  )
+  const lines = [headerLine, sepLine, ...bodyLines]
+  // 每行末尾换行；body 为空时仍保留 header+sep 两个换行结尾
+  return lines.join('\n') + '\n'
 }
