@@ -213,7 +213,16 @@ import {
   toMarkdown,
 } from './csv.js'
 
-const input = ref('')
+const SAMPLE_CSV = [
+  'name,age,score,active,joined,last_login',
+  'Alice,30,95.5,true,2024-01-15,2024-12-01',
+  'Bob,25,87.2,false,2023-11-20,2024-11-28',
+  'Carol,35,92.8,true,2024-03-08,2024-12-10',
+  'David,28,78.1,false,2024-02-11,2024-10-15',
+  'Eve,40,88.9,true,2023-09-01,2024-12-09',
+].join('\n')
+
+const input = ref(SAMPLE_CSV)
 const fileName = ref('')
 const state = ref('idle') // 'idle' | 'loaded' | 'error'
 const error = ref('')

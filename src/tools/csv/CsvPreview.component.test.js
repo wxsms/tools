@@ -39,8 +39,9 @@ describe('CsvPreview - idle state', () => {
     expect(ta.attributes('placeholder')).toContain('粘贴 CSV')
   })
 
-  it('disables 解析 button when textarea is empty', () => {
+  it('disables 解析 button when textarea is empty', async () => {
     const wrapper = mountIdle()
+    await wrapper.find('textarea').setValue('')
     const btn = wrapper.findAll('button').find(b => b.text().includes('解析'))
     expect(btn.element.disabled).toBe(true)
   })
