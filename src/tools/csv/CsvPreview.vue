@@ -86,9 +86,42 @@
       </div>
       <div
         v-else
-        class="border border-base-content/10 rounded-lg p-6 text-center text-base-content/40 text-sm"
+        class="border border-base-content/10 rounded-lg overflow-auto"
       >
-        表格预览将在后续任务实现
+        <div class="sticky top-0 bg-base-100 z-10 flex">
+          <div
+            v-for="(h, i) in headers"
+            :key="i"
+            class="flex-1 px-2 py-1 border-b border-base-content/10 align-top"
+          >
+            <div class="font-semibold text-sm">
+              {{ h }}
+            </div>
+            <div class="text-xs opacity-60">
+              {{ types[i] }}
+            </div>
+            <div class="text-xs opacity-50">
+              {{ formatStats(columnStatsList[i], types[i]) }}
+            </div>
+          </div>
+        </div>
+        <div class="csv-body">
+          <div
+            v-for="(row, ri) in dataRows"
+            :key="ri"
+            class="flex"
+            data-row
+          >
+            <div
+              v-for="(cell, ci) in row"
+              :key="ci"
+              class="flex-1 px-2 truncate max-w-[200px] text-sm flex items-center"
+              :title="String(cell ?? '')"
+            >
+              {{ cell }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -103,7 +136,7 @@ import {
   TrashIcon,
   ArrowLeftIcon,
 } from '@heroicons/vue/24/outline'
-import { inferColumnType } from './csv.js'
+import { inferColumnType, columnStats } from './csv.js'
 
 const input = ref('')
 const fileName = ref('')
@@ -112,6 +145,22 @@ const error = ref('')
 const headers = ref([])
 const dataRows = ref([])
 const types = ref([])
+
+const columnStatsList = computed(() =>
+  headers.value.map((_, i) =>
+    columnStats(dataRows.value.map(r => r[i]), types.value[i])
+  )
+)
+
+function formatStats(stats, type) {
+  if (!stats || Object.keys(stats).length === 0) return ''
+  if (type === 'integer' || type === 'float') {
+    return `min:${stats.min} max:${stats.max} avg:${stats.avg}`
+  }
+  if (type === 'date') return `min:${stats.min} max:${stats.max}`
+  if (type === 'boolean') return `T:${stats.true} F:${stats.false}`
+  return `unique:${stats.unique}`
+}
 
 const typeSummary = computed(() => {
   if (types.value.length === 0) return ''

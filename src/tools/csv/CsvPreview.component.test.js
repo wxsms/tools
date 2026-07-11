@@ -139,3 +139,68 @@ describe('CsvPreview - error state', () => {
     expect(wrapper.find('textarea').exists()).toBe(true)
   })
 })
+
+describe('CsvPreview - table rendering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  async function mountLoaded() {
+    Papa.parse.mockReturnValue({
+      data: [
+        ['name', 'age', 'score'],
+        ['Alice', '30', '85.5'],
+        ['Bob', '25', '90.2'],
+      ],
+      errors: [],
+    })
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('name,age,score\nAlice,30,85.5\nBob,25,90.2')
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+    return wrapper
+  }
+
+  it('renders all column headers with type annotations', async () => {
+    const wrapper = await mountLoaded()
+    const text = wrapper.text()
+    expect(text).toContain('name')
+    expect(text).toContain('integer')
+    expect(text).toContain('float')
+    expect(text).toContain('string')
+  })
+
+  it('renders column stats in header row', async () => {
+    const wrapper = await mountLoaded()
+    const text = wrapper.text()
+    // age 30, 25 → min:25 max:30
+    expect(text).toContain('25')
+    expect(text).toContain('30')
+    // score avg = (85.5+90.2)/2 = 87.85
+    expect(text).toContain('87.85')
+  })
+
+  it('renders data rows in body', async () => {
+    const wrapper = await mountLoaded()
+    const body = wrapper.find('.csv-body')
+    expect(body.exists()).toBe(true)
+    const rows = body.findAll('[data-row]')
+    expect(rows.length).toBe(2)
+    expect(body.text()).toContain('Alice')
+    expect(body.text()).toContain('Bob')
+  })
+
+  it('truncates long cell content with title attribute', async () => {
+    Papa.parse.mockReturnValue({
+      data: [['col'], ['a'.repeat(500)]],
+      errors: [],
+    })
+    const wrapper = mount(CsvPreview)
+    await wrapper.find('textarea').setValue('col\n' + 'a'.repeat(500))
+    const parseBtn = wrapper.findAll('button').find(b => b.text().includes('解析'))
+    await parseBtn.trigger('click')
+    const cell = wrapper.find('.csv-body [data-row]:first-child > div:first-child')
+    expect(cell.attributes('title')).toBe('a'.repeat(500))
+    expect(cell.classes()).toContain('truncate')
+  })
+})
