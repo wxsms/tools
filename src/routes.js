@@ -45,4 +45,11 @@ export default [
       description: '估算 LLM 提示词的 token 数量，支持纯文本与 messages 对话结构，可视化展示分词结果',
     },
   },
+  {
+    path: '/csv',
+    meta: {
+      title: 'CSV 预览',
+      description: 'CSV 表格预览，支持类型推断、列统计、排序筛选、导出 JSON / Markdown',
+    },
+  },
 ]
