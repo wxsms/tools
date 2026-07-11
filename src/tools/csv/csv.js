@@ -124,8 +124,15 @@ export function filterRows(rows, filters) {
   )
 }
 
-export function toJson(_rows, _headers) {
-  return []
+export function toJson(rows, headers) {
+  const objs = rows.map(row => {
+    const obj = {}
+    for (let i = 0; i < headers.length; i++) {
+      obj[headers[i]] = row[i] ?? ''
+    }
+    return obj
+  })
+  return JSON.stringify(objs, null, 2)
 }
 
 export function toMarkdown(_rows, _headers) {

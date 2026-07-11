@@ -57,6 +57,7 @@ describe('inferColumnType', () => {
 import { columnStats } from './csv.js'
 import { sortRows } from './csv.js'
 import { filterRows } from './csv.js'
+import { toJson } from './csv.js'
 
 describe('columnStats', () => {
   it('returns empty object for empty values', () => {
@@ -208,5 +209,39 @@ describe('filterRows', () => {
   it('skips empty filter values (treats as no filter)', () => {
     const result = filterRows(rows, { 0: 'apple', 1: '' })
     expect(result.map(r => r[0])).toEqual(['apple', 'APPLE'])
+  })
+})
+
+describe('toJson', () => {
+  it('converts rows with headers as keys', () => {
+    const headers = ['name', 'age', 'city']
+    const rows = [
+      ['Alice', '30', 'Beijing'],
+      ['Bob', '25', 'Shanghai'],
+    ]
+    expect(JSON.parse(toJson(rows, headers))).toEqual([
+      { name: 'Alice', age: '30', city: 'Beijing' },
+      { name: 'Bob', age: '25', city: 'Shanghai' },
+    ])
+  })
+
+  it('returns pretty-printed JSON with 2-space indent', () => {
+    const result = toJson([['a', 'b']], ['x', 'y'])
+    expect(result).toContain('\n  ')
+    expect(result).toContain('"x": "a"')
+  })
+
+  it('handles single column', () => {
+    const result = toJson([['1'], ['2']], ['value'])
+    expect(JSON.parse(result)).toEqual([{ value: '1' }, { value: '2' }])
+  })
+
+  it('returns "[]" for empty rows', () => {
+    expect(toJson([], ['a', 'b'])).toBe('[]')
+  })
+
+  it('handles duplicate headers (last wins per JS object semantics)', () => {
+    const result = toJson([['1', '2']], ['k', 'k'])
+    expect(JSON.parse(result)).toEqual([{ k: '2' }])
   })
 })
