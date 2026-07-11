@@ -55,6 +55,7 @@ describe('inferColumnType', () => {
 })
 
 import { columnStats } from './csv.js'
+import { sortRows } from './csv.js'
 
 describe('columnStats', () => {
   it('returns empty object for empty values', () => {
@@ -103,5 +104,61 @@ describe('columnStats', () => {
     const values = []
     for (let i = 0; i < 150; i++) values.push(`v${i}`)
     expect(columnStats(values, 'string')).toEqual({ unique: '100+' })
+  })
+})
+
+describe('sortRows', () => {
+  const rows = [
+    ['3', '2024-03-01', 'apple'],
+    ['1', '2024-01-15', 'banana'],
+    ['2', '2024-12-31', 'apple'],
+  ]
+  const types = ['integer', 'date', 'string']
+
+  it('returns original array when direction is null', () => {
+    const sorted = sortRows(rows, 0, null, types)
+    expect(sorted).toBe(rows) // 引用相同，未复制
+  })
+
+  it('sorts integer column ascending', () => {
+    const sorted = sortRows(rows, 0, 'asc', types)
+    expect(sorted.map(r => r[0])).toEqual(['1', '2', '3'])
+  })
+
+  it('sorts integer column descending', () => {
+    const sorted = sortRows(rows, 0, 'desc', types)
+    expect(sorted.map(r => r[0])).toEqual(['3', '2', '1'])
+  })
+
+  it('sorts date column by timestamp, not string', () => {
+    const sorted = sortRows(rows, 1, 'asc', types)
+    expect(sorted.map(r => r[1])).toEqual(['2024-01-15', '2024-03-01', '2024-12-31'])
+  })
+
+  it('sorts string column with localeCompare ascending', () => {
+    const sorted = sortRows(rows, 2, 'asc', types)
+    expect(sorted.map(r => r[2])).toEqual(['apple', 'apple', 'banana'])
+  })
+
+  it('pushes empty values to end on ascending sort', () => {
+    const rowsWithEmpty = [
+      ['3', 'a'],
+      ['', 'b'],
+      ['1', 'c'],
+    ]
+    const sorted = sortRows(rowsWithEmpty, 0, 'asc', ['integer', 'string'])
+    expect(sorted.map(r => r[0])).toEqual(['1', '3', ''])
+  })
+
+  it('sorts float column numerically (not as string)', () => {
+    const fRows = [['10.5'], ['2.1'], ['100.0']]
+    const sorted = sortRows(fRows, 0, 'asc', ['float'])
+    expect(sorted.map(r => r[0])).toEqual(['2.1', '10.5', '100.0'])
+  })
+
+  it('does not mutate original array', () => {
+    const before = rows.map(r => [...r])
+    sortRows(rows, 0, 'asc', types)
+    expect(rows).toEqual(before)
   })
 })

@@ -78,8 +78,35 @@ export function columnStats(values, type) {
   return { unique: unique.size }
 }
 
-export function sortRows(rows, _columnIndex, _direction) {
-  return rows
+function compareValues(a, b, type) {
+  const aEmpty = a === '' || a == null
+  const bEmpty = b === '' || b == null
+  if (aEmpty && bEmpty) return 0
+  if (aEmpty) return 1   // 空值始终排到末尾
+  if (bEmpty) return -1
+
+  if (type === 'integer' || type === 'float') {
+    return Number(a) - Number(b)
+  }
+  if (type === 'date') {
+    return Date.parse(a) - Date.parse(b)
+  }
+  if (type === 'boolean') {
+    // false < true
+    const av = /^true$/i.test(a) ? 1 : 0
+    const bv = /^true$/i.test(b) ? 1 : 0
+    return av - bv
+  }
+  return String(a).localeCompare(String(b))
+}
+
+export function sortRows(rows, columnIndex, direction, types) {
+  if (direction !== 'asc' && direction !== 'desc') return rows
+  const type = types ? types[columnIndex] : 'string'
+  const sign = direction === 'asc' ? 1 : -1
+  const copy = [...rows]
+  copy.sort((a, b) => sign * compareValues(a[columnIndex], b[columnIndex], type))
+  return copy
 }
 
 export function filterRows(rows, _filters) {
