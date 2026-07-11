@@ -52,4 +52,11 @@ export default [
       description: 'CSV 表格预览，支持类型推断、列统计、排序筛选、导出 JSON / Markdown',
     },
   },
+  {
+    path: '/svg-preview',
+    meta: {
+      title: 'SVG 预览',
+      description: 'SVG 代码实时预览，支持美化 / 压缩、Data URI 生成、颜色覆盖与下载',
+    },
+  },
 ]
