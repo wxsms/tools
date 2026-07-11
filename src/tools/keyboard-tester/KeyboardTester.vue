@@ -166,16 +166,19 @@ const pressedCount = computed(() => {
 })
 
 function onKeyDown(e) {
+  // 阻断默认行为(F5 刷新、Ctrl+R、Tab 切焦点、Backspace 后退等),
+  // 让用户在这页测试键盘时按键不会触发浏览器/页面副作用。
+  // 仅影响 keydown 不影响 keyup,不影响 OS 级或浏览器 chrome 快捷键
+  // (如 Ctrl+W / Ctrl+N / Alt+Tab 等本就拿不到事件)。
+  e.preventDefault()
   if (e.repeat) return
   const code = e.code
   if (!code) return
-  if (currentLayout.value.some(k => k.code === code)) {
-    e.preventDefault()
-    state[code] = 'active'
-  }
+  state[code] = 'active'
 }
 
 function onKeyUp(e) {
+  e.preventDefault()
   const code = e.code
   if (!code) return
   if (state[code] === 'active') {
