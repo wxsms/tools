@@ -35,6 +35,7 @@ import Gradient from './tools/gradient/Gradient.vue'
 import BorderRadius from './tools/border-radius/BorderRadius.vue'
 import Triangle from './tools/triangle/Triangle.vue'
 import CssAnimation from './tools/css-animation/CssAnimation.vue'
+import CubicBezier from './tools/cubic-bezier/CubicBezier.vue'
 import CodeScreenshot from './tools/code-screenshot/CodeScreenshot.vue'
 import PatchViewer from './tools/patch-viewer/PatchViewer.vue'
 import CliFormat from './tools/cli-format/CliFormat.vue'
@@ -80,6 +81,7 @@ const components = {
   '/border-radius': BorderRadius,
   '/triangle': Triangle,
   '/css-animation': CssAnimation,
+  '/cubic-bezier': CubicBezier,
   '/code-screenshot': CodeScreenshot,
   '/patch-viewer': PatchViewer,
   '/cli-format': CliFormat,

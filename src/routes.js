@@ -34,6 +34,7 @@ export default [
   { path: '/border-radius', meta: { title: '圆角', description: 'CSS border-radius 可视化生成' } },
   { path: '/triangle', meta: { title: '三角形', description: 'CSS border 三角形生成' } },
   { path: '/css-animation', meta: { title: 'CSS 动画', description: 'CSS animation 可视化生成' } },
+  { path: '/cubic-bezier', meta: { title: '贝塞尔曲线', description: 'CSS cubic-bezier 缓动曲线可视化编辑，可拖拽控制点、预览动画' } },
   { path: '/code-screenshot', meta: { title: '代码截图', description: '代码语法高亮截图，支持多语言与主题' } },
   { path: '/patch-viewer', meta: { title: 'Patch 查看', description: '可视化查看 git diff / unified patch 文件' } },
   { path: '/cli-format', meta: { title: '命令行格式转换', description: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义' } },

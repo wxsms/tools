@@ -40,6 +40,7 @@ import {
   CpuChipIcon,
   BeakerIcon,
   BoltIcon,
+  ChartBarSquareIcon,
 } from '@heroicons/vue/24/outline'
 
 export const toolGroups = [
@@ -198,6 +199,12 @@ export const toolGroups = [
         path: '/css-animation',
         desc: 'CSS animation 可视化生成',
         icon: FilmIcon,
+      },
+      {
+        name: '贝塞尔曲线',
+        path: '/cubic-bezier',
+        desc: 'CSS cubic-bezier 缓动曲线可视化编辑，可拖拽控制点、预览动画',
+        icon: ChartBarSquareIcon,
       },
     ],
   },
