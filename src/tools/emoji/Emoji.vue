@@ -28,7 +28,7 @@
         data-test="tab"
         class="btn btn-sm shrink-0"
         :class="activeGroup === tab.id ? 'btn-primary' : 'btn-ghost'"
-        @click="activeGroup = tab.id"
+        @click="onTabClick(tab.id)"
       >
         {{ tab.name }}
       </button>
@@ -50,6 +50,12 @@
       >
         {{ emoji.char }}
       </button>
+    </div>
+    <div
+      v-else
+      class="text-center py-12 opacity-50"
+    >
+      未找到匹配的 emoji
     </div>
 
     <div
@@ -284,5 +290,10 @@ async function copyAndToast(text, msg) {
 async function onEmojiClick(emoji) {
   selectedHex.value = emoji.hexcode
   await copyAndToast(emoji.char, `已复制 ${emoji.char}`)
+}
+
+function onTabClick(id) {
+  activeGroup.value = id
+  selectedHex.value = null
 }
 </script>

@@ -71,6 +71,27 @@ describe('Emoji component', () => {
     expect(after).toBeLessThan(before)
   })
 
+  it('hides detail panel when switching tab', async () => {
+    const wrapper = mountComponent()
+    const btn = wrapper.find('[data-test="emoji-btn"]')
+    await btn.trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="detail"]').exists()).toBe(true)
+    const tabs = wrapper.findAll('[data-test="tab"]')
+    await tabs[1].trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="detail"]').exists()).toBe(false)
+  })
+
+  it('shows empty state when search has no match', async () => {
+    const wrapper = mountComponent()
+    const input = wrapper.find('input[type="text"]')
+    await input.setValue('xyzqwerty_nothing')
+    await flushPromises()
+    expect(wrapper.findAll('[data-test="emoji-btn"]').length).toBe(0)
+    expect(wrapper.text()).toContain('未找到匹配的 emoji')
+  })
+
   it('copies char when emoji clicked', async () => {
     const wrapper = mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
