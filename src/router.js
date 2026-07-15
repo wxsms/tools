@@ -1,97 +1,54 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import routeDefs from './routes.js'
 import Home from './tools/home/Home.vue'
-import Base64 from './tools/base64/Base64.vue'
-import Gzip from './tools/gzip/Gzip.vue'
-import Diff from './tools/diff/Diff.vue'
-import Watermark from './tools/watermark/Watermark.vue'
-import AesEncrypt from './tools/aes-encrypt/AesEncrypt.vue'
-import HashHmac from './tools/hash-hmac/HashHmac.vue'
-import Json from './tools/json/Json.vue'
-import FileBase64 from './tools/file-base64/FileBase64.vue'
-import Rsa from './tools/rsa/Rsa.vue'
-import UrlEncode from './tools/url-encode/UrlEncode.vue'
-import Case from './tools/case/Case.vue'
-import Timestamp from './tools/timestamp/Timestamp.vue'
-import MdHtml from './tools/md-html/MdHtml.vue'
-import QrCode from './tools/qr-code/QrCode.vue'
-import Regex from './tools/regex/Regex.vue'
-import Uuid from './tools/uuid/Uuid.vue'
-import HtmlEntity from './tools/html-entity/HtmlEntity.vue'
-import Password from './tools/password/Password.vue'
-import ColorPicker from './tools/color-picker/ColorPicker.vue'
-import IpLookup from './tools/ip-lookup/IpLookup.vue'
-import ImageCompress from './tools/image-compress/ImageCompress.vue'
-import HttpStatus from './tools/http-status/HttpStatus.vue'
-import Unicode from './tools/unicode/Unicode.vue'
-import UrlParse from './tools/url-parse/UrlParse.vue'
-import JwtDecode from './tools/jwt-decode/JwtDecode.vue'
-import Cron from './tools/cron/Cron.vue'
-import Radix from './tools/radix/Radix.vue'
-import Lorem from './tools/lorem/Lorem.vue'
-import MimeTypes from './tools/mime-types/MimeTypes.vue'
-import BoxShadow from './tools/box-shadow/BoxShadow.vue'
-import Gradient from './tools/gradient/Gradient.vue'
-import BorderRadius from './tools/border-radius/BorderRadius.vue'
-import Triangle from './tools/triangle/Triangle.vue'
-import CssAnimation from './tools/css-animation/CssAnimation.vue'
-import CubicBezier from './tools/cubic-bezier/CubicBezier.vue'
-import CodeScreenshot from './tools/code-screenshot/CodeScreenshot.vue'
-import PatchViewer from './tools/patch-viewer/PatchViewer.vue'
-import CliFormat from './tools/cli-format/CliFormat.vue'
-import KvCache from './tools/kv-cache/KvCache.vue'
-import TokenCounter from './tools/token-counter/TokenCounter.vue'
-import CsvPreview from './tools/csv/CsvPreview.vue'
-import SvgPreview from './tools/svg-preview/SvgPreview.vue'
-import KeyboardTester from './tools/keyboard-tester/KeyboardTester.vue'
-import Emoji from './tools/emoji/Emoji.vue'
+import { lazy } from './lazy.js'
 
 const components = {
   '/': Home,
-  '/base64': Base64,
-  '/gzip': Gzip,
-  '/diff': Diff,
-  '/watermark': Watermark,
-  '/aes-encrypt': AesEncrypt,
-  '/hash-hmac': HashHmac,
-  '/json': Json,
-  '/file-base64': FileBase64,
-  '/rsa': Rsa,
-  '/url-encode': UrlEncode,
-  '/case': Case,
-  '/timestamp': Timestamp,
-  '/md-html': MdHtml,
-  '/qr-code': QrCode,
-  '/regex': Regex,
-  '/uuid': Uuid,
-  '/html-entity': HtmlEntity,
-  '/password': Password,
-  '/color-picker': ColorPicker,
-  '/ip-lookup': IpLookup,
-  '/image-compress': ImageCompress,
-  '/http-status': HttpStatus,
-  '/unicode': Unicode,
-  '/url-parse': UrlParse,
-  '/jwt-decode': JwtDecode,
-  '/cron': Cron,
-  '/radix': Radix,
-  '/lorem': Lorem,
-  '/mime-types': MimeTypes,
-  '/box-shadow': BoxShadow,
-  '/gradient': Gradient,
-  '/border-radius': BorderRadius,
-  '/triangle': Triangle,
-  '/css-animation': CssAnimation,
-  '/cubic-bezier': CubicBezier,
-  '/code-screenshot': CodeScreenshot,
-  '/patch-viewer': PatchViewer,
-  '/cli-format': CliFormat,
-  '/kv-cache': KvCache,
-  '/token-counter': TokenCounter,
-  '/csv': CsvPreview,
-  '/svg-preview': SvgPreview,
-  '/keyboard-tester': KeyboardTester,
-  '/emoji': Emoji,
+  '/base64': lazy(() => import('./tools/base64/Base64.vue')),
+  '/gzip': lazy(() => import('./tools/gzip/Gzip.vue')),
+  '/diff': lazy(() => import('./tools/diff/Diff.vue')),
+  '/watermark': lazy(() => import('./tools/watermark/Watermark.vue')),
+  '/aes-encrypt': lazy(() => import('./tools/aes-encrypt/AesEncrypt.vue')),
+  '/hash-hmac': lazy(() => import('./tools/hash-hmac/HashHmac.vue')),
+  '/json': lazy(() => import('./tools/json/Json.vue')),
+  '/file-base64': lazy(() => import('./tools/file-base64/FileBase64.vue')),
+  '/rsa': lazy(() => import('./tools/rsa/Rsa.vue')),
+  '/url-encode': lazy(() => import('./tools/url-encode/UrlEncode.vue')),
+  '/case': lazy(() => import('./tools/case/Case.vue')),
+  '/timestamp': lazy(() => import('./tools/timestamp/Timestamp.vue')),
+  '/md-html': lazy(() => import('./tools/md-html/MdHtml.vue')),
+  '/qr-code': lazy(() => import('./tools/qr-code/QrCode.vue')),
+  '/regex': lazy(() => import('./tools/regex/Regex.vue')),
+  '/uuid': lazy(() => import('./tools/uuid/Uuid.vue')),
+  '/html-entity': lazy(() => import('./tools/html-entity/HtmlEntity.vue')),
+  '/password': lazy(() => import('./tools/password/Password.vue')),
+  '/color-picker': lazy(() => import('./tools/color-picker/ColorPicker.vue')),
+  '/ip-lookup': lazy(() => import('./tools/ip-lookup/IpLookup.vue')),
+  '/image-compress': lazy(() => import('./tools/image-compress/ImageCompress.vue')),
+  '/http-status': lazy(() => import('./tools/http-status/HttpStatus.vue')),
+  '/unicode': lazy(() => import('./tools/unicode/Unicode.vue')),
+  '/url-parse': lazy(() => import('./tools/url-parse/UrlParse.vue')),
+  '/jwt-decode': lazy(() => import('./tools/jwt-decode/JwtDecode.vue')),
+  '/cron': lazy(() => import('./tools/cron/Cron.vue')),
+  '/radix': lazy(() => import('./tools/radix/Radix.vue')),
+  '/lorem': lazy(() => import('./tools/lorem/Lorem.vue')),
+  '/mime-types': lazy(() => import('./tools/mime-types/MimeTypes.vue')),
+  '/box-shadow': lazy(() => import('./tools/box-shadow/BoxShadow.vue')),
+  '/gradient': lazy(() => import('./tools/gradient/Gradient.vue')),
+  '/border-radius': lazy(() => import('./tools/border-radius/BorderRadius.vue')),
+  '/triangle': lazy(() => import('./tools/triangle/Triangle.vue')),
+  '/css-animation': lazy(() => import('./tools/css-animation/CssAnimation.vue')),
+  '/cubic-bezier': lazy(() => import('./tools/cubic-bezier/CubicBezier.vue')),
+  '/code-screenshot': lazy(() => import('./tools/code-screenshot/CodeScreenshot.vue')),
+  '/patch-viewer': lazy(() => import('./tools/patch-viewer/PatchViewer.vue')),
+  '/cli-format': lazy(() => import('./tools/cli-format/CliFormat.vue')),
+  '/kv-cache': lazy(() => import('./tools/kv-cache/KvCache.vue')),
+  '/token-counter': lazy(() => import('./tools/token-counter/TokenCounter.vue')),
+  '/csv': lazy(() => import('./tools/csv/CsvPreview.vue')),
+  '/svg-preview': lazy(() => import('./tools/svg-preview/SvgPreview.vue')),
+  '/keyboard-tester': lazy(() => import('./tools/keyboard-tester/KeyboardTester.vue')),
+  '/emoji': lazy(() => import('./tools/emoji/Emoji.vue')),
 }
 
 const routes = routeDefs.map(r => ({
