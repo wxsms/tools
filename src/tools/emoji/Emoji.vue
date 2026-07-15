@@ -4,59 +4,83 @@
       Emoji 大全
     </h1>
 
-    <div class="relative mb-4">
-      <input
-        v-model="query"
-        type="text"
-        class="input input-bordered w-full pr-10"
-        placeholder="输入关键词搜索（英文）..."
-      >
-      <button
-        v-if="query"
-        class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
-        aria-label="清空搜索"
-        @click="query = ''"
-      >
-        ✕
-      </button>
-    </div>
-
-    <div class="flex gap-1 overflow-x-auto mb-6 pb-1">
-      <button
-        v-for="tab in tabs"
-        :key="String(tab.id)"
-        data-test="tab"
-        class="btn btn-sm shrink-0"
-        :class="activeGroup === tab.id ? 'btn-primary' : 'btn-ghost'"
-        @click="activeGroup = tab.id"
-      >
-        {{ tab.name }}
-      </button>
-    </div>
-
     <div
-      v-if="visibleEmojis.length"
-      class="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1"
-    >
-      <button
-        v-for="emoji in beforeAndRow"
-        :key="emoji.hexcode"
-        data-test="emoji-btn"
-        class="aspect-square text-3xl flex items-center justify-center rounded-lg hover:bg-base-200 active:scale-95 transition"
-        :class="{ 'bg-base-300 ring-2 ring-primary': selectedHex === emoji.hexcode }"
-        :title="emoji.label"
-        :aria-label="`复制 emoji ${emoji.label}`"
-        @click="onEmojiClick(emoji)"
-      >
-        {{ emoji.char }}
-      </button>
-    </div>
-    <div
-      v-else
+      v-if="loading"
       class="text-center py-12 opacity-50"
+      data-test="loading"
     >
-      未找到匹配的 emoji
+      <span class="loading loading-spinner loading-lg" />
+      <p class="mt-2">
+        加载 emoji 数据中...
+      </p>
     </div>
+
+    <div
+      v-else-if="loadError"
+      class="text-center py-12 text-error"
+      data-test="error"
+    >
+      <p>emoji 数据加载失败</p>
+      <p class="text-sm opacity-70 mt-1">
+        {{ loadError.message }}
+      </p>
+    </div>
+
+    <template v-else>
+      <div class="relative mb-4">
+        <input
+          v-model="query"
+          type="text"
+          class="input input-bordered w-full pr-10"
+          placeholder="输入关键词搜索（英文）..."
+        >
+        <button
+          v-if="query"
+          class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-circle"
+          aria-label="清空搜索"
+          @click="query = ''"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex gap-1 overflow-x-auto mb-6 pb-1">
+        <button
+          v-for="tab in tabs"
+          :key="String(tab.id)"
+          data-test="tab"
+          class="btn btn-sm shrink-0"
+          :class="activeGroup === tab.id ? 'btn-primary' : 'btn-ghost'"
+          @click="activeGroup = tab.id"
+        >
+          {{ tab.name }}
+        </button>
+      </div>
+
+      <div
+        v-if="visibleEmojis.length"
+        class="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1"
+      >
+        <button
+          v-for="emoji in beforeAndRow"
+          :key="emoji.hexcode"
+          data-test="emoji-btn"
+          class="aspect-square text-3xl flex items-center justify-center rounded-lg hover:bg-base-200 active:scale-95 transition"
+          :class="{ 'bg-base-300 ring-2 ring-primary': selectedHex === emoji.hexcode }"
+          :title="emoji.label"
+          :aria-label="`复制 emoji ${emoji.label}`"
+          @click="onEmojiClick(emoji)"
+        >
+          {{ emoji.char }}
+        </button>
+      </div>
+      <div
+        v-else
+        class="text-center py-12 opacity-50"
+      >
+        未找到匹配的 emoji
+      </div>
+    </template>
 
     <div
       v-if="selectedEmoji && visibleEmojis.length"
@@ -194,7 +218,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { EMOJIS, GROUPS } from './emoji-data.js'
+import { loadEmojiData, GROUPS } from './emoji-data.js'
 import { searchEmojis, copyFormats, copyText } from './emoji.js'
 
 const query = ref('')
@@ -202,6 +226,10 @@ const activeGroup = ref(null)
 const selectedHex = ref(null)
 const toast = ref(null)
 let toastTimer = null
+
+const emojis = ref([])
+const loading = ref(true)
+const loadError = ref(null)
 
 const cols = ref(8)
 let smMQ = null
@@ -213,13 +241,20 @@ function updateCols() {
   else cols.value = 8
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (typeof window !== 'undefined' && window.matchMedia) {
     smMQ = window.matchMedia('(min-width: 640px)')
     lgMQ = window.matchMedia('(min-width: 1024px)')
     updateCols()
     if (smMQ.addEventListener) smMQ.addEventListener('change', updateCols)
     if (lgMQ.addEventListener) lgMQ.addEventListener('change', updateCols)
+  }
+  try {
+    emojis.value = await loadEmojiData()
+  } catch (e) {
+    loadError.value = e
+  } finally {
+    loading.value = false
   }
 })
 
@@ -234,17 +269,16 @@ const tabs = computed(() => [
 ])
 
 const filteredByGroup = computed(() => {
-  if (activeGroup.value === null) return EMOJIS
-  return EMOJIS.filter(e => e.group === activeGroup.value)
+  if (activeGroup.value === null) return emojis.value
+  return emojis.value.filter(e => e.group === activeGroup.value)
 })
 
 const visibleEmojis = computed(() => searchEmojis(filteredByGroup.value, query.value))
 
 const selectedEmoji = computed(() => {
   if (!selectedHex.value) return null
-  // 仅当选中的 emoji 仍在当前可见结果内时才展示详情面板
   if (!visibleEmojis.value.some(e => e.hexcode === selectedHex.value)) return null
-  return EMOJIS.find(e => e.hexcode === selectedHex.value) || null
+  return emojis.value.find(e => e.hexcode === selectedHex.value) || null
 })
 
 const formats = computed(() => selectedEmoji.value ? copyFormats(selectedEmoji.value) : null)

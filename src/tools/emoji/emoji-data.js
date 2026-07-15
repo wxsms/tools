@@ -1,6 +1,3 @@
-import compact from 'emojibase-data/en/compact.json'
-import shortcodesMap from 'emojibase-data/en/shortcodes/emojibase.json'
-
 export const GROUPS = [
   { id: 0, name: '笑脸与情感' },
   { id: 1, name: '人与身体' },
@@ -21,20 +18,58 @@ function normalizeShortcodes(value) {
   return [value]
 }
 
-export const EMOJIS = compact
-  .filter(e => VALID_GROUP_IDS.has(e.group))
-  .map(e => ({
-    hexcode: e.hexcode,
-    char: e.unicode,
-    label: e.label,
-    shortcodes: normalizeShortcodes(shortcodesMap[e.hexcode]),
-    tags: e.tags || [],
-    group: e.group,
-    order: e.order,
-    skins: (e.skins || []).map(s => ({
-      hexcode: s.hexcode,
-      char: s.unicode,
-      label: s.label,
-    })),
-  }))
-  .sort((a, b) => a.order - b.order)
+let cache = null
+let pending = null
+
+export async function loadEmojiData() {
+  if (cache) return cache
+  if (pending) return pending
+  pending = (async () => {
+    const [compact, shortcodesMap] = await Promise.all([
+      import('emojibase-data/en/compact.json'),
+      import('emojibase-data/en/shortcodes/emojibase.json'),
+    ])
+    const data = compact.default || compact
+    const sc = shortcodesMap.default || shortcodesMap
+    cache = data
+      .filter(e => VALID_GROUP_IDS.has(e.group))
+      .map(e => ({
+        hexcode: e.hexcode,
+        char: e.unicode,
+        label: e.label,
+        shortcodes: normalizeShortcodes(sc[e.hexcode]),
+        tags: e.tags || [],
+        group: e.group,
+        order: e.order,
+        skins: (e.skins || []).map(s => ({
+          hexcode: s.hexcode,
+          char: s.unicode,
+          label: s.label,
+        })),
+      }))
+      .sort((a, b) => a.order - b.order)
+    return cache
+  })()
+  return pending
+}
+
+// 仅供测试同步使用：直接接收原始数据并预处理
+export function preprocessEmojis(compact, shortcodesMap) {
+  return compact
+    .filter(e => VALID_GROUP_IDS.has(e.group))
+    .map(e => ({
+      hexcode: e.hexcode,
+      char: e.unicode,
+      label: e.label,
+      shortcodes: normalizeShortcodes(shortcodesMap[e.hexcode]),
+      tags: e.tags || [],
+      group: e.group,
+      order: e.order,
+      skins: (e.skins || []).map(s => ({
+        hexcode: s.hexcode,
+        char: s.unicode,
+        label: s.label,
+      })),
+    }))
+    .sort((a, b) => a.order - b.order)
+}

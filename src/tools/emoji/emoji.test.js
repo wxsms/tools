@@ -1,6 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { EMOJIS, GROUPS } from './emoji-data.js'
+import { describe, it, expect, beforeAll } from 'vitest'
+import { loadEmojiData, GROUPS } from './emoji-data.js'
 import { getEmojiGroups, searchEmojis, copyFormats } from './emoji.js'
+
+let EMOJIS
+
+beforeAll(async () => {
+  EMOJIS = await loadEmojiData()
+})
 
 describe('emoji-data integrity', () => {
   it('has more than 1500 emojis', () => {

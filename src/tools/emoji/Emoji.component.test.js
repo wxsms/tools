@@ -2,8 +2,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import Emoji from './Emoji.vue'
 
-function mountComponent() {
-  return mount(Emoji)
+async function mountComponent() {
+  const wrapper = mount(Emoji)
+  await vi.dynamicImportSettled()
+  await flushPromises()
+  return wrapper
 }
 
 describe('Emoji component', () => {
@@ -15,31 +18,31 @@ describe('Emoji component', () => {
     })
   })
 
-  it('renders title', () => {
-    const wrapper = mountComponent()
+  it('renders title', async () => {
+    const wrapper = await mountComponent()
     expect(wrapper.text()).toContain('Emoji 大全')
   })
 
-  it('renders search input', () => {
-    const wrapper = mountComponent()
+  it('renders search input', async () => {
+    const wrapper = await mountComponent()
     expect(wrapper.find('input[type="text"]').exists()).toBe(true)
   })
 
-  it('renders category tabs (全部 + 9 groups = 10)', () => {
-    const wrapper = mountComponent()
+  it('renders category tabs (全部 + 9 groups = 10)', async () => {
+    const wrapper = await mountComponent()
     const tabs = wrapper.findAll('[data-test="tab"]')
     expect(tabs.length).toBe(10)
     expect(tabs[0].text()).toContain('全部')
   })
 
-  it('renders at least 100 emoji buttons under 全部', () => {
-    const wrapper = mountComponent()
+  it('renders at least 100 emoji buttons under 全部', async () => {
+    const wrapper = await mountComponent()
     const buttons = wrapper.findAll('[data-test="emoji-btn"]')
     expect(buttons.length).toBeGreaterThan(100)
   })
 
   it('filters emojis by search query', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const before = wrapper.findAll('[data-test="emoji-btn"]').length
     const input = wrapper.find('input[type="text"]')
     await input.setValue('grinning')
@@ -50,7 +53,7 @@ describe('Emoji component', () => {
   })
 
   it('restores full list when search cleared', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const before = wrapper.findAll('[data-test="emoji-btn"]').length
     const input = wrapper.find('input[type="text"]')
     await input.setValue('grinning')
@@ -62,7 +65,7 @@ describe('Emoji component', () => {
   })
 
   it('filters by category when tab clicked', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const before = wrapper.findAll('[data-test="emoji-btn"]').length
     const tabs = wrapper.findAll('[data-test="tab"]')
     await tabs[1].trigger('click')
@@ -72,7 +75,7 @@ describe('Emoji component', () => {
   })
 
   it('hides detail panel when selected emoji filtered out', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     // 点第一个 emoji（通常是 grinning face，label 含 'grinning'）
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
@@ -86,7 +89,7 @@ describe('Emoji component', () => {
   })
 
   it('keeps detail panel when selected emoji still in results', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
     await flushPromises()
@@ -99,7 +102,7 @@ describe('Emoji component', () => {
   })
 
   it('shows empty state when search has no match', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const input = wrapper.find('input[type="text"]')
     await input.setValue('xyzqwerty_nothing')
     await flushPromises()
@@ -108,7 +111,7 @@ describe('Emoji component', () => {
   })
 
   it('copies char when emoji clicked', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
     await flushPromises()
@@ -119,7 +122,7 @@ describe('Emoji component', () => {
   })
 
   it('shows detail panel when emoji clicked', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     expect(wrapper.find('[data-test="detail"]').exists()).toBe(false)
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
@@ -128,7 +131,7 @@ describe('Emoji component', () => {
   })
 
   it('renders 5 copy format buttons in detail panel', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
     await flushPromises()
@@ -137,7 +140,7 @@ describe('Emoji component', () => {
   })
 
   it('copies codepoint format when codepoint button clicked', async () => {
-    const wrapper = mountComponent()
+    const wrapper = await mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
     await flushPromises()
@@ -150,5 +153,12 @@ describe('Emoji component', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalled()
     const arg = navigator.clipboard.writeText.mock.calls[0][0]
     expect(arg).toMatch(/^U\+[0-9A-F]+( U\+[0-9A-F]+)*$/)
+  })
+
+  it('shows loading state before data is loaded', () => {
+    const wrapper = mount(Emoji)
+    // 未 flushPromises，应处于 loading 状态
+    expect(wrapper.find('[data-test="loading"]').exists()).toBe(true)
+    expect(wrapper.find('input[type="text"]').exists()).toBe(false)
   })
 })
