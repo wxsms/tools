@@ -68,4 +68,11 @@ export default [
       wide: true,
     },
   },
+  {
+    path: '/emoji',
+    meta: {
+      title: 'Emoji 大全',
+      description: 'Emoji 查询与复制，支持字符、shortcode、码点、HTML 实体、URL 编码多种格式',
+    },
+  },
 ]
