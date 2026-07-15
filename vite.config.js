@@ -17,7 +17,12 @@ export default defineConfig({
       routes: routeDefs.map(r => r.path),
       renderer: new vitePrerender.PuppeteerRenderer({
         headless: true,
-        renderAfterDocumentEvent: 'x-app-rendered',
+        timeout: 60000,
+        navigationOptions: {
+          waituntil: 'domcontentloaded',
+          timeout: 60000,
+        },
+        renderAfterTime: 3000,
       }),
       postProcess(renderedRoute) {
         renderedRoute.route = renderedRoute.originalRoute
