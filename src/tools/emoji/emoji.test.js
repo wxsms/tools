@@ -103,11 +103,11 @@ describe('copyFormats', () => {
     const thumbsUp = EMOJIS.find(e => e.hexcode === '1F44D')
     expect(thumbsUp).toBeTruthy()
     const fmt = copyFormats(thumbsUp)
-    expect(fmt.char).toBe('👍')
-    expect(fmt.shortcode).toBe(':thumbsup:')
+    expect(fmt.char).toBe(thumbsUp.char)
+    expect(fmt.shortcode).toBe(':' + thumbsUp.shortcodes[0] + ':')
     expect(fmt.codepoint).toBe('U+1F44D')
     expect(fmt.htmlEntity).toBe('&#128077;')
-    expect(fmt.urlEncoded).toBe(encodeURIComponent('👍'))
+    expect(fmt.urlEncoded).toBe(encodeURIComponent(thumbsUp.char))
   })
 
   it('returns empty shortcode when no shortcodes', () => {

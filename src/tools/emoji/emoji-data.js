@@ -15,13 +15,19 @@ export const GROUPS = [
 
 const VALID_GROUP_IDS = new Set(GROUPS.map(g => g.id))
 
+function normalizeShortcodes(value) {
+  if (!value) return []
+  if (Array.isArray(value)) return value
+  return [value]
+}
+
 export const EMOJIS = compact
   .filter(e => VALID_GROUP_IDS.has(e.group))
   .map(e => ({
     hexcode: e.hexcode,
     char: e.unicode,
     label: e.label,
-    shortcodes: shortcodesMap[e.hexcode] || [],
+    shortcodes: normalizeShortcodes(shortcodesMap[e.hexcode]),
     tags: e.tags || [],
     group: e.group,
     order: e.order,
