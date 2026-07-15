@@ -71,16 +71,31 @@ describe('Emoji component', () => {
     expect(after).toBeLessThan(before)
   })
 
-  it('hides detail panel when switching tab', async () => {
+  it('hides detail panel when selected emoji filtered out', async () => {
+    const wrapper = mountComponent()
+    // 点第一个 emoji（通常是 grinning face，label 含 'grinning'）
+    const btn = wrapper.find('[data-test="emoji-btn"]')
+    await btn.trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="detail"]').exists()).toBe(true)
+    // 搜索一个不会命中已选中 emoji 的词
+    const input = wrapper.find('input[type="text"]')
+    await input.setValue('thumbsup')
+    await flushPromises()
+    expect(wrapper.find('[data-test="detail"]').exists()).toBe(false)
+  })
+
+  it('keeps detail panel when selected emoji still in results', async () => {
     const wrapper = mountComponent()
     const btn = wrapper.find('[data-test="emoji-btn"]')
     await btn.trigger('click')
     await flushPromises()
     expect(wrapper.find('[data-test="detail"]').exists()).toBe(true)
-    const tabs = wrapper.findAll('[data-test="tab"]')
-    await tabs[1].trigger('click')
+    // 搜索一个会命中已选中 emoji 的词（第一个是 grinning face，label 含 'grinning'）
+    const input = wrapper.find('input[type="text"]')
+    await input.setValue('grinning')
     await flushPromises()
-    expect(wrapper.find('[data-test="detail"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="detail"]').exists()).toBe(true)
   })
 
   it('shows empty state when search has no match', async () => {

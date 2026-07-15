@@ -28,7 +28,7 @@
         data-test="tab"
         class="btn btn-sm shrink-0"
         :class="activeGroup === tab.id ? 'btn-primary' : 'btn-ghost'"
-        @click="onTabClick(tab.id)"
+        @click="activeGroup = tab.id"
       >
         {{ tab.name }}
       </button>
@@ -242,6 +242,8 @@ const visibleEmojis = computed(() => searchEmojis(filteredByGroup.value, query.v
 
 const selectedEmoji = computed(() => {
   if (!selectedHex.value) return null
+  // 仅当选中的 emoji 仍在当前可见结果内时才展示详情面板
+  if (!visibleEmojis.value.some(e => e.hexcode === selectedHex.value)) return null
   return EMOJIS.find(e => e.hexcode === selectedHex.value) || null
 })
 
@@ -290,10 +292,5 @@ async function copyAndToast(text, msg) {
 async function onEmojiClick(emoji) {
   selectedHex.value = emoji.hexcode
   await copyAndToast(emoji.char, `已复制 ${emoji.char}`)
-}
-
-function onTabClick(id) {
-  activeGroup.value = id
-  selectedHex.value = null
 }
 </script>
