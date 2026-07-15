@@ -219,7 +219,7 @@ async function copyAndToast(text, msg) {
   try {
     await copyText(text)
     showToast(msg)
-  } catch (e) {
+  } catch {
     showToast('复制失败，请手动选择')
   }
 }

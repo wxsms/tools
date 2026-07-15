@@ -35,10 +35,14 @@ export async function copyText(text) {
     try {
       await navigator.clipboard.writeText(text)
       return
-    } catch (e) {
+    } catch {
       // 降级到 execCommand
     }
   }
+  return fallbackCopy(text)
+}
+
+function fallbackCopy(text) {
   try {
     const ta = document.createElement('textarea')
     ta.value = text
@@ -49,7 +53,7 @@ export async function copyText(text) {
     const ok = document.execCommand('copy')
     document.body.removeChild(ta)
     if (!ok) throw new Error('execCommand returned false')
-  } catch (e) {
-    throw new Error('copy failed')
+  } catch (err) {
+    throw new Error('copy failed', { cause: err })
   }
 }
