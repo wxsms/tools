@@ -44,6 +44,7 @@ import TokenCounter from './tools/token-counter/TokenCounter.vue'
 import CsvPreview from './tools/csv/CsvPreview.vue'
 import SvgPreview from './tools/svg-preview/SvgPreview.vue'
 import KeyboardTester from './tools/keyboard-tester/KeyboardTester.vue'
+import Emoji from './tools/emoji/Emoji.vue'
 
 const components = {
   '/': Home,
@@ -90,6 +91,7 @@ const components = {
   '/csv': CsvPreview,
   '/svg-preview': SvgPreview,
   '/keyboard-tester': KeyboardTester,
+  '/emoji': Emoji,
 }
 
 const routes = routeDefs.map(r => ({
