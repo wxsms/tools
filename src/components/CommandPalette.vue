@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { searchIndex, searchTools, highlightMatch, truncateResults } from '../tools/search.js'
@@ -129,5 +129,59 @@ function select(path) {
   closePalette()
 }
 
-defineExpose({ open: openPalette, close: closePalette })
+function handleKeydown(e) {
+  const isToggleShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')
+  if (isToggleShortcut) {
+    e.preventDefault()
+    if (open.value) closePalette()
+    else openPalette()
+    return
+  }
+
+  if (!open.value) return
+
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    closePalette()
+    return
+  }
+
+  if (!results.value.length) return
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    activeIndex.value = (activeIndex.value + 1) % results.value.length
+    return
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    activeIndex.value =
+      (activeIndex.value - 1 + results.value.length) % results.value.length
+    return
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    const tool = results.value[activeIndex.value]
+    if (tool) select(tool.path)
+    return
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+defineExpose({
+  open: openPalette,
+  close: closePalette,
+  handleKeydown,
+  activeIndex,
+  results,
+})
 </script>
