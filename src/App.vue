@@ -44,7 +44,7 @@
               @click="paletteRef?.open()"
             >
               <MagnifyingGlassIcon class="w-5 h-5" />
-              <span class="hidden sm:inline text-base-content/60">搜索工具…</span>
+              <span class="hidden sm:inline text-base-content/60">搜索...</span>
               <kbd class="kbd kbd-sm hidden sm:inline-block">{{ shortcutHint }}</kbd>
             </button>
             <a
