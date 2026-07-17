@@ -44,14 +44,14 @@
                 <span
                   v-for="(seg, j) in highlightMatch(tool.name, query)"
                   :key="j"
-                  :class="seg.matched ? 'bg-warning/30 rounded px-0.5' : ''"
+                  :class="seg.matched ? 'bg-warning/30 rounded' : ''"
                 >{{ seg.text }}</span>
               </div>
               <p class="text-xs text-base-content/60 truncate">
                 <span
                   v-for="(seg, j) in highlightMatch(tool.desc, query)"
                   :key="j"
-                  :class="seg.matched ? 'bg-warning/30 rounded px-0.5' : ''"
+                  :class="seg.matched ? 'bg-warning/30 rounded' : ''"
                 >{{ seg.text }}</span>
               </p>
             </div>
