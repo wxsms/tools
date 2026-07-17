@@ -25,3 +25,38 @@ export function buildSearchIndex(groups) {
 
 // Eager-built singleton index — built once at module load.
 export const searchIndex = buildSearchIndex(toolGroups)
+
+/**
+ * Split text into segments, marking which parts match the query.
+ * Case-insensitive. Preserves original case. Handles multiple matches.
+ *
+ * @param {string} text
+ * @param {string} query
+ * @returns {Array<{text: string, matched: boolean}>}
+ */
+export function highlightMatch(text, query) {
+  const q = (query || '').trim()
+  if (!q) {
+    return [{ text, matched: false }]
+  }
+
+  const textLower = text.toLowerCase()
+  const queryLower = q.toLowerCase()
+  const segments = []
+  let i = 0
+
+  while (i < text.length) {
+    const found = textLower.indexOf(queryLower, i)
+    if (found === -1) {
+      segments.push({ text: text.slice(i), matched: false })
+      break
+    }
+    if (found > i) {
+      segments.push({ text: text.slice(i, found), matched: false })
+    }
+    segments.push({ text: text.slice(found, found + q.length), matched: true })
+    i = found + q.length
+  }
+
+  return segments
+}
