@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSearchIndex, highlightMatch, searchTools } from './search.js'
+import { buildSearchIndex, highlightMatch, searchTools, truncateResults } from './search.js'
 import { toolGroups } from '../tools.js'
 
 describe('buildSearchIndex', () => {
@@ -179,5 +179,30 @@ describe('searchTools', () => {
     expect(r).toHaveProperty('groupName')
     expect(r).toHaveProperty('icon')
     expect(r).toHaveProperty('matchedField')
+  })
+})
+
+describe('truncateResults', () => {
+  const make = n => Array.from({ length: n }, (_, i) => ({ path: `/t${i}` }))
+
+  it('returns all results when count is below limit', () => {
+    expect(truncateResults(make(10), 20)).toHaveLength(10)
+  })
+
+  it('truncates to limit when count exceeds it', () => {
+    expect(truncateResults(make(30), 20)).toHaveLength(20)
+  })
+
+  it('keeps the first N entries in order', () => {
+    const out = truncateResults(make(30), 5)
+    expect(out.map(r => r.path)).toEqual(['/t0', '/t1', '/t2', '/t3', '/t4'])
+  })
+
+  it('default limit is 20', () => {
+    expect(truncateResults(make(30))).toHaveLength(20)
+  })
+
+  it('handles empty input', () => {
+    expect(truncateResults([], 20)).toEqual([])
   })
 })

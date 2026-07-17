@@ -100,3 +100,15 @@ export function searchTools(query, index) {
   matched.sort((a, b) => FIELD_PRIORITY[a.matchedField] - FIELD_PRIORITY[b.matchedField])
   return matched
 }
+
+/**
+ * Slice results to at most `limit` entries. Pure utility — keeps
+ * searchTools free of UI concerns.
+ *
+ * @param {Array} results
+ * @param {number} [limit=20]
+ * @returns {Array}
+ */
+export function truncateResults(results, limit = 20) {
+  return results.slice(0, limit)
+}
