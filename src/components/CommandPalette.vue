@@ -40,7 +40,7 @@
               class="w-5 h-5 opacity-70"
             />
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center flex-wrap">
                 <span
                   v-for="(seg, j) in highlightMatch(tool.name, query)"
                   :key="j"
