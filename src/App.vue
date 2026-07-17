@@ -38,6 +38,15 @@
             class="flex-1"
           />
           <div class="flex-none flex items-center gap-2">
+            <button
+              class="btn btn-ghost btn-sm gap-2"
+              aria-label="搜索工具"
+              @click="paletteRef?.open()"
+            >
+              <MagnifyingGlassIcon class="w-5 h-5" />
+              <span class="hidden sm:inline text-base-content/60">搜索...</span>
+              <kbd class="kbd kbd-sm hidden sm:inline-block">{{ shortcutHint }}</kbd>
+            </button>
             <a
               href="https://github.com/wxsms/tools"
               target="_blank"
@@ -140,15 +149,23 @@
         </aside>
       </div>
     </div>
+    <CommandPalette ref="paletteRef" />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme.js'
 import { toolGroups } from './tools.js'
-import { Bars3Icon, SunIcon, MoonIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline'
+import {
+  Bars3Icon,
+  MagnifyingGlassIcon,
+  MoonIcon,
+  SunIcon,
+  WrenchScrewdriverIcon,
+} from '@heroicons/vue/24/outline'
+import CommandPalette from './components/CommandPalette.vue'
 
 const SITE_TITLE = "wxsm's Kit"
 const SITE_URL = import.meta.env.VITE_SITE_URL || ''
@@ -159,6 +176,11 @@ const router = useRouter()
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
 const isHome = computed(() => route.path === '/')
+const paletteRef = ref(null)
+
+const isMac = typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '')
+const shortcutHint = isMac ? '⌘K' : 'Ctrl+K'
 
 function updateMeta(name, content) {
   let el = document.querySelector(`meta[name="${name}"]`)
