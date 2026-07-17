@@ -60,3 +60,43 @@ export function highlightMatch(text, query) {
 
   return segments
 }
+
+const FIELD_PRIORITY = {
+  name: 0,
+  path: 1,
+  groupName: 2,
+  desc: 3,
+}
+
+/**
+ * Search an index for tools matching query. Returns results sorted by
+ * field priority (name > path > groupName > desc); ties preserve index order.
+ *
+ * @param {string} query
+ * @param {Array} index - output of buildSearchIndex
+ * @returns {Array} matched entries, each with `matchedField` added
+ */
+export function searchTools(query, index) {
+  const q = (query || '').trim().toLowerCase()
+  if (!q) return []
+
+  const matched = []
+  for (const entry of index) {
+    let matchedField = null
+    if (entry.name.toLowerCase().includes(q)) {
+      matchedField = 'name'
+    } else if (entry.path.toLowerCase().includes(q)) {
+      matchedField = 'path'
+    } else if (entry.groupName.toLowerCase().includes(q)) {
+      matchedField = 'groupName'
+    } else if (entry.desc.toLowerCase().includes(q)) {
+      matchedField = 'desc'
+    }
+    if (matchedField) {
+      matched.push({ ...entry, matchedField })
+    }
+  }
+
+  matched.sort((a, b) => FIELD_PRIORITY[a.matchedField] - FIELD_PRIORITY[b.matchedField])
+  return matched
+}
