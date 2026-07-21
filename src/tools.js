@@ -90,6 +90,12 @@ export const toolGroups = [
         desc: '二进制 / 八进制 / 十进制 / 十六进制互转，支持 2-36 任意进制',
         icon: CalculatorIcon,
       },
+      {
+        name: 'JSON → Go',
+        path: '/json-to-go',
+        desc: '将 JSON 样本转换为 Go 结构体定义',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
