@@ -12,6 +12,7 @@ const components = {
   '/aes-encrypt': lazy(() => import('./tools/aes-encrypt/AesEncrypt.vue')),
   '/hash-hmac': lazy(() => import('./tools/hash-hmac/HashHmac.vue')),
   '/json': lazy(() => import('./tools/json/Json.vue')),
+  '/json-to-go': lazy(() => import('./tools/json-to-go/JsonToGo.vue')),
   '/file-base64': lazy(() => import('./tools/file-base64/FileBase64.vue')),
   '/rsa': lazy(() => import('./tools/rsa/Rsa.vue')),
   '/url-encode': lazy(() => import('./tools/url-encode/UrlEncode.vue')),
