@@ -6,15 +6,6 @@
 
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center gap-4 mb-4">
-      <label class="label cursor-pointer gap-2">
-        <input
-          v-model="omitempty"
-          type="checkbox"
-          class="checkbox checkbox-sm"
-          @change="regenerate"
-        >
-        <span class="label-text">所有属性可选</span>
-      </label>
       <div class="form-control">
         <label class="label py-1"><span class="label-text">顶层结构体名</span></label>
         <input
@@ -25,6 +16,15 @@
           @input="regenerate"
         >
       </div>
+      <label class="label cursor-pointer gap-2">
+        <input
+          v-model="omitempty"
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          @change="regenerate"
+        >
+        <span class="label-text">所有属性可选</span>
+      </label>
     </div>
 
     <div class="flex flex-col gap-4 max-w-2xl">
@@ -57,6 +57,12 @@
           class="text-error text-sm mt-1"
         >
           {{ error }}
+        </p>
+        <p
+          v-if="warning"
+          class="text-warning text-sm mt-1"
+        >
+          {{ warning }}
         </p>
       </div>
 
@@ -134,6 +140,7 @@ const DEFAULT_INPUT = JSON.stringify({
 const input = ref(DEFAULT_INPUT)
 const output = ref('')
 const error = ref('')
+const warning = ref('')
 const omitempty = ref(true)
 const typeName = ref('')
 const inputCopied = ref(false)
@@ -230,10 +237,12 @@ async function generate() {
   })
   if (r.ok) {
     error.value = ''
+    warning.value = r.warning || ''
     output.value = r.code
     syncOutputEditor()
   } else {
     output.value = ''
+    warning.value = ''
     error.value = r.error
     syncOutputEditor()
   }
@@ -248,6 +257,7 @@ function syncOutputEditor() {
 
 function scheduleGenerate() {
   error.value = ''
+  warning.value = ''
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(generate, 300)
 }
@@ -264,6 +274,7 @@ function clear() {
   input.value = ''
   output.value = ''
   error.value = ''
+  warning.value = ''
   if (inputEditor) {
     inputEditor.dispatch({
       changes: { from: 0, to: inputEditor.state.doc.length, insert: '' },
