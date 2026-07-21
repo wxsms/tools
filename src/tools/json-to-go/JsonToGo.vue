@@ -13,7 +13,7 @@
           class="checkbox checkbox-sm"
           @change="regenerate"
         >
-        <span class="label-text">omitempty tag</span>
+        <span class="label-text">所有属性可选（指针字段 + omitempty tag）</span>
       </label>
     </div>
 

@@ -46,4 +46,27 @@ describe('jsonToGo', () => {
     if (!r.ok) return
     expect(r.code).not.toContain('omitempty')
   })
+
+  // 锁定 allPropertiesOptional 副作用：omitempty=true 时字段渲染为指针类型
+  it('renders pointer types when omitempty: true', async () => {
+    const r = await jsonToGo('{"a": 1}', { omitempty: true })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.code).toMatch(/\*\w+/) // *int64 之类
+  })
+
+  it('handles top-level array input', async () => {
+    const r = await jsonToGo('[1, 2, 3]')
+    expect(r.ok).toBe(true)
+  })
+
+  it('handles null field value', async () => {
+    const r = await jsonToGo('{"a": null}')
+    expect(r.ok).toBe(true)
+  })
+
+  it('handles mixed-type array', async () => {
+    const r = await jsonToGo('[1, "a", true]')
+    expect(r.ok).toBe(true)
+  })
 })
