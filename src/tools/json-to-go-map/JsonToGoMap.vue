@@ -1,0 +1,302 @@
+<template>
+  <div>
+    <h1 class="text-3xl font-bold mb-6">
+      JSON → Go Map 转换
+    </h1>
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap items-center gap-4 mb-4">
+      <label class="label cursor-pointer gap-2">
+        <input
+          v-model="useAny"
+          type="checkbox"
+          class="checkbox checkbox-sm"
+          @change="regenerate"
+        >
+        <span class="label-text">使用 <code>any</code> 替代 <code>interface{}</code></span>
+      </label>
+    </div>
+
+    <div class="flex flex-col gap-4 max-w-2xl">
+      <!-- Input -->
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">JSON 输入</span></label>
+        <div class="relative">
+          <div
+            ref="inputEditorEl"
+            class="cm-container border border-base-300"
+          />
+          <button
+            v-if="input"
+            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2 z-10"
+            :title="inputCopied ? '已复制！' : '复制'"
+            @click="copyText(input, 'inputCopied')"
+          >
+            <CheckIcon
+              v-if="inputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
+          </button>
+        </div>
+        <p
+          v-if="error"
+          class="text-error text-sm mt-1"
+        >
+          {{ error }}
+        </p>
+      </div>
+
+      <div class="flex justify-center opacity-40">
+        <ArrowDownIcon class="w-6 h-6" />
+      </div>
+
+      <!-- Output -->
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Go 输出</span></label>
+        <div class="relative">
+          <div
+            ref="outputEditorEl"
+            class="cm-container border border-base-300"
+          />
+          <button
+            v-if="output"
+            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2 z-10"
+            :title="outputCopied ? '已复制！' : '复制'"
+            @click="copyText(output, 'outputCopied')"
+          >
+            <CheckIcon
+              v-if="outputCopied"
+              class="w-4 h-4 text-success"
+            />
+            <ClipboardDocumentIcon
+              v-else
+              class="w-4 h-4"
+            />
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          class="btn btn-ghost btn-sm gap-1"
+          @click="clear"
+        >
+          <TrashIcon class="w-4 h-4" />
+          清空
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightActiveLine, drawSelection, rectangularSelection, highlightSpecialChars } from '@codemirror/view'
+import { EditorState } from '@codemirror/state'
+import { json as jsonLang } from '@codemirror/lang-json'
+import { go as goLang } from '@codemirror/lang-go'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language'
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
+import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
+import {
+  ArrowDownIcon,
+  ClipboardDocumentIcon,
+  CheckIcon,
+  TrashIcon,
+} from '@heroicons/vue/24/outline'
+import { jsonToGoMap } from './json-to-go-map.js'
+import { useTheme } from '../../composables/useTheme.js'
+
+const DEFAULT_INPUT = JSON.stringify({
+  name: 'wxsm',
+  age: 18,
+  active: true,
+  tags: ['dev', 'go'],
+  address: { city: 'BJ', zip: '100000' },
+}, null, 2)
+
+const input = ref(DEFAULT_INPUT)
+const output = ref('')
+const error = ref('')
+const useAny = ref(false)
+const inputCopied = ref(false)
+const outputCopied = ref(false)
+
+const inputEditorEl = ref(null)
+const outputEditorEl = ref(null)
+let inputEditor = null
+let outputEditor = null
+let debounceTimer = null
+
+const { theme } = useTheme()
+
+function getThemeExt() {
+  return theme.value === 'dark' ? oneDark : []
+}
+
+function createExtensions(langExt, onChange) {
+  return [
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    highlightSpecialChars(),
+    history(),
+    drawSelection(),
+    EditorState.allowMultipleSelections.of(true),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    bracketMatching(),
+    closeBrackets(),
+    rectangularSelection(),
+    highlightActiveLine(),
+    highlightSelectionMatches(),
+    keymap.of([
+      ...closeBracketsKeymap,
+      ...defaultKeymap,
+      ...searchKeymap,
+      ...historyKeymap,
+      indentWithTab,
+    ]),
+    langExt,
+    EditorView.updateListener.of(onChange),
+    EditorView.theme({
+      '&': { height: '100%' },
+      '.cm-scroller': { overflow: 'auto' },
+    }),
+  ]
+}
+
+function inputOnChange(update) {
+  if (!update.docChanged) return
+  input.value = update.state.doc.toString()
+  scheduleGenerate()
+}
+
+function outputOnChange() {
+  // 输出是只读的，不处理变更
+}
+
+function createEditors() {
+  if (inputEditorEl.value && !inputEditor) {
+    inputEditor = new EditorView({
+      state: EditorState.create({
+        doc: input.value,
+        extensions: [...createExtensions(jsonLang(), inputOnChange), getThemeExt()],
+      }),
+      parent: inputEditorEl.value,
+    })
+  }
+  if (outputEditorEl.value && !outputEditor) {
+    outputEditor = new EditorView({
+      state: EditorState.create({
+        doc: output.value,
+        extensions: [
+          ...createExtensions(goLang(), outputOnChange),
+          EditorState.readOnly.of(true),
+          getThemeExt(),
+        ],
+      }),
+      parent: outputEditorEl.value,
+    })
+  }
+}
+
+function destroyEditors() {
+  inputEditor?.destroy()
+  inputEditor = null
+  outputEditor?.destroy()
+  outputEditor = null
+}
+
+function generate() {
+  const r = jsonToGoMap(input.value, { useAny: useAny.value })
+  if (r.ok) {
+    error.value = ''
+    output.value = r.code
+  } else {
+    output.value = ''
+    error.value = r.error
+  }
+  syncOutputEditor()
+}
+
+function syncOutputEditor() {
+  if (!outputEditor) return
+  outputEditor.dispatch({
+    changes: { from: 0, to: outputEditor.state.doc.length, insert: output.value },
+  })
+}
+
+function scheduleGenerate() {
+  error.value = ''
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(generate, 300)
+}
+
+function regenerate() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  generate()
+}
+
+function clear() {
+  input.value = ''
+  output.value = ''
+  error.value = ''
+  if (inputEditor) {
+    inputEditor.dispatch({
+      changes: { from: 0, to: inputEditor.state.doc.length, insert: '' },
+    })
+  }
+  syncOutputEditor()
+}
+
+async function copyText(text, flag) {
+  try {
+    await navigator.clipboard.writeText(text)
+    if (flag === 'inputCopied') {
+      inputCopied.value = true
+      setTimeout(() => { inputCopied.value = false }, 1500)
+    } else {
+      outputCopied.value = true
+      setTimeout(() => { outputCopied.value = false }, 1500)
+    }
+  } catch { /* clipboard not available */ }
+}
+
+watch(theme, async () => {
+  destroyEditors()
+  await nextTick()
+  createEditors()
+  syncOutputEditor()
+})
+
+onMounted(() => {
+  createEditors()
+  generate()
+})
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  destroyEditors()
+})
+</script>
+
+<style>
+.cm-container {
+  height: 320px;
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.cm-container .cm-editor {
+  height: 100%;
+  font-size: 0.875rem;
+}
+</style>
