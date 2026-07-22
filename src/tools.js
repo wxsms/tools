@@ -96,6 +96,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 Go 结构体定义',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → Go Map',
+        path: '/json-to-go-map',
+        desc: '将 JSON 转换为 Go map[string]interface{} 字面量',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
