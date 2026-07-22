@@ -66,8 +66,14 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **Use `git -C <path>` instead of `cd` before git.**
 
-- Prefer `git -C E:/githome-windows/tools status` over `cd E:/githome-windows/tools && git status`
+- Prefer `git -C . status` (or `git -C $(pwd) status`) over `cd <path> && git status`
 - This keeps the working directory stable and avoids side effects from `cd`
+
+**Work on a feature branch, not master.**
+
+- Before making any changes (code, docs, specs), create a branch from `master`: `git checkout -b feat/<topic>` or `docs/<topic>` (run from the repo root, no need for `-C`).
+- Commit work to the feature branch. Do not commit directly to `master`.
+- `master` should only move via PR merge. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>` then `git checkout master && git reset --hard origin/master`) before pushing anything.
 
 ---
 
