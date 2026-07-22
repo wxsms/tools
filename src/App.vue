@@ -84,7 +84,8 @@
 
         <!-- Page content -->
         <main :class="['flex-1 p-6 lg:p-10', isHome ? 'max-w-5xl mx-auto' : (route.meta.wide ? '' : 'max-w-4xl')]">
-          <router-view />
+          <RouteError v-if="routeError" />
+          <router-view v-else />
         </main>
 
         <!-- Footer -->
@@ -166,6 +167,8 @@ import {
   WrenchScrewdriverIcon,
 } from '@heroicons/vue/24/outline'
 import CommandPalette from './components/CommandPalette.vue'
+import RouteError from './components/RouteError.vue'
+import { useRouteLoading } from './composables/useRouteLoading.js'
 
 const SITE_TITLE = "wxsm's Kit"
 const SITE_URL = import.meta.env.VITE_SITE_URL || ''
@@ -174,6 +177,7 @@ const year = new Date().getFullYear()
 const route = useRoute()
 const router = useRouter()
 const { theme, toggleTheme } = useTheme()
+const { error: routeError } = useRouteLoading()
 const isDark = computed(() => theme.value === 'dark')
 const isHome = computed(() => route.path === '/')
 const paletteRef = ref(null)
