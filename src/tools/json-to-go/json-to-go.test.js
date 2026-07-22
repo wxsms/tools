@@ -33,11 +33,19 @@ describe('jsonToGo', () => {
     expect(matches.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('emits omitempty when omitempty: true (default)', async () => {
-    const r = await jsonToGo(JSON.stringify({ name: 'foo' }))
+  it('emits omitempty when omitempty: true', async () => {
+    const r = await jsonToGo(JSON.stringify({ name: 'foo' }), { omitempty: true })
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.code).toContain('omitempty')
+  })
+
+  it('defaults to omitempty: false (value-type fields, no omitempty tag)', async () => {
+    const r = await jsonToGo(JSON.stringify({ name: 'foo' }))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.code).not.toContain('omitempty')
+    expect(r.code).not.toMatch(/\*\w+/) // no pointer fields
   })
 
   it('does NOT emit omitempty when omitempty: false', async () => {
