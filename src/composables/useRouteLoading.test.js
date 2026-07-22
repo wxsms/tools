@@ -43,12 +43,15 @@ describe('setupRouteLoading', () => {
       routes: [
         { path: '/', component: { template: '<div>home</div>' } },
         { path: '/boom', component: () => Promise.reject(new Error('chunk missing')) },
+        { path: '/other', component: { template: '<div>other</div>' } },
       ],
     })
     setupRouteLoading(router)
     await router.push('/boom').catch(() => {})
     await new Promise(r => setTimeout(r, 0))
-    await router.push('/')
+    // 失败后用户点不同路径（侧边栏其他工具）—— 这是真实恢复路径。
+    // vue-router 5 对 same-path 根本不调 beforeEach，所以同路径清 error 是不可能的。
+    await router.push('/other')
     await new Promise(r => setTimeout(r, 0))
     const { error } = useRouteLoading()
     expect(error.value).toBe('')

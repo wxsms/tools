@@ -2,5 +2,5 @@
 @plugin "daisyui";
 
 #nprogress .bar {
-  background: var(--color-primary) !important;
+  background: var(--color-primary);
 }
