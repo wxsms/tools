@@ -13,6 +13,7 @@ const components = {
   '/json': () => import('./tools/json/Json.vue'),
   '/json-to-go': () => import('./tools/json-to-go/JsonToGo.vue'),
   '/json-to-go-map': () => import('./tools/json-to-go-map/JsonToGoMap.vue'),
+  '/json-to-ts': () => import('./tools/json-to-ts/JsonToTs.vue'),
   '/file-base64': () => import('./tools/file-base64/FileBase64.vue'),
   '/rsa': () => import('./tools/rsa/Rsa.vue'),
   '/url-encode': () => import('./tools/url-encode/UrlEncode.vue'),

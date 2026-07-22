@@ -102,6 +102,12 @@ export const toolGroups = [
         desc: '将 JSON 转换为 Go map[string]interface{} 字面量',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → TypeScript',
+        path: '/json-to-ts',
+        desc: '将 JSON 样本转换为 TypeScript 类型定义，支持 interface / type 别名切换',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
