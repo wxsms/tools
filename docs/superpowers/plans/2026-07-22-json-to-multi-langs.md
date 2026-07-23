@@ -40,6 +40,7 @@
 |---|---|
 | `package.json` | 新增 `@replit/codemirror-lang-csharp` 依赖 |
 | `src/router.js` | 追加 5 条路由 component 映射 |
+| `src/routes.js` | 追加 5 条路由 meta（title / description，用于页面标题、SEO、prerender） |
 | `src/tools.js` | 「编码转换」分组末尾追加 5 个侧栏入口 |
 
 ### 不动的文件
@@ -718,6 +719,12 @@ Modify `src/router.js` — 在 `'/json-to-ts'` 那一行之后追加:
   '/json-to-python': () => import('./tools/json-to-python/JsonToPython.vue'),
 ```
 
+Modify `src/routes.js` — 在 `'/json-to-ts'` 那一行之后追加（用于页面 title / meta description / prerender）:
+
+```js
+  { path: '/json-to-python', meta: { title: 'JSON → Python', description: '将 JSON 样本转换为 Python 类型定义，支持 pydantic BaseModel' } },
+```
+
 - [ ] **Step 3: 注册侧栏入口**
 
 Modify `src/tools.js` — 在「编码转换」分组里 `json-to-ts` 入口之后追加:
@@ -1131,6 +1138,12 @@ Modify `src/router.js` — 在 `'/json-to-python'` 行之后追加:
   '/json-to-rust': () => import('./tools/json-to-rust/JsonToRust.vue'),
 ```
 
+Modify `src/routes.js` — 在 `'/json-to-python'` 行之后追加:
+
+```js
+  { path: '/json-to-rust', meta: { title: 'JSON → Rust', description: '将 JSON 样本转换为 Rust struct 定义，支持 derive 与 skip_serializing_none' } },
+```
+
 - [ ] **Step 3: 注册侧栏入口**
 
 Modify `src/tools.js` — 在 `JSON → Python` 入口之后追加:
@@ -1506,6 +1519,12 @@ Modify `src/router.js` — 在 `'/json-to-rust'` 行之后追加:
   '/json-to-java': () => import('./tools/json-to-java/JsonToJava.vue'),
 ```
 
+Modify `src/routes.js` — 在 `'/json-to-rust'` 行之后追加:
+
+```js
+  { path: '/json-to-java', meta: { title: 'JSON → Java', description: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok' } },
+```
+
 - [ ] **Step 3: 注册侧栏入口**
 
 Modify `src/tools.js` — 在 `JSON → Rust` 入口之后追加:
@@ -1858,6 +1877,12 @@ Modify `src/router.js` — 在 `'/json-to-java'` 行之后追加:
 
 ```js
   '/json-to-cpp': () => import('./tools/json-to-cpp/JsonToCpp.vue'),
+```
+
+Modify `src/routes.js` — 在 `'/json-to-java'` 行之后追加:
+
+```js
+  { path: '/json-to-cpp', meta: { title: 'JSON → C++', description: '将 JSON 样本转换为 C++ struct，支持自定义命名空间' } },
 ```
 
 - [ ] **Step 3: 注册侧栏入口**
@@ -2225,6 +2250,12 @@ Modify `src/router.js` — 在 `'/json-to-cpp'` 行之后追加:
 
 ```js
   '/json-to-csharp': () => import('./tools/json-to-csharp/JsonToCsharp.vue'),
+```
+
+Modify `src/routes.js` — 在 `'/json-to-cpp'` 行之后追加:
+
+```js
+  { path: '/json-to-csharp', meta: { title: 'JSON → C#', description: '将 JSON 样本转换为 C# 类型定义，支持 List<T> 与自定义命名空间' } },
 ```
 
 - [ ] **Step 3: 注册侧栏入口**
