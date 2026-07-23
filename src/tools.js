@@ -108,6 +108,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 TypeScript 类型定义，支持 interface / type 别名切换',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → Python',
+        path: '/json-to-python',
+        desc: '将 JSON 样本转换为 Python 类型定义，支持 pydantic BaseModel',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
