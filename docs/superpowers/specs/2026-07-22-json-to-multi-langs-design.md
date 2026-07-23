@@ -106,7 +106,7 @@ src/tools/
 ### JSON → C#
 
 - 路由: `/json-to-csharp`
-- CodeMirror: **需新增 `@codemirror/lang-csharp` 依赖**
+- CodeMirror: **需新增 `@replit/codemirror-lang-csharp` 依赖**（CodeMirror 6 官方未发布 C# 语言包，使用 Replit 维护的社区包，API 与官方 `@codemirror/lang-*` 一致，导出 `csharp()`）
 - 顶层类型名: `typeName`
 - Checkbox / 输入框:
   1. **仅类型** — `just-types: true`（默认勾选）
@@ -206,7 +206,7 @@ JSON → C#            (新)
 
 ### 依赖
 
-- 仅 C# 需要新装 `@codemirror/lang-csharp`
+- 仅 C# 需要新装 `@replit/codemirror-lang-csharp`（官方 `@codemirror/lang-csharp` 不存在）
 - 其他 4 个语言的 CodeMirror 包 `package.json` 已有
 - `quicktype-core` 已有，无需升级
 
@@ -236,5 +236,5 @@ JSON → C#            (新)
 ## 风险与回退
 
 - **quicktype 行为差异**：某些语言的 `just-types` 在单样本下可能不产生 `omitempty` 等效果，与 Go 一致——通过 `allPropertiesOptional` 顶层 option 解决。实现时若发现某语言选项不生效，在 `.js` 文件顶部注释中记录实际行为（参照 `json-to-go.js` 的注释风格）。
-- **CodeMirror C# 包**：若 `@codemirror/lang-csharp` 与当前 CodeMirror 6 版本不兼容，C# 工具可降级为不挂语言扩展（用默认高亮），不阻塞其他工具。
+- **CodeMirror C# 包**：官方 `@codemirror/lang-csharp` 不存在，改用 `@replit/codemirror-lang-csharp`。若该社区包与当前 CodeMirror 6 版本不兼容，C# 工具可降级为不挂语言扩展（用默认高亮），不阻塞其他工具。
 - **回退**：所有改动在新分支 `feat/json-to-multi-langs` 上，不合并即无影响。

@@ -38,7 +38,7 @@
 
 | 文件 | 改动 |
 |---|---|
-| `package.json` | 新增 `@codemirror/lang-csharp` 依赖 |
+| `package.json` | 新增 `@replit/codemirror-lang-csharp` 依赖 |
 | `src/router.js` | 追加 5 条路由 component 映射 |
 | `src/tools.js` | 「编码转换」分组末尾追加 5 个侧栏入口 |
 
@@ -113,29 +113,31 @@ Python/Rust/Java/C++/C# 标识符基本都可用 `^[A-Za-z_][A-Za-z0-9_]*$`。wa
 - Modify: `package.json` (dependencies)
 - Modify: `package-lock.json` (由 npm 自动更新)
 
-- [ ] **Step 1: 安装 @codemirror/lang-csharp**
+> **注意包名**：CodeMirror 6 官方未发布 C# 语言包，`@codemirror/lang-csharp` 在 npm 上不存在（404）。改用 Replit 维护的社区包 `@replit/codemirror-lang-csharp`，导出 `csharp()` 函数，API 与官方 `@codemirror/lang-*` 一致。
+
+- [ ] **Step 1: 安装 @replit/codemirror-lang-csharp**
 
 Run:
 ```bash
-cd E:/githome-windows/tools && npm install @codemirror/lang-csharp
+cd E:/githome-windows/tools && npm install @replit/codemirror-lang-csharp
 ```
 
-Expected: `package.json` 的 `dependencies` 新增 `"@codemirror/lang-csharp": "^6.x.x"`，`package-lock.json` 更新。
+Expected: `package.json` 的 `dependencies` 新增 `"@replit/codemirror-lang-csharp": "^6.x.x"`，`package-lock.json` 更新。
 
 - [ ] **Step 2: 验证依赖写入 package.json**
 
 Run:
 ```bash
-cd E:/githome-windows/tools && node -e "console.log(require('./package.json').dependencies['@codemirror/lang-csharp'])"
+cd E:/githome-windows/tools && node -e "console.log(require('./package.json').dependencies['@replit/codemirror-lang-csharp'])"
 ```
 
 Expected: 输出版本号字符串（非 `undefined`）。
 
-- [ ] **Step 3: 验证包可加载**
+- [ ] **Step 3: 验证包可加载并导出 csharp 函数**
 
 Run:
 ```bash
-cd E:/githome-windows/tools && node -e "import('@codemirror/lang-csharp').then(m => console.log(typeof m.csharp))"
+cd E:/githome-windows/tools && node -e "import('@replit/codemirror-lang-csharp').then(m => console.log(typeof m.csharp))"
 ```
 
 Expected: 输出 `function`。
@@ -144,7 +146,7 @@ Expected: 输出 `function`。
 
 ```bash
 git -C E:/githome-windows/tools add package.json package-lock.json
-git -C E:/githome-windows/tools commit -m "chore: add @codemirror/lang-csharp dependency for JSON → C# tool"
+git -C E:/githome-windows/tools commit -m "chore: add @replit/codemirror-lang-csharp dependency for JSON → C# tool"
 ```
 
 ---
@@ -2180,7 +2182,7 @@ Output label：
 import：
 ```diff
 -import { cpp } from '@codemirror/lang-cpp'
-+import { csharp } from '@codemirror/lang-csharp'
++import { csharp } from '@replit/codemirror-lang-csharp'
 -import { jsonToCpp } from './json-to-cpp.js'
 +import { jsonToCsharp } from './json-to-csharp.js'
 ```
@@ -2345,7 +2347,7 @@ Expected: 看到 1 个 docs 提交 + 1 个 chore 提交 + 10 个 feat 提交（5
 - §各语言选项 Java：Task 6/7 覆盖 ✓
 - §各语言选项 C++：Task 8/9 覆盖 ✓
 - §各语言选项 C#：Task 10/11 覆盖 ✓
-- §依赖安装（@codemirror/lang-csharp）：Task 1 覆盖 ✓
+- §依赖安装（@replit/codemirror-lang-csharp）：Task 1 覆盖 ✓
 - §注册步骤（router.js + tools.js）：每个工具的 Step 2/3 覆盖 ✓
 - §验收清单（lint/test/build/手动验证）：Task 12 覆盖 ✓
 - §不重构旧工具：计划全程未触碰旧文件 ✓
