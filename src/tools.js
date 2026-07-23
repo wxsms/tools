@@ -120,6 +120,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 Rust struct 定义，支持 derive 与 skip_serializing_none',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → Java',
+        path: '/json-to-java',
+        desc: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
