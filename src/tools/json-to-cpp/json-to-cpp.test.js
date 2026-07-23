@@ -31,18 +31,22 @@ describe('jsonToCpp', () => {
 
   // quicktype C++ renderer with `just-types: true` suppresses the `namespace`
   // wrapper (see CPlusPlusRenderer.js emitSource: justTypes branch emits types
-  // directly without emitNamespaces). Namespace is only applied in full-output
-  // mode. These two tests assert that behavior.
-  it('does not emit namespace when just-types is on (default)', async () => {
+  // directly without emitNamespaces). jsonToCpp post-processes the output:
+  // when namespace is not the default 'quicktype', it wraps the code in
+  // `namespace X { ... }`. These two tests assert that behavior.
+  it('does not wrap in namespace when using default', async () => {
     const r = await jsonToCpp('{"a": 1}')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.code).not.toMatch(/namespace quicktype/)
   })
 
-  it('accepts a custom namespace option without error', async () => {
+  it('uses custom namespace when provided', async () => {
     const r = await jsonToCpp('{"a": 1}', { namespace: 'myapp' })
     expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.code).toMatch(/namespace myapp/)
+    expect(r.code).toMatch(/namespace myapp {/)
   })
 
   it('handles top-level array input', async () => {
