@@ -15,6 +15,7 @@ const components = {
   '/json-to-go-map': () => import('./tools/json-to-go-map/JsonToGoMap.vue'),
   '/json-to-ts': () => import('./tools/json-to-ts/JsonToTs.vue'),
   '/json-to-python': () => import('./tools/json-to-python/JsonToPython.vue'),
+  '/json-to-rust': () => import('./tools/json-to-rust/JsonToRust.vue'),
   '/file-base64': () => import('./tools/file-base64/FileBase64.vue'),
   '/rsa': () => import('./tools/rsa/Rsa.vue'),
   '/url-encode': () => import('./tools/url-encode/UrlEncode.vue'),

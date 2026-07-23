@@ -114,6 +114,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 Python 类型定义，支持 pydantic BaseModel',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → Rust',
+        path: '/json-to-rust',
+        desc: '将 JSON 样本转换为 Rust struct 定义，支持 derive 与 skip_serializing_none',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
