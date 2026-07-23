@@ -13,6 +13,7 @@ export default [
   { path: '/json-to-python', meta: { title: 'JSON → Python', description: '将 JSON 样本转换为 Python 类型定义，支持 pydantic BaseModel' } },
   { path: '/json-to-rust', meta: { title: 'JSON → Rust', description: '将 JSON 样本转换为 Rust struct 定义，支持 derive 与 skip_serializing_none' } },
   { path: '/json-to-java', meta: { title: 'JSON → Java', description: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok' } },
+  { path: '/json-to-cpp', meta: { title: 'JSON → C++', description: '将 JSON 样本转换为 C++ struct，支持自定义命名空间' } },
   { path: '/file-base64', meta: { title: '文件转 Base64', description: '文件与 Base64 互转，支持图片预览' } },
   { path: '/rsa', meta: { title: 'RSA 加密', description: 'RSA 密钥生成、加密与解密' } },
   { path: '/url-encode', meta: { title: 'URL 编码', description: 'URL 编码与解码，支持批量处理' } },

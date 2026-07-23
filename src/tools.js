@@ -126,6 +126,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → C++',
+        path: '/json-to-cpp',
+        desc: '将 JSON 样本转换为 C++ struct，支持自定义命名空间',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
