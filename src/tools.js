@@ -110,6 +110,12 @@ export const toolGroups = [
         icon: 'simple-icons:csharp',
       },
       {
+        name: 'JSON → PHP',
+        path: '/json-to-php',
+        desc: '将 JSON 样本转换为 PHP class，支持 setter 与闭合标签',
+        icon: 'simple-icons:php',
+      },
+      {
         name: 'JSON ↔ YAML',
         path: '/json-yaml',
         desc: 'JSON 与 YAML 双向实时转换',

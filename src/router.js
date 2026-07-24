@@ -21,6 +21,7 @@ const components = {
   '/json-to-java': () => import('./tools/json-to-java/JsonToJava.vue'),
   '/json-to-cpp': () => import('./tools/json-to-cpp/JsonToCpp.vue'),
   '/json-to-csharp': () => import('./tools/json-to-csharp/JsonToCsharp.vue'),
+  '/json-to-php': () => import('./tools/json-to-php/JsonToPhp.vue'),
   '/file-base64': () => import('./tools/file-base64/FileBase64.vue'),
   '/rsa': () => import('./tools/rsa/Rsa.vue'),
   '/url-encode': () => import('./tools/url-encode/UrlEncode.vue'),
