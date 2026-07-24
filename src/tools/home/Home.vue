@@ -4,11 +4,10 @@
       <div class="hero-content text-center">
         <div class="max-w-lg">
           <h1 class="text-4xl font-bold">
-            wxsm's Kit
+            wxsm's toolbox
           </h1>
           <p class="py-4 text-base-content/70">
-            🔧 实用 · ⚡ 快速 · 💯 免费<br>
-            所有操作均在浏览器本地运行，数据不会离开你的设备。
+            🔧 实用 · ⚡ 快速 · 💯 免费
           </p>
         </div>
       </div>

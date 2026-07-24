@@ -33,10 +33,10 @@
               class="btn btn-ghost text-xl"
             >
               <Icon
-                icon="lucide:wrench"
+                icon="mdi:toolbox"
                 class="w-6 h-6"
               />
-              wxsm's Kit
+              wxsm's toolbox
             </router-link>
           </div>
           <div
@@ -102,7 +102,7 @@
         <!-- Footer -->
         <footer class="footer footer-center p-4 bg-base-200 text-base-content">
           <aside>
-            <p>&copy; {{ year }} wxsm — 个人工具箱</p>
+            <p>&copy; {{ year }} wxsm's toolbox</p>
           </aside>
         </footer>
       </div>
@@ -124,10 +124,10 @@
             class="btn btn-ghost text-xl no-underline mb-4 self-start"
           >
             <Icon
-              icon="lucide:wrench"
+              icon="mdi:toolbox"
               class="w-6 h-6"
             />
-            wxsm's Kit
+            wxsm's toolbox
           </router-link>
 
           <div class="divider mt-0 mb-2" />
@@ -178,7 +178,7 @@ import RouteError from './components/RouteError.vue'
 import { useRouteLoading } from './composables/useRouteLoading.js'
 import { Icon } from '@iconify/vue'
 
-const SITE_TITLE = "wxsm's Kit"
+const SITE_TITLE = "wxsm's toolbox"
 const SITE_URL = import.meta.env.VITE_SITE_URL || ''
 
 const year = new Date().getFullYear()
