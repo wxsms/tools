@@ -6,7 +6,7 @@ export default [
   { path: '/watermark', meta: { title: '图片水印', description: '为图片添加透明文字水印' } },
   { path: '/aes-encrypt', meta: { title: '对称加密', description: 'AES 对称加密与解密' } },
   { path: '/hash-hmac', meta: { title: '哈希 / 散列', description: '哈希摘要与 HMAC 计算' } },
-  { path: '/json', meta: { title: 'JSON 校验', description: 'JSON 校验、树形查看、格式化、压缩、Unicode 与转义转换' } },
+  { path: '/json', meta: { title: 'JSON 校验', description: 'JSON 校验、树形查看、格式化、压缩、Unicode 与转义转换', wide: true } },
   { path: '/json-yaml', meta: { title: 'JSON / YAML 转换', description: 'JSON ↔ YAML 双向实时转换', wide: true } },
   { path: '/json-to-go', meta: { title: 'JSON → Go', description: '将 JSON 样本转换为 Go 结构体定义，支持 omitempty', wide: true } },
   { path: '/json-to-go-map', meta: { title: 'JSON → Go Map', description: '将 JSON 转换为 Go map[string]interface{} 字面量', wide: true } },
