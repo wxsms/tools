@@ -109,6 +109,12 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 C# 类型定义，支持 List<T> 与自定义命名空间',
         icon: 'simple-icons:csharp',
       },
+      {
+        name: 'JSON ↔ YAML',
+        path: '/json-yaml',
+        desc: 'JSON 与 YAML 双向实时转换',
+        icon: 'lucide:file-json',
+      },
     ],
   },
   {

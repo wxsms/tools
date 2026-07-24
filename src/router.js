@@ -11,6 +11,7 @@ const components = {
   '/aes-encrypt': () => import('./tools/aes-encrypt/AesEncrypt.vue'),
   '/hash-hmac': () => import('./tools/hash-hmac/HashHmac.vue'),
   '/json': () => import('./tools/json/Json.vue'),
+  '/json-yaml': () => import('./tools/json-yaml/JsonYaml.vue'),
   '/json-to-go': () => import('./tools/json-to-go/JsonToGo.vue'),
   '/json-to-go-map': () => import('./tools/json-to-go-map/JsonToGoMap.vue'),
   '/json-to-ts': () => import('./tools/json-to-ts/JsonToTs.vue'),
