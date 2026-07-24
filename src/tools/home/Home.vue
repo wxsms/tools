@@ -31,8 +31,8 @@
         >
           <div class="card-body flex-row items-center gap-4">
             <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <component
-                :is="tool.icon"
+              <Icon
+                :icon="tool.icon"
                 class="w-5 h-5"
               />
             </div>
@@ -53,4 +53,5 @@
 
 <script setup>
 import { toolGroups } from '../../tools.js'
+import { Icon } from '@iconify/vue'
 </script>

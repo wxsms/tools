@@ -136,8 +136,8 @@
                   class="flex items-center gap-3"
                   active-class="menu-active"
                 >
-                  <component
-                    :is="tool.icon"
+                  <Icon
+                    :icon="tool.icon"
                     class="w-5 h-5"
                   />
                   {{ tool.name }}
@@ -169,6 +169,7 @@ import {
 import CommandPalette from './components/CommandPalette.vue'
 import RouteError from './components/RouteError.vue'
 import { useRouteLoading } from './composables/useRouteLoading.js'
+import { Icon } from '@iconify/vue'
 
 const SITE_TITLE = "wxsm's Kit"
 const SITE_URL = import.meta.env.VITE_SITE_URL || ''
