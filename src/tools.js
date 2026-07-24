@@ -113,7 +113,7 @@ export const toolGroups = [
         name: 'JSON ↔ YAML',
         path: '/json-yaml',
         desc: 'JSON 与 YAML 双向实时转换',
-        icon: 'lucide:file-json',
+        icon: 'simple-icons:yaml',
       },
     ],
   },

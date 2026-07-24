@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="json-yaml-page">
     <h1 class="text-3xl font-bold mb-6">
       JSON / YAML 转换
     </h1>
@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.cm-container {
+.json-yaml-page .cm-container {
   height: calc(100vh - 260px);
   min-height: 400px;
   border-radius: var(--radius-field, 0.5rem);
