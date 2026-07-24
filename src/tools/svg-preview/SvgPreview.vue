@@ -154,12 +154,13 @@
           >
             在左侧粘贴 SVG 代码即可预览
           </div>
-          <!-- eslint-disable-next-line vue/no-v-html -->
+          <!-- eslint-disable vue/no-v-html -->
           <div
             v-else
             class="min-h-64 flex items-center justify-center p-4"
             v-html="renderedSvg"
           />
+          <!-- eslint-enable vue/no-v-html -->
         </div>
 
         <div

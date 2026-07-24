@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      图片处理
+      图片压缩
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <div class="form-control">

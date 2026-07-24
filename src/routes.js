@@ -28,7 +28,7 @@ export default [
   { path: '/password', meta: { title: '密码生成', description: '可配置长度、字符集的随机密码生成器' } },
   { path: '/color-picker', meta: { title: '取色器', description: '屏幕取色与 HEX / RGB / HSL 颜色互转' } },
   { path: '/ip-lookup', meta: { title: 'IP 查询', description: '查询 IP 地址归属地信息' } },
-  { path: '/image-compress', meta: { title: '图片处理', description: '图片压缩、缩放与格式转换' } },
+  { path: '/image-compress', meta: { title: '图片压缩', description: '图片压缩、缩放与格式转换' } },
   { path: '/http-status', meta: { title: 'HTTP 状态码', description: 'HTTP 状态码含义速查' } },
   { path: '/unicode', meta: { title: 'Unicode 转换', description: 'Unicode 编码与解码' } },
   { path: '/url-parse', meta: { title: 'URL 解析', description: '拆分 URL 各部分与 Query 参数' } },

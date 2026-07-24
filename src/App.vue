@@ -8,9 +8,16 @@
       >
 
       <!-- Main content -->
-      <div class="drawer-content flex flex-col min-h-screen">
+      <div class="drawer-content flex flex-col min-h-screen relative">
         <!-- Navbar -->
-        <div class="navbar bg-base-200 w-full sticky top-0 z-30 shadow-sm">
+        <div
+          :class="[
+            'navbar w-full z-30',
+            isHome
+              ? 'bg-base-200 sticky top-0 shadow-sm'
+              : 'bg-base-200 sticky top-0 shadow-sm lg:absolute lg:top-0 lg:right-0 lg:left-auto lg:bg-transparent lg:shadow-none lg:w-auto',
+          ]"
+        >
           <div class="flex-none lg:hidden">
             <label
               v-if="!isHome"

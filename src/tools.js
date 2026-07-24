@@ -24,7 +24,7 @@ export const toolGroups = [
         name: 'Unicode 转换',
         path: '/unicode',
         desc: 'Unicode 编码与解码',
-        icon: 'lucide:languages',
+        icon: 'mdi:unicode',
       },
       {
         name: 'Gzip 压缩',
@@ -256,7 +256,7 @@ export const toolGroups = [
         icon: 'lucide:qr-code',
       },
       {
-        name: '图片处理',
+        name: '图片压缩',
         path: '/image-compress',
         desc: '图片压缩、缩放与格式转换',
         icon: 'lucide:image',

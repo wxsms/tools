@@ -120,7 +120,7 @@ component tests and pure-function tests, suffix the component test with
 
 1. **Create folder + view** — Add `src/tools/<tool-name>/ToolName.vue`, following existing tool patterns. Put any pure functions / helpers the tool needs alongside the `.vue` file in the same folder.
 2. **Register route** — Import and add route in `src/router.js`: `{ path: '/tool-name', component: ToolName }`
-3. **Add sidebar entry** — Append to `tools` array in `src/App.vue`: `{ name: 'Tool Name', path: '/tool-name', icon: XxxIcon }`, and import the icon
+3. **Add sidebar entry** — Append to `tools` array in `src/tools.js`: `{ name: 'Tool Name', path: '/tool-name', icon: 'prefix:name' }`, where `icon` is an Iconify string (see Icon Source below)
 
 All three steps are required.
 
@@ -130,11 +130,20 @@ When implementing a bidirectional converter tool (e.g. encode/decode, timestamp/
 
 ### Icon Source
 
-Uses `@heroicons/vue` outline style icons.
+Uses [Iconify](https://iconify.design/) via `@iconify/vue`'s `<Icon>` component. Icons are referenced as strings in the form `'prefix:name'`. Three icon sets are installed for offline use:
 
-- Browse at: https://heroicons.com/
-- Pick outline style, copy the component name (e.g. `DocumentPlusIcon`)
-- Import from `@heroicons/vue/24/outline`
+- `lucide:*` — main general-purpose set (Lucide, outline style, `@iconify-json/lucide`)
+- `mdi:*` — Material Design Icons, has many concept-specific icons (e.g. `mdi:code-json`, `mdi:watermark`, `mdi:svg`, `@iconify-json/mdi`)
+- `simple-icons:*` — brand logos only (e.g. `simple-icons:go`, `simple-icons:typescript`, `@iconify-json/simple-icons`)
+
+Usage:
+- In `src/tools.js`, set `icon: 'lucide:arrow-left-right'` (string, not a component)
+- In `.vue` templates: `<Icon icon="lucide:search" class="w-5 h-5" />` (import `Icon` from `@iconify/vue`)
+- The `vite-plugin-iconify-offline` plugin scans `src/**/*.{vue,js}` at build time and bundles only the icons actually referenced, so no runtime API calls are needed.
+
+To find an icon:
+- Browse at https://icon-sets.iconify.design/ (search by name or keyword)
+- Or query locally: `node -e "console.log(Object.keys(require('@iconify-json/mdi/icons.json').icons).filter(k => k.includes('keyword')))"`
 
 ### Lint
 
