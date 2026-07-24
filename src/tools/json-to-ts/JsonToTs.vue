@@ -327,14 +327,33 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.cm-container {
-  height: 320px;
+.json-to-ts-page .cm-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
   border-radius: var(--radius-field, 0.5rem);
   overflow: hidden;
 }
 
-.cm-container .cm-editor {
+.json-to-ts-page .cm-container .cm-editor {
   height: 100%;
   font-size: 0.875rem;
+}
+
+.json-to-ts-page .cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .json-to-ts-page .cm-container .cm-editor {
+  background: var(--color-base-300);
+}
+:not([data-theme="dark"]) .json-to-ts-page .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-300);
+  border-right: 1px solid var(--color-base-100);
+}
+:not([data-theme="dark"]) .json-to-ts-page .cm-container .cm-editor .cm-activeLineGutter {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .json-to-ts-page .cm-container .cm-editor .cm-activeLine {
+  background: var(--color-base-200);
 }
 </style>
