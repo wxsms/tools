@@ -30,7 +30,7 @@ export const toolGroups = [
         name: 'Gzip 压缩',
         path: '/gzip',
         desc: 'Gzip 压缩与解压（Base64 表示）',
-        icon: 'lucide:archive',
+        icon: 'mdi:zip-box-outline',
       },
       {
         name: '进制转换',
@@ -48,7 +48,7 @@ export const toolGroups = [
         name: '文件转 Base64',
         path: '/file-base64',
         desc: '文件与 Base64 互转，支持图片预览',
-        icon: 'lucide:file-up',
+        icon: 'lucide:file-archive',
       },
     ],
   },
@@ -95,7 +95,7 @@ export const toolGroups = [
         name: 'JSON → Java',
         path: '/json-to-java',
         desc: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok',
-        icon: 'simple-icons:openjdk',
+        icon: 'mdi:language-java',
       },
       {
         name: 'JSON → C++',
@@ -189,7 +189,7 @@ export const toolGroups = [
         name: 'Markdown 转换',
         path: '/md-html',
         desc: 'Markdown ↔ HTML 双向转换',
-        icon: 'lucide:file-text',
+        icon: 'mdi:language-markdown',
       },
       {
         name: 'Emoji 大全',
@@ -206,19 +206,19 @@ export const toolGroups = [
         name: '盒阴影',
         path: '/box-shadow',
         desc: 'CSS box-shadow 可视化生成',
-        icon: 'lucide:layers',
+        icon: 'mdi:box-shadow',
       },
       {
         name: '渐变',
         path: '/gradient',
         desc: 'CSS 渐变可视化生成',
-        icon: 'lucide:paintbrush',
+        icon: 'mdi:gradient-vertical',
       },
       {
         name: '圆角',
         path: '/border-radius',
         desc: 'CSS border-radius 可视化生成',
-        icon: 'lucide:square-stack',
+        icon: 'mdi:rounded-corner',
       },
       {
         name: '三角形',
