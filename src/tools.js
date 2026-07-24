@@ -115,6 +115,12 @@ export const toolGroups = [
         desc: 'JSON 与 YAML 双向实时转换',
         icon: 'simple-icons:yaml',
       },
+      {
+        name: 'JSON ↔ TOML',
+        path: '/json-toml',
+        desc: 'JSON 与 TOML 双向实时转换',
+        icon: 'simple-icons:toml',
+      },
     ],
   },
   {
