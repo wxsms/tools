@@ -108,6 +108,36 @@ export const toolGroups = [
         desc: '将 JSON 样本转换为 TypeScript 类型定义，支持 interface / type 别名切换',
         icon: CodeBracketSquareIcon,
       },
+      {
+        name: 'JSON → Python',
+        path: '/json-to-python',
+        desc: '将 JSON 样本转换为 Python 类型定义，支持 pydantic BaseModel',
+        icon: CodeBracketSquareIcon,
+      },
+      {
+        name: 'JSON → Rust',
+        path: '/json-to-rust',
+        desc: '将 JSON 样本转换为 Rust struct 定义，支持 derive 与 skip_serializing_none',
+        icon: CodeBracketSquareIcon,
+      },
+      {
+        name: 'JSON → Java',
+        path: '/json-to-java',
+        desc: '将 JSON 样本转换为 Java POJO，支持 List<T> 与 Lombok',
+        icon: CodeBracketSquareIcon,
+      },
+      {
+        name: 'JSON → C++',
+        path: '/json-to-cpp',
+        desc: '将 JSON 样本转换为 C++ struct，支持自定义命名空间',
+        icon: CodeBracketSquareIcon,
+      },
+      {
+        name: 'JSON → C#',
+        path: '/json-to-csharp',
+        desc: '将 JSON 样本转换为 C# 类型定义，支持 List<T> 与自定义命名空间',
+        icon: CodeBracketSquareIcon,
+      },
     ],
   },
   {
