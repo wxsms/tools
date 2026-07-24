@@ -384,6 +384,6 @@ onBeforeUnmount(() => {
 .json-page .json-tree-container {
   height: calc(100vh - 260px);
   min-height: 400px;
-  background: var(--color-base-100);
+  background: var(--color-base-300);
 }
 </style>
