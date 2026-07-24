@@ -23,11 +23,17 @@
           :disabled="!patchText.trim()"
           @click="parse"
         >
-          <DocumentTextIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:file-text"
+            class="w-4 h-4"
+          />
           解析
         </button>
         <label class="btn btn-sm gap-1">
-          <ArrowUpTrayIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:upload"
+            class="w-4 h-4"
+          />
           上传文件
           <input
             type="file"
@@ -40,7 +46,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -88,7 +97,10 @@
             class="btn btn-ghost btn-sm gap-1"
             @click="backToInput"
           >
-            <ArrowLeftIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:arrow-left"
+              class="w-4 h-4"
+            />
             返回
           </button>
         </div>
@@ -105,7 +117,8 @@
           class="flex items-center gap-2 px-3 py-2 bg-base-200 cursor-pointer select-none"
           @click="toggleFile(fi)"
         >
-          <ChevronDownIcon
+          <Icon
+            icon="lucide:chevron-down"
             class="w-4 h-4 shrink-0 transition-transform"
             :class="{ '-rotate-90': !expandedFiles.has(fi) }"
           />
@@ -115,12 +128,14 @@
             :title="copiedFileIndex === fi ? '已复制！' : '复制文件名'"
             @click.stop="copyFileName(fi)"
           >
-            <CheckIcon
+            <Icon
               v-if="copiedFileIndex === fi"
+              icon="lucide:check"
               class="w-3.5 h-3.5 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-3.5 h-3.5"
             />
           </button>
@@ -155,16 +170,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, reactive } from 'vue'
-import {
-  DocumentTextIcon,
-  ArrowUpTrayIcon,
-  TrashIcon,
-  ArrowLeftIcon,
-  ChevronDownIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-} from '@heroicons/vue/24/outline'
 import { parsePatch, getFileDisplayName, computeTotalStats } from './patch.js'
 import UnifiedView from './patch/UnifiedView.vue'
 import SplitView from './patch/SplitView.vue'

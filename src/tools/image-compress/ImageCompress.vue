@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      图片处理
+      图片压缩
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
       <div class="form-control">
@@ -117,7 +117,10 @@
             class="btn btn-ghost btn-sm gap-1"
             @click="reset"
           >
-            <TrashIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:trash-2"
+              class="w-4 h-4"
+            />
             重置
           </button>
           <button
@@ -125,7 +128,10 @@
             :disabled="!imageSrc"
             @click="download"
           >
-            <ArrowDownTrayIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:download"
+              class="w-4 h-4"
+            />
             下载
           </button>
         </div>
@@ -135,9 +141,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, watch, nextTick } from 'vue'
-import { TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
-
 const fileInput = ref(null)
 const canvas = ref(null)
 const imageSrc = ref('')

@@ -25,7 +25,10 @@
             :disabled="!eyedropperSupported || picking"
             @click="pickColor"
           >
-            <EyeDropperIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:pipette"
+              class="w-4 h-4"
+            />
             {{ picking ? '取色中…' : '取色' }}
           </button>
         </div>
@@ -46,12 +49,14 @@
             :title="hexCopied ? '已复制！' : '复制'"
             @click="copyVal(hex, 'hexCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="hexCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -73,12 +78,14 @@
             :title="rgbCopied ? '已复制！' : '复制'"
             @click="copyVal(rgb, 'rgbCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="rgbCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -100,12 +107,14 @@
             :title="hslCopied ? '已复制！' : '复制'"
             @click="copyVal(hsl, 'hslCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="hslCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -116,9 +125,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon, EyeDropperIcon } from '@heroicons/vue/24/outline'
-
 const hex = ref('#6366f1')
 const rgb = ref('rgb(99, 102, 241)')
 const hsl = ref('hsl(239, 84%, 67%)')

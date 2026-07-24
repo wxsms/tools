@@ -8,9 +8,16 @@
       >
 
       <!-- Main content -->
-      <div class="drawer-content flex flex-col min-h-screen">
+      <div class="drawer-content flex flex-col min-h-screen relative">
         <!-- Navbar -->
-        <div class="navbar bg-base-200 w-full sticky top-0 z-30 shadow-sm">
+        <div
+          :class="[
+            'navbar w-full z-30',
+            isHome
+              ? 'bg-base-200 sticky top-0 shadow-sm'
+              : 'bg-base-200 sticky top-0 shadow-sm lg:absolute lg:top-0 lg:right-0 lg:left-auto lg:bg-transparent lg:shadow-none lg:w-auto',
+          ]"
+        >
           <div class="flex-none lg:hidden">
             <label
               v-if="!isHome"
@@ -18,7 +25,10 @@
               aria-label="open sidebar"
               class="btn btn-square btn-ghost"
             >
-              <Bars3Icon class="w-5 h-5" />
+              <Icon
+                icon="lucide:menu"
+                class="w-5 h-5"
+              />
             </label>
           </div>
           <div
@@ -29,8 +39,11 @@
               to="/"
               class="btn btn-ghost text-xl"
             >
-              <WrenchScrewdriverIcon class="w-6 h-6" />
-              wxsm's Kit
+              <Icon
+                icon="mdi:toolbox"
+                class="w-6 h-6"
+              />
+              wxsm's toolbox
             </router-link>
           </div>
           <div
@@ -43,7 +56,10 @@
               aria-label="搜索工具"
               @click="paletteRef?.open()"
             >
-              <MagnifyingGlassIcon class="w-5 h-5" />
+              <Icon
+                icon="lucide:search"
+                class="w-5 h-5"
+              />
               <span class="hidden sm:inline text-base-content/60">搜索...</span>
               <kbd class="kbd kbd-sm hidden sm:inline-block">{{ shortcutHint }}</kbd>
             </button>
@@ -70,11 +86,13 @@
                 :checked="isDark"
                 @change="toggleTheme"
               >
-              <SunIcon
+              <Icon
+                icon="lucide:sun"
                 aria-label="Light"
                 class="w-4 h-4"
               />
-              <MoonIcon
+              <Icon
+                icon="lucide:moon"
                 aria-label="Dark"
                 class="w-4 h-4"
               />
@@ -91,7 +109,7 @@
         <!-- Footer -->
         <footer class="footer footer-center p-4 bg-base-200 text-base-content">
           <aside>
-            <p>&copy; {{ year }} wxsm — 个人工具箱</p>
+            <p>&copy; {{ year }} wxsm's toolbox</p>
           </aside>
         </footer>
       </div>
@@ -112,8 +130,11 @@
             to="/"
             class="btn btn-ghost text-xl no-underline mb-4 self-start"
           >
-            <WrenchScrewdriverIcon class="w-6 h-6" />
-            wxsm's Kit
+            <Icon
+              icon="mdi:toolbox"
+              class="w-6 h-6"
+            />
+            wxsm's toolbox
           </router-link>
 
           <div class="divider mt-0 mb-2" />
@@ -136,8 +157,8 @@
                   class="flex items-center gap-3"
                   active-class="menu-active"
                 >
-                  <component
-                    :is="tool.icon"
+                  <Icon
+                    :icon="tool.icon"
                     class="w-5 h-5"
                   />
                   {{ tool.name }}
@@ -159,18 +180,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme.js'
 import { toolGroups } from './tools.js'
-import {
-  Bars3Icon,
-  MagnifyingGlassIcon,
-  MoonIcon,
-  SunIcon,
-  WrenchScrewdriverIcon,
-} from '@heroicons/vue/24/outline'
 import CommandPalette from './components/CommandPalette.vue'
 import RouteError from './components/RouteError.vue'
 import { useRouteLoading } from './composables/useRouteLoading.js'
+import { Icon } from '@iconify/vue'
 
-const SITE_TITLE = "wxsm's Kit"
+const SITE_TITLE = "wxsm's toolbox"
 const SITE_URL = import.meta.env.VITE_SITE_URL || ''
 
 const year = new Date().getFullYear()

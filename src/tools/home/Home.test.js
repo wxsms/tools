@@ -32,7 +32,7 @@ async function mountComponent() {
 describe('Home', () => {
   it('renders hero title', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain("wxsm's Kit")
+    expect(wrapper.text()).toContain("wxsm's toolbox")
   })
 
   it('renders tool group headings', async () => {

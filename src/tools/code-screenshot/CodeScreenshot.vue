@@ -68,7 +68,10 @@
             :disabled="!code"
             @click="exportImage"
           >
-            <ArrowDownTrayIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:download"
+              class="w-4 h-4"
+            />
             导出 PNG
           </button>
         </div>
@@ -201,9 +204,9 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { toPng } from 'html-to-image'
-import { ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { javascript } from '@codemirror/lang-javascript'

@@ -1,6 +1,6 @@
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, watch, onMounted, computed } from 'vue'
-import { InformationCircleIcon } from '@heroicons/vue/24/outline'
 import {
   MODEL_CONFIGS,
   loadTokenizer,
@@ -349,7 +349,10 @@ watch(activeModelId, () => {
             data-testid="preview-tip"
             data-tip="部分模型(GPT / Kimi 等基于字节 BPE 的分词器)会把一个多字节字符切到相邻 token 上，单个 token 单独解码会显示为 � —— 这是预期行为，不影响 Token 总数。"
           >
-            <InformationCircleIcon class="h-4 w-4 opacity-60 cursor-help" />
+            <Icon
+              icon="lucide:info"
+              class="h-4 w-4 opacity-60 cursor-help"
+            />
           </span>
         </div>
         <div class="flex flex-wrap gap-1">

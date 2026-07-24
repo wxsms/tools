@@ -15,7 +15,10 @@
           />
         </div>
         <div class="hidden lg:flex items-center justify-center opacity-30">
-          <ArrowsRightLeftIcon class="w-5 h-5" />
+          <Icon
+            icon="lucide:arrow-left-right"
+            class="w-5 h-5"
+          />
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">修改后文本</span></label>
@@ -34,14 +37,20 @@
           :disabled="!leftText && !rightText"
           @click="computeDiffFn"
         >
-          <ArrowsRightLeftIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:arrow-left-right"
+            class="w-4 h-4"
+          />
           对比
         </button>
         <button
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -186,8 +195,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import { ArrowsRightLeftIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { computeDiff as doComputeDiff, computeStats, computeDisplayLines } from './diff.js'
 
 const leftText = ref('')

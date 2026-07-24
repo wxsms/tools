@@ -26,7 +26,10 @@
         class="btn btn-sm gap-1"
         @click="reset"
       >
-        <ArrowPathIcon class="w-4 h-4" />
+        <Icon
+          icon="lucide:refresh-cw"
+          class="w-4 h-4"
+        />
         重置
       </button>
       <div class="flex items-center gap-3 text-sm ml-auto">
@@ -118,8 +121,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue'
-import { ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { layout104, layout87, limitedCodes, normalizeKeyCode } from './layout.js'
 
 const layout = ref('104')

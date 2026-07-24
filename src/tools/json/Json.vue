@@ -11,7 +11,10 @@
         :disabled="!input"
         @click="format"
       >
-        <SparklesIcon class="w-4 h-4" />
+        <Icon
+          icon="lucide:sparkles"
+          class="w-4 h-4"
+        />
         格式化
       </button>
       <button
@@ -19,7 +22,10 @@
         :disabled="!input"
         @click="minify"
       >
-        <ArrowsPointingInIcon class="w-4 h-4" />
+        <Icon
+          icon="lucide:minimize-2"
+          class="w-4 h-4"
+        />
         压缩
       </button>
       <button
@@ -76,12 +82,14 @@
             :title="copied ? '已复制！' : '复制'"
             @click="copy"
           >
-            <CheckIcon
+            <Icon
               v-if="copied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -124,13 +132,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import {
-  SparklesIcon,
-  ArrowsPointingInIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-} from '@heroicons/vue/24/outline'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import { useTheme } from '../../composables/useTheme.js'

@@ -126,11 +126,11 @@ describe('searchTools', () => {
   })
 
   it('matches groupName when name and path do not', () => {
-    // '加解密' is the group name; no tool's name or path contains the exact char pair '加解密'.
-    const results = searchTools('加解密', index)
+    // '加密安全' is the group name; no tool's name or path contains the exact string '加密安全'.
+    const results = searchTools('加密安全', index)
     expect(results.length).toBeGreaterThan(0)
     for (const r of results) {
-      expect(r.groupName).toBe('加解密')
+      expect(r.groupName).toBe('加密安全')
       expect(r.matchedField).toBe('groupName')
     }
   })

@@ -5,7 +5,7 @@ import { toolGroups } from '../tools.js'
  * Preserves group order and intra-group order.
  *
  * @param {Array} groups - toolGroups from src/tools.js
- * @returns {Array<{name: string, desc: string, path: string, groupName: string, icon: Object}>}
+ * @returns {Array<{name: string, desc: string, path: string, groupName: string, icon: string}>}
  */
 export function buildSearchIndex(groups) {
   const index = []

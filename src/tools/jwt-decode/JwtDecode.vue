@@ -40,12 +40,14 @@
               :title="headerCopied ? '已复制！' : '复制'"
               @click="copyText(header, 'headerCopied')"
             >
-              <CheckIcon
+              <Icon
                 v-if="headerCopied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -66,12 +68,14 @@
               :title="payloadCopied ? '已复制！' : '复制'"
               @click="copyText(payload, 'payloadCopied')"
             >
-              <CheckIcon
+              <Icon
                 v-if="payloadCopied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -92,12 +96,14 @@
               :title="signatureCopied ? '已复制！' : '复制'"
               @click="copyText(signature, 'signatureCopied')"
             >
-              <CheckIcon
+              <Icon
                 v-if="signatureCopied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -110,8 +116,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import { decodeJwt } from './jwt-decode.js'
 
 const token = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IuW8oOS4iSIsImlhdCI6MTczMjg2NDAwMCwiZXhwIjoxNzY0NDAwMDAwfQ.4DLecMqe5D8R8F64fF8LZ9Kq3VK7nJaPENPK9xXkx6Y')

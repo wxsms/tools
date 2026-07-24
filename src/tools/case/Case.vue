@@ -20,12 +20,14 @@
             :title="inputCopied ? '已复制！' : '复制'"
             @click="copyText(input, 'inputCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="inputCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -37,7 +39,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -64,12 +69,14 @@
             :title="item.copied ? '已复制！' : '复制'"
             @click="copyText(item.value, item.key)"
           >
-            <CheckIcon
+            <Icon
               v-if="item.copied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -80,8 +87,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, reactive } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { convertCases } from './case.js'
 
 const input = ref('')

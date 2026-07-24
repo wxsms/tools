@@ -12,35 +12,50 @@
             class="btn btn-sm gap-1"
             @click="formatSvg"
           >
-            <SparklesIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:sparkles"
+              class="w-4 h-4"
+            />
             美化
           </button>
           <button
             class="btn btn-sm gap-1"
             @click="minifySvg"
           >
-            <ArrowsPointingInIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:minimize-2"
+              class="w-4 h-4"
+            />
             压缩
           </button>
           <button
             class="btn btn-sm gap-1"
             @click="copyRaw"
           >
-            <ClipboardDocumentIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:clipboard"
+              class="w-4 h-4"
+            />
             {{ rawCopied ? '已复制' : '复制' }}
           </button>
           <button
             class="btn btn-sm gap-1"
             @click="downloadSvg"
           >
-            <ArrowDownTrayIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:download"
+              class="w-4 h-4"
+            />
             下载
           </button>
           <button
             class="btn btn-ghost btn-sm gap-1"
             @click="clear"
           >
-            <TrashIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:trash-2"
+              class="w-4 h-4"
+            />
             清空
           </button>
         </div>
@@ -139,12 +154,13 @@
           >
             在左侧粘贴 SVG 代码即可预览
           </div>
-          <!-- eslint-disable-next-line vue/no-v-html -->
+          <!-- eslint-disable vue/no-v-html -->
           <div
             v-else
             class="min-h-64 flex items-center justify-center p-4"
             v-html="renderedSvg"
           />
+          <!-- eslint-enable vue/no-v-html -->
         </div>
 
         <div
@@ -174,12 +190,14 @@
               :title="uriCopied ? '已复制!' : '复制'"
               @click="copyDataUri"
             >
-              <CheckIcon
+              <Icon
                 v-if="uriCopied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -194,17 +212,9 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, watch } from 'vue'
 import { optimize } from 'svgo/browser'
-import {
-  SparklesIcon,
-  ArrowsPointingInIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-  ArrowDownTrayIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
-
 const DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
   <path d="M8 12h8M12 8v8"/>

@@ -62,12 +62,14 @@
             :title="item.copied ? '已复制！' : '复制'"
             @click="copyText(item.value, item.key)"
           >
-            <CheckIcon
+            <Icon
               v-if="item.copied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -110,12 +112,14 @@
                 :title="customCopied ? '已复制！' : '复制'"
                 @click="copyText(customResult, 'customCopied')"
               >
-                <CheckIcon
+                <Icon
                   v-if="customCopied"
+                  icon="lucide:check"
                   class="w-4 h-4 text-success"
                 />
-                <ClipboardDocumentIcon
+                <Icon
                   v-else
+                  icon="lucide:clipboard"
                   class="w-4 h-4"
                 />
               </button>
@@ -135,7 +139,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -144,8 +151,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, reactive, computed } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { convertRadix, isValidForBase } from './radix.js'
 
 const input = ref('')

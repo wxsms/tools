@@ -53,7 +53,10 @@
           class="btn btn-primary btn-sm gap-1"
           @click="generateAndFillKey"
         >
-          <SparklesIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:sparkles"
+            class="w-4 h-4"
+          />
           生成
         </button>
       </div>
@@ -145,12 +148,14 @@
                   :title="saltCopied ? '已复制！' : '复制'"
                   @click="copySalt"
                 >
-                  <CheckIcon
+                  <Icon
                     v-if="saltCopied"
+                    icon="lucide:check"
                     class="w-4 h-4 text-success"
                   />
-                  <ClipboardDocumentIcon
+                  <Icon
                     v-else
+                    icon="lucide:clipboard"
                     class="w-4 h-4"
                   />
                 </button>
@@ -219,12 +224,14 @@
                   :title="ivCopied ? '已复制！' : '复制'"
                   @click="copyIv"
                 >
-                  <CheckIcon
+                  <Icon
                     v-if="ivCopied"
+                    icon="lucide:check"
                     class="w-4 h-4 text-success"
                   />
-                  <ClipboardDocumentIcon
+                  <Icon
                     v-else
+                    icon="lucide:clipboard"
                     class="w-4 h-4"
                   />
                 </button>
@@ -263,12 +270,14 @@
             :title="plaintextCopied ? '已复制！' : '复制'"
             @click="copyPlaintext"
           >
-            <CheckIcon
+            <Icon
               v-if="plaintextCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -276,7 +285,10 @@
       </div>
 
       <div class="flex justify-center opacity-40">
-        <ArrowsUpDownIcon class="w-6 h-6" />
+        <Icon
+          icon="lucide:arrow-up-down"
+          class="w-6 h-6"
+        />
       </div>
 
       <!-- Ciphertext (output / bidirectional) -->
@@ -302,12 +314,14 @@
             :title="ciphertextCopied ? '已复制！' : '复制'"
             @click="copyCiphertext"
           >
-            <CheckIcon
+            <Icon
               v-if="ciphertextCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -325,7 +339,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clearEnc"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -334,14 +351,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import {
-  ArrowsUpDownIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-  SparklesIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
 import {
   aesEncrypt,
   aesDecrypt,
