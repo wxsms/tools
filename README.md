@@ -5,16 +5,6 @@
 
 Personal toolkit built with Vue 3 + Vite + Tailwind CSS + DaisyUI.
 
-## Tools
-
-| Tool | Description |
-|------|-------------|
-| [Base64 Converter](https://wxsms.github.io/tools/base64) | Encode and decode Base64 with Unicode support |
-| [Gzip Encoder / Decoder](https://wxsms.github.io/tools/gzip) | Gzip compress text, output as Base64 |
-| [MD5 Hash](https://wxsms.github.io/tools/md5) | Compute MD5 hash of text |
-| [Text Diff](https://wxsms.github.io/tools/diff) | Compare texts with line-level diff and inline highlighting |
-| [Image Watermark](https://wxsms.github.io/tools/watermark) | Add transparent text watermark to images |
-
 ## Development
 
 ```bash
