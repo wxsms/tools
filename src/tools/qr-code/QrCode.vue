@@ -21,12 +21,14 @@
             :title="textCopied ? '已复制！' : '复制'"
             @click="copyText(text)"
           >
-            <CheckIcon
+            <Icon
               v-if="textCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -143,7 +145,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
         <button
@@ -151,7 +156,10 @@
           :disabled="!dataUrl"
           @click="download"
         >
-          <ArrowDownTrayIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:download"
+            class="w-4 h-4"
+          />
           下载
         </button>
       </div>
@@ -160,10 +168,9 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
 import QRCode from 'qrcode'
-import { ClipboardDocumentIcon, CheckIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
-
 const text = ref('https://example.com')
 const size = ref(256)
 const errorLevel = ref('M')

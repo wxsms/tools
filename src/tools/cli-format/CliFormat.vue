@@ -51,12 +51,14 @@
             :title="singleCopied ? '已复制！' : '复制'"
             @click="copy(singleLine, 'singleCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="singleCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -64,7 +66,10 @@
       </div>
 
       <div class="flex justify-center opacity-40">
-        <ArrowsUpDownIcon class="w-6 h-6" />
+        <Icon
+          icon="lucide:arrow-up-down"
+          class="w-6 h-6"
+        />
       </div>
 
       <div class="form-control">
@@ -83,12 +88,14 @@
             :title="multiCopied ? '已复制！' : '复制'"
             @click="copy(multiLine, 'multiCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="multiCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -106,7 +113,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -115,8 +125,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import { ArrowsUpDownIcon, ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { toSingleLine, toMultiLine } from './cli-format.js'
 
 const DEFAULT_SINGLE = 'docker run --name "my container" -v /host/path:/container/path -e KEY=value --restart always alpine'

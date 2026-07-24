@@ -16,7 +16,10 @@
           :disabled="loading"
           @click="lookup"
         >
-          <MagnifyingGlassIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:search"
+            class="w-4 h-4"
+          />
           查询
         </button>
       </div>
@@ -60,9 +63,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
-
 const queryIp = ref('')
 const displayRows = ref([])
 const loading = ref(false)

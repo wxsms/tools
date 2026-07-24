@@ -52,12 +52,14 @@
             :title="inputCopied ? '已复制！' : '复制'"
             @click="copyText(input, 'inputCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="inputCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -77,7 +79,10 @@
       </div>
 
       <div class="flex justify-center opacity-40">
-        <ArrowDownIcon class="w-6 h-6" />
+        <Icon
+          icon="lucide:arrow-down"
+          class="w-6 h-6"
+        />
       </div>
 
       <!-- Output -->
@@ -94,12 +99,14 @@
             :title="outputCopied ? '已复制！' : '复制'"
             @click="copyText(output, 'outputCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="outputCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -111,7 +118,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -120,6 +130,7 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightActiveLine, drawSelection, rectangularSelection, highlightSpecialChars } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
@@ -130,12 +141,6 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language'
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
-import {
-  ArrowDownIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
 import { jsonToCSharp } from './json-to-csharp.js'
 import { useTheme } from '../../composables/useTheme.js'
 

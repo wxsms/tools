@@ -134,7 +134,10 @@
                 :disabled="stops.length <= 2"
                 @click.stop="removeStop(i)"
               >
-                <XMarkIcon class="w-3 h-3" />
+                <Icon
+                  icon="lucide:x"
+                  class="w-3 h-3"
+                />
               </button>
             </li>
           </ul>
@@ -142,7 +145,10 @@
             class="btn btn-outline btn-sm mt-2 gap-1"
             @click="addStop"
           >
-            <PlusIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:plus"
+              class="w-4 h-4"
+            />
             添加色标
           </button>
         </div>
@@ -198,12 +204,14 @@
               :title="copied ? '已复制！' : '复制'"
               @click="copyCode"
             >
-              <CheckIcon
+              <Icon
                 v-if="copied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -215,9 +223,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import { PlusIcon, XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
-
 const types = [
   { value: 'linear', label: '线性' },
   { value: 'radial', label: '径向' },

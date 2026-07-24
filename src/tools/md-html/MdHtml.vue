@@ -14,12 +14,14 @@
             class="btn btn-ghost btn-xs gap-1"
             @click="copyText(md, 'mdCopied')"
           >
-            <CheckIcon
+            <Icon
               v-if="mdCopied"
+              icon="lucide:check"
               class="w-3.5 h-3.5 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-3.5 h-3.5"
             />
             {{ mdCopied ? '已复制！' : '复制' }}
@@ -55,12 +57,14 @@
               class="btn btn-ghost btn-xs gap-1"
               @click="copyText(htmlRef, 'htmlCopied')"
             >
-              <CheckIcon
+              <Icon
                 v-if="htmlCopied"
+                icon="lucide:check"
                 class="w-3.5 h-3.5 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-3.5 h-3.5"
               />
               {{ htmlCopied ? '已复制！' : '复制' }}
@@ -99,7 +103,10 @@
         class="btn btn-ghost btn-sm gap-1"
         @click="clear"
       >
-        <TrashIcon class="w-4 h-4" />
+        <Icon
+          icon="lucide:trash-2"
+          class="w-4 h-4"
+        />
         清空
       </button>
     </div>
@@ -107,6 +114,7 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightActiveLine, drawSelection, rectangularSelection, highlightSpecialChars } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
@@ -119,7 +127,6 @@ import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { marked } from 'marked'
 import { useTheme } from '../../composables/useTheme.js'
-import { ClipboardDocumentIcon, CheckIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { htmlToMarkdown } from './md-html.js'
 
 const defaultMd = `# 你好世界

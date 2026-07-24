@@ -24,11 +24,17 @@
           :disabled="!input.trim()"
           @click="parse"
         >
-          <DocumentTextIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:file-text"
+            class="w-4 h-4"
+          />
           解析
         </button>
         <label class="btn btn-sm gap-1">
-          <ArrowUpTrayIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:upload"
+            class="w-4 h-4"
+          />
           上传文件
           <input
             type="file"
@@ -41,7 +47,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clear"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -67,7 +76,10 @@
             class="btn btn-ghost btn-sm gap-1"
             @click="backToInput"
           >
-            <ArrowLeftIcon class="w-4 h-4" />
+            <Icon
+              icon="lucide:arrow-left"
+              class="w-4 h-4"
+            />
             返回
           </button>
           <span
@@ -89,7 +101,10 @@
               @click="toggleExportMenu"
             >
               导出
-              <ChevronDownIcon class="w-4 h-4" />
+              <Icon
+                icon="lucide:chevron-down"
+                class="w-4 h-4"
+              />
             </button>
             <ul
               v-if="showExportMenu"
@@ -186,15 +201,9 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, watch } from 'vue'
 import Papa from 'papaparse'
-import {
-  DocumentTextIcon,
-  ArrowUpTrayIcon,
-  TrashIcon,
-  ArrowLeftIcon,
-  ChevronDownIcon,
-} from '@heroicons/vue/24/outline'
 import {
   inferColumnType,
   columnStats,

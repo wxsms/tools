@@ -51,12 +51,14 @@
                 :title="copiedIndex === i ? '已复制！' : '复制'"
                 @click="copyIndex(i)"
               >
-                <CheckIcon
+                <Icon
                   v-if="copiedIndex === i"
+                  icon="lucide:check"
                   class="w-4 h-4 text-success"
                 />
-                <ClipboardDocumentIcon
+                <Icon
                   v-else
+                  icon="lucide:clipboard"
                   class="w-4 h-4"
                 />
               </button>
@@ -116,8 +118,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import { WEEKDAY_NAMES, parseCronExpr, describeCron, computeNextTimes } from './cron.js'
 
 const cronExpr = ref('* * * * *')

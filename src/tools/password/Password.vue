@@ -80,7 +80,10 @@
               class="btn btn-primary btn-sm gap-1"
               @click="generate"
             >
-              <ArrowPathIcon class="w-4 h-4" />
+              <Icon
+                icon="lucide:refresh-cw"
+                class="w-4 h-4"
+              />
               重新生成
             </button>
           </div>
@@ -117,12 +120,14 @@
                 :title="copiedIndex === i ? '已复制！' : '复制'"
                 @click="copyIndex(i)"
               >
-                <CheckIcon
+                <Icon
                   v-if="copiedIndex === i"
+                  icon="lucide:check"
                   class="w-4 h-4 text-success"
                 />
-                <ClipboardDocumentIcon
+                <Icon
                   v-else
+                  icon="lucide:clipboard"
                   class="w-4 h-4"
                 />
               </button>
@@ -141,9 +146,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed, watch } from 'vue'
-import { ArrowPathIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
-
 const length = ref(16)
 const uppercase = ref(true)
 const lowercase = ref(true)

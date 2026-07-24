@@ -18,7 +18,10 @@
               aria-label="open sidebar"
               class="btn btn-square btn-ghost"
             >
-              <Bars3Icon class="w-5 h-5" />
+              <Icon
+                icon="lucide:menu"
+                class="w-5 h-5"
+              />
             </label>
           </div>
           <div
@@ -29,7 +32,10 @@
               to="/"
               class="btn btn-ghost text-xl"
             >
-              <WrenchScrewdriverIcon class="w-6 h-6" />
+              <Icon
+                icon="lucide:wrench"
+                class="w-6 h-6"
+              />
               wxsm's Kit
             </router-link>
           </div>
@@ -43,7 +49,10 @@
               aria-label="搜索工具"
               @click="paletteRef?.open()"
             >
-              <MagnifyingGlassIcon class="w-5 h-5" />
+              <Icon
+                icon="lucide:search"
+                class="w-5 h-5"
+              />
               <span class="hidden sm:inline text-base-content/60">搜索...</span>
               <kbd class="kbd kbd-sm hidden sm:inline-block">{{ shortcutHint }}</kbd>
             </button>
@@ -70,11 +79,13 @@
                 :checked="isDark"
                 @change="toggleTheme"
               >
-              <SunIcon
+              <Icon
+                icon="lucide:sun"
                 aria-label="Light"
                 class="w-4 h-4"
               />
-              <MoonIcon
+              <Icon
+                icon="lucide:moon"
                 aria-label="Dark"
                 class="w-4 h-4"
               />
@@ -112,7 +123,10 @@
             to="/"
             class="btn btn-ghost text-xl no-underline mb-4 self-start"
           >
-            <WrenchScrewdriverIcon class="w-6 h-6" />
+            <Icon
+              icon="lucide:wrench"
+              class="w-6 h-6"
+            />
             wxsm's Kit
           </router-link>
 
@@ -159,13 +173,6 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from './composables/useTheme.js'
 import { toolGroups } from './tools.js'
-import {
-  Bars3Icon,
-  MagnifyingGlassIcon,
-  MoonIcon,
-  SunIcon,
-  WrenchScrewdriverIcon,
-} from '@heroicons/vue/24/outline'
 import CommandPalette from './components/CommandPalette.vue'
 import RouteError from './components/RouteError.vue'
 import { useRouteLoading } from './composables/useRouteLoading.js'

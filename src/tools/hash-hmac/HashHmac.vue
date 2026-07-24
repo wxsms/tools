@@ -80,7 +80,10 @@
           class="btn btn-primary btn-sm gap-1"
           @click="generateHmacKey"
         >
-          <SparklesIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:sparkles"
+            class="w-4 h-4"
+          />
           生成
         </button>
       </div>
@@ -102,12 +105,14 @@
             :title="hashInputCopied ? '已复制！' : '复制'"
             @click="copyHashInput"
           >
-            <CheckIcon
+            <Icon
               v-if="hashInputCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -115,7 +120,10 @@
       </div>
 
       <div class="flex justify-center opacity-40">
-        <ArrowDownIcon class="w-6 h-6" />
+        <Icon
+          icon="lucide:arrow-down"
+          class="w-6 h-6"
+        />
       </div>
 
       <!-- Output -->
@@ -133,12 +141,14 @@
             :title="hashOutputCopied ? '已复制！' : '复制'"
             @click="copyHashOutput"
           >
-            <CheckIcon
+            <Icon
               v-if="hashOutputCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -150,7 +160,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clearHash"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -159,14 +172,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import {
-  ArrowDownIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-  SparklesIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
 import {
   computeHash,
   computeHmac,

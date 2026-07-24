@@ -77,12 +77,14 @@
               :title="encodeCopied ? '已复制！' : '复制'"
               @click="copyBase64Output"
             >
-              <CheckIcon
+              <Icon
                 v-if="encodeCopied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -95,7 +97,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clearEncode"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
       </div>
@@ -165,7 +170,10 @@
           class="btn btn-ghost btn-sm gap-1"
           @click="clearDecode"
         >
-          <TrashIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:trash-2"
+            class="w-4 h-4"
+          />
           清空
         </button>
         <button
@@ -173,7 +181,10 @@
           :disabled="!base64Input"
           @click="download"
         >
-          <ArrowDownTrayIcon class="w-4 h-4" />
+          <Icon
+            icon="lucide:download"
+            class="w-4 h-4"
+          />
           下载
         </button>
       </div>
@@ -182,8 +193,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
 import { IMAGE_MIMES, formatSize, mimeToExt, parseDataUrl, buildImageSrc } from './file-base64.js'
 
 // --- Shared ---

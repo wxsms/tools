@@ -48,12 +48,14 @@
               :title="copied[c.key] ? '已复制！' : '复制'"
               @click="copy(c.value, c.key)"
             >
-              <CheckIcon
+              <Icon
                 v-if="copied[c.key]"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -81,12 +83,14 @@
               :title="copied['param-' + p.key] ? '已复制！' : '复制'"
               @click="copy(p.value, 'param-' + p.key)"
             >
-              <CheckIcon
+              <Icon
                 v-if="copied['param-' + p.key]"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -98,8 +102,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, reactive } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import { tokenizeUrl, COMPONENT_COLORS } from './url-tokenize.js'
 
 const input = ref('https://example.com:8080/path/to/page?name=张三&lang=zh&id=42#section')

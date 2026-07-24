@@ -80,12 +80,14 @@
             :title="testCopied ? '已复制！' : '复制'"
             @click="copyText(testString, 'test')"
           >
-            <CheckIcon
+            <Icon
               v-if="testCopied"
+              icon="lucide:check"
               class="w-4 h-4 text-success"
             />
-            <ClipboardDocumentIcon
+            <Icon
               v-else
+              icon="lucide:clipboard"
               class="w-4 h-4"
             />
           </button>
@@ -134,12 +136,14 @@
                 :title="copiedIndex === i ? '已复制！' : '复制'"
                 @click="copyText(m.match, 'match-' + i)"
               >
-                <CheckIcon
+                <Icon
                   v-if="copiedIndex === i"
+                  icon="lucide:check"
                   class="w-3.5 h-3.5 text-success"
                 />
-                <ClipboardDocumentIcon
+                <Icon
                   v-else
+                  icon="lucide:clipboard"
                   class="w-3.5 h-3.5"
                 />
               </button>
@@ -182,8 +186,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, reactive, computed } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import { testRegex, buildHighlightedSegments, commonPatterns, flagsToString } from './regex.js'
 
 const SAMPLE_PATTERN = '\\b\\w+@\\w+\\.\\w+\\b'

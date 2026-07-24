@@ -95,12 +95,14 @@
               :title="copied ? '已复制！' : '复制'"
               @click="copyCode"
             >
-              <CheckIcon
+              <Icon
                 v-if="copied"
+                icon="lucide:check"
                 class="w-4 h-4 text-success"
               />
-              <ClipboardDocumentIcon
+              <Icon
                 v-else
+                icon="lucide:clipboard"
                 class="w-4 h-4"
               />
             </button>
@@ -112,9 +114,8 @@
 </template>
 
 <script setup>
+import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
-import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/vue/24/outline'
-
 const directions = [
   { value: 'up', label: '上' },
   { value: 'right', label: '右' },
