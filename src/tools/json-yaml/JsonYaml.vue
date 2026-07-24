@@ -31,12 +31,6 @@
           ref="jsonEditorEl"
           class="cm-container border border-base-300"
         />
-        <p
-          v-if="error.json"
-          class="text-error text-sm mt-1"
-        >
-          {{ error.json }}
-        </p>
       </div>
 
       <!-- YAML panel -->
@@ -65,16 +59,20 @@
           ref="yamlEditorEl"
           class="cm-container border border-base-300"
         />
-        <p
-          v-if="error.yaml"
-          class="text-error text-sm mt-1"
-        >
-          {{ error.yaml }}
-        </p>
       </div>
     </div>
 
-    <div class="flex justify-end mt-4">
+    <div class="flex items-center justify-between mt-4 gap-4">
+      <p
+        v-if="error.json || error.yaml"
+        class="text-error text-sm flex-1 min-w-0 truncate"
+      >
+        {{ error.json || error.yaml }}
+      </p>
+      <span
+        v-else
+        class="flex-1"
+      />
       <button
         class="btn btn-ghost btn-sm gap-1"
         @click="clear"
