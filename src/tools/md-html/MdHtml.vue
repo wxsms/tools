@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="md-html-page">
     <h1 class="text-3xl font-bold mb-6">
       Markdown / HTML 转换
     </h1>
@@ -379,7 +379,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.cm-container {
+.md-html-page .cm-container {
   height: calc(100vh - 260px);
   min-height: 400px;
   border-radius: var(--radius-field, 0.5rem);

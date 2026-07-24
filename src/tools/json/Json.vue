@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="json-page">
     <h1 class="text-3xl font-bold mb-6">
       JSON 校验器
     </h1>
@@ -59,58 +59,41 @@
     </div>
 
     <!-- Main layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="flex gap-4">
       <!-- Left: editor -->
-      <div class="form-control">
-        <label class="label">
+      <div class="flex-1 form-control min-w-0">
+        <label class="label mb-2">
           <span class="label-text font-semibold">输入</span>
-        </label>
-        <div class="relative">
-          <textarea
-            v-model="input"
-            class="textarea textarea-bordered w-full font-mono text-sm h-[520px] resize-none"
-            :class="{
-              'textarea-success': touched && input.trim() && isValid,
-              'textarea-error': touched && input.trim() && !isValid,
-            }"
-            placeholder="在此粘贴 JSON..."
-            @input="onInput"
-          />
           <button
             v-if="input"
-            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="copied ? '已复制！' : '复制'"
+            class="btn btn-ghost btn-xs gap-1"
             @click="copy"
           >
             <Icon
               v-if="copied"
               icon="lucide:check"
-              class="w-4 h-4 text-success"
+              class="w-3.5 h-3.5 text-success"
             />
             <Icon
               v-else
               icon="lucide:clipboard"
-              class="w-4 h-4"
+              class="w-3.5 h-3.5"
             />
+            {{ copied ? '已复制！' : '复制' }}
           </button>
-        </div>
-        <p
-          v-if="touched && input.trim()"
-          :class="isValid ? 'text-success' : 'text-error'"
-          class="text-sm mt-1"
-        >
-          {{ isValid ? 'JSON 有效' : 'JSON 无效：' + error }}
-        </p>
+        </label>
+        <div
+          ref="editorEl"
+          class="cm-container border border-base-300"
+        />
       </div>
 
       <!-- Right: tree view -->
-      <div class="form-control">
-        <label class="label">
+      <div class="flex-1 form-control min-w-0">
+        <label class="label mb-2">
           <span class="label-text font-semibold">树形视图</span>
         </label>
-        <div
-          class="border border-base-content/10 rounded-lg overflow-auto p-3 h-[520px]"
-        >
+        <div class="json-tree-container border border-base-content/10 rounded-lg overflow-auto p-3">
           <vue-json-pretty
             v-if="parsedData !== undefined"
             :data="parsedData"
@@ -128,12 +111,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Bottom row: validation status + clear button -->
+    <div class="flex items-center justify-between mt-4 gap-4">
+      <p
+        v-if="touched && input.trim()"
+        :class="isValid ? 'text-success' : 'text-error'"
+        class="text-sm flex-1 min-w-0 truncate"
+      >
+        {{ isValid ? 'JSON 有效' : 'JSON 无效：' + error }}
+      </p>
+      <span
+        v-else
+        class="flex-1"
+      />
+      <button
+        class="btn btn-ghost btn-sm gap-1"
+        @click="clear"
+      >
+        <Icon
+          icon="lucide:trash-2"
+          class="w-4 h-4"
+        />
+        清空
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { Icon } from '@iconify/vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightActiveLine, drawSelection, rectangularSelection, highlightSpecialChars } from '@codemirror/view'
+import { EditorState } from '@codemirror/state'
+import { json as jsonLang } from '@codemirror/lang-json'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language'
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
+import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import { useTheme } from '../../composables/useTheme.js'
@@ -160,6 +176,9 @@ const error = ref('')
 const copied = ref(false)
 const touched = ref(false)
 
+const editorEl = ref(null)
+let editor = null
+
 const isValid = computed(() => !input.value.trim() || !error.value)
 
 const parsedData = computed(() => {
@@ -171,7 +190,47 @@ const parsedData = computed(() => {
   }
 })
 
-function onInput() {
+function getThemeExt() {
+  return theme.value === 'dark' ? oneDark : []
+}
+
+function createExtensions() {
+  return [
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    highlightSpecialChars(),
+    history(),
+    drawSelection(),
+    EditorState.allowMultipleSelections.of(true),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+    bracketMatching(),
+    closeBrackets(),
+    rectangularSelection(),
+    highlightActiveLine(),
+    highlightSelectionMatches(),
+    keymap.of([
+      ...closeBracketsKeymap,
+      ...defaultKeymap,
+      ...searchKeymap,
+      ...historyKeymap,
+      indentWithTab,
+    ]),
+    jsonLang(),
+    EditorView.updateListener.of(onChange),
+    EditorView.theme({
+      '&': { height: '100%' },
+      '.cm-scroller': { overflow: 'auto' },
+    }),
+  ]
+}
+
+function onChange(update) {
+  if (!update.docChanged) return
+  input.value = update.state.doc.toString()
+  validate()
+}
+
+function validate() {
   touched.value = true
   if (!input.value.trim()) {
     error.value = ''
@@ -185,11 +244,35 @@ function onInput() {
   }
 }
 
+function syncEditor() {
+  if (!editor) return
+  editor.dispatch({
+    changes: { from: 0, to: editor.state.doc.length, insert: input.value },
+  })
+}
+
+function createEditor() {
+  if (!editorEl.value) return
+  editor = new EditorView({
+    state: EditorState.create({
+      doc: input.value,
+      extensions: [...createExtensions(), getThemeExt()],
+    }),
+    parent: editorEl.value,
+  })
+}
+
+function destroyEditor() {
+  editor?.destroy()
+  editor = null
+}
+
 function format() {
   try {
     const obj = JSON.parse(input.value)
     input.value = JSON.stringify(obj, null, 2)
     error.value = ''
+    syncEditor()
   } catch (e) {
     error.value = e.message
   }
@@ -200,6 +283,7 @@ function minify() {
     const obj = JSON.parse(input.value)
     input.value = JSON.stringify(obj)
     error.value = ''
+    syncEditor()
   } catch (e) {
     error.value = e.message
   }
@@ -209,26 +293,36 @@ function toUnicode() {
   input.value = input.value.replace(/[\u4e00-\u9fff]/g, ch => {
     return '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0')
   })
+  syncEditor()
 }
 
 function fromUnicode() {
   input.value = input.value.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
     return String.fromCharCode(parseInt(code, 16))
   })
+  syncEditor()
 }
 
 function addQuoteEscape() {
-  // JSON string → escaped string with \" for quotes, \\n for newlines
   input.value = JSON.stringify(input.value)
+  syncEditor()
 }
 
 function removeQuoteEscape() {
   try {
-    // Unwrap one layer of JSON string escaping
     input.value = JSON.parse(input.value)
+    error.value = ''
   } catch (e) {
     error.value = '不是有效的转义字符串：' + e.message
   }
+  syncEditor()
+}
+
+function clear() {
+  input.value = ''
+  error.value = ''
+  touched.value = false
+  syncEditor()
 }
 
 async function copy() {
@@ -238,4 +332,58 @@ async function copy() {
     setTimeout(() => copied.value = false, 1500)
   } catch { /* clipboard not available */ }
 }
+
+watch(theme, async () => {
+  destroyEditor()
+  await nextTick()
+  createEditor()
+  syncEditor()
+})
+
+onMounted(() => {
+  createEditor()
+  validate()
+})
+
+onBeforeUnmount(() => {
+  destroyEditor()
+})
 </script>
+
+<style>
+.json-page .cm-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.json-page .cm-container .cm-editor {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.json-page .cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .json-page .cm-container .cm-editor {
+  background: var(--color-base-300);
+}
+:not([data-theme="dark"]) .json-page .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-300);
+  border-right: 1px solid var(--color-base-100);
+}
+:not([data-theme="dark"]) .json-page .cm-container .cm-editor .cm-activeLineGutter {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .json-page .cm-container .cm-editor .cm-activeLine {
+  background: var(--color-base-200);
+}
+
+.json-page .json-tree-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  background: var(--color-base-300);
+}
+</style>
