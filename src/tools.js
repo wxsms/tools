@@ -46,7 +46,7 @@ import {
 
 export const toolGroups = [
   {
-    name: '编码转换',
+    name: '编码解码',
     tools: [
       {
         name: 'Base64 转换',
@@ -67,16 +67,22 @@ export const toolGroups = [
         icon: CodeBracketSquareIcon,
       },
       {
+        name: 'Unicode 转换',
+        path: '/unicode',
+        desc: 'Unicode 编码与解码',
+        icon: LanguageIcon,
+      },
+      {
         name: 'Gzip 压缩',
         path: '/gzip',
         desc: 'Gzip 压缩与解压（Base64 表示）',
         icon: CircleStackIcon,
       },
       {
-        name: 'Unicode 转换',
-        path: '/unicode',
-        desc: 'Unicode 编码与解码',
-        icon: LanguageIcon,
+        name: '进制转换',
+        path: '/radix',
+        desc: '二进制 / 八进制 / 十进制 / 十六进制互转，支持 2-36 任意进制',
+        icon: CalculatorIcon,
       },
       {
         name: 'JWT 解码',
@@ -85,10 +91,21 @@ export const toolGroups = [
         icon: TicketIcon,
       },
       {
-        name: '进制转换',
-        path: '/radix',
-        desc: '二进制 / 八进制 / 十进制 / 十六进制互转，支持 2-36 任意进制',
-        icon: CalculatorIcon,
+        name: '文件转 Base64',
+        path: '/file-base64',
+        desc: '文件与 Base64 互转，支持图片预览',
+        icon: PaperClipIcon,
+      },
+    ],
+  },
+  {
+    name: 'JSON 工具',
+    tools: [
+      {
+        name: 'JSON 校验',
+        path: '/json',
+        desc: 'JSON 校验、树形查看、格式化、压缩、Unicode 与转义转换',
+        icon: CommandLineIcon,
       },
       {
         name: 'JSON → Go',
@@ -141,7 +158,7 @@ export const toolGroups = [
     ],
   },
   {
-    name: '加解密',
+    name: '加密安全',
     tools: [
       {
         name: '对称加密',
@@ -161,11 +178,6 @@ export const toolGroups = [
         desc: 'RSA 密钥生成、加密与解密',
         icon: KeyIcon,
       },
-    ],
-  },
-  {
-    name: '生成转换',
-    tools: [
       {
         name: '密码生成',
         path: '/password',
@@ -178,17 +190,46 @@ export const toolGroups = [
         desc: 'UUID v4 与 NanoID 生成',
         icon: FingerPrintIcon,
       },
+    ],
+  },
+  {
+    name: '文本处理',
+    tools: [
       {
-        name: '时间戳转换',
-        path: '/timestamp',
-        desc: 'Unix 时间戳 ↔ 日期时间转换（10 位 / 13 位）',
-        icon: ClockIcon,
+        name: '文本对比',
+        path: '/diff',
+        desc: '文本对比，支持字符级差异与行内高亮',
+        icon: DocumentPlusIcon,
       },
       {
-        name: '取色器',
-        path: '/color-picker',
-        desc: '屏幕取色与 HEX / RGB / HSL 颜色互转',
-        icon: EyeDropperIcon,
+        name: '正则测试',
+        path: '/regex',
+        desc: '正则表达式实时测试与匹配高亮',
+        icon: MagnifyingGlassIcon,
+      },
+      {
+        name: '大小写转换',
+        path: '/case',
+        desc: '大小写转换与编程命名风格转换',
+        icon: AdjustmentsHorizontalIcon,
+      },
+      {
+        name: 'Patch 查看',
+        path: '/patch-viewer',
+        desc: '可视化查看 git diff / unified patch 文件',
+        icon: CodeBracketIcon,
+      },
+      {
+        name: '命令行格式转换',
+        path: '/cli-format',
+        desc: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义',
+        icon: CommandLineIcon,
+      },
+      {
+        name: 'CSV 预览',
+        path: '/csv',
+        desc: 'CSV 表格预览，支持类型推断、列统计、排序筛选、导出',
+        icon: TableCellsIcon,
       },
       {
         name: 'Markdown 转换',
@@ -197,22 +238,10 @@ export const toolGroups = [
         icon: DocumentTextIcon,
       },
       {
-        name: 'SVG 预览',
-        path: '/svg-preview',
-        desc: 'SVG 代码实时预览，支持美化 / 压缩、Data URI、颜色覆盖与下载',
-        icon: BeakerIcon,
-      },
-      {
-        name: 'Cron 解析',
-        path: '/cron',
-        desc: 'Cron 表达式解析与生成',
-        icon: CalendarDaysIcon,
-      },
-      {
-        name: '占位文本',
-        path: '/lorem',
-        desc: '中英文占位文本生成，可配置段落数与句数',
-        icon: QueueListIcon,
+        name: 'Emoji 大全',
+        path: '/emoji',
+        desc: 'Emoji 查询与多种格式复制',
+        icon: FaceSmileIcon,
       },
     ],
   },
@@ -258,72 +287,13 @@ export const toolGroups = [
     ],
   },
   {
-    name: '文本处理',
-    tools: [
-      {
-        name: '文本对比',
-        path: '/diff',
-        desc: '文本对比，支持字符级差异与行内高亮',
-        icon: DocumentPlusIcon,
-      },
-      {
-        name: 'JSON 校验',
-        path: '/json',
-        desc: 'JSON 校验、树形查看、格式化、压缩、Unicode 与转义转换',
-        icon: CommandLineIcon,
-      },
-      {
-        name: '正则测试',
-        path: '/regex',
-        desc: '正则表达式实时测试与匹配高亮',
-        icon: MagnifyingGlassIcon,
-      },
-      {
-        name: '大小写转换',
-        path: '/case',
-        desc: '大小写转换与编程命名风格转换',
-        icon: AdjustmentsHorizontalIcon,
-      },
-      {
-        name: 'Patch 查看',
-        path: '/patch-viewer',
-        desc: '可视化查看 git diff / unified patch 文件',
-        icon: CodeBracketIcon,
-      },
-      {
-        name: '命令行格式转换',
-        path: '/cli-format',
-        desc: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义',
-        icon: CommandLineIcon,
-      },
-      {
-        name: 'CSV 预览',
-        path: '/csv',
-        desc: 'CSV 表格预览，支持类型推断、列统计、排序筛选、导出',
-        icon: TableCellsIcon,
-      },
-      {
-        name: 'Emoji 大全',
-        path: '/emoji',
-        desc: 'Emoji 查询与多种格式复制',
-        icon: FaceSmileIcon,
-      },
-    ],
-  },
-  {
-    name: '图片',
+    name: '图片多媒体',
     tools: [
       {
         name: '图片水印',
         path: '/watermark',
         desc: '为图片添加透明文字水印',
         icon: SparklesIcon,
-      },
-      {
-        name: '文件转 Base64',
-        path: '/file-base64',
-        desc: '文件与 Base64 互转，支持图片预览',
-        icon: PaperClipIcon,
       },
       {
         name: '二维码生成',
@@ -343,10 +313,16 @@ export const toolGroups = [
         desc: '代码语法高亮截图，支持多语言与主题',
         icon: CameraIcon,
       },
+      {
+        name: 'SVG 预览',
+        path: '/svg-preview',
+        desc: 'SVG 代码实时预览，支持美化 / 压缩、Data URI、颜色覆盖与下载',
+        icon: BeakerIcon,
+      },
     ],
   },
   {
-    name: '网络',
+    name: '网络 Web',
     tools: [
       {
         name: 'IP 查询',
@@ -375,6 +351,23 @@ export const toolGroups = [
     ],
   },
   {
+    name: '时间日期',
+    tools: [
+      {
+        name: '时间戳转换',
+        path: '/timestamp',
+        desc: 'Unix 时间戳 ↔ 日期时间转换（10 位 / 13 位）',
+        icon: ClockIcon,
+      },
+      {
+        name: 'Cron 解析',
+        path: '/cron',
+        desc: 'Cron 表达式解析与生成',
+        icon: CalendarDaysIcon,
+      },
+    ],
+  },
+  {
     name: 'LLM',
     tools: [
       {
@@ -392,8 +385,20 @@ export const toolGroups = [
     ],
   },
   {
-    name: '硬件',
+    name: '其他工具',
     tools: [
+      {
+        name: '取色器',
+        path: '/color-picker',
+        desc: '屏幕取色与 HEX / RGB / HSL 颜色互转',
+        icon: EyeDropperIcon,
+      },
+      {
+        name: '占位文本',
+        path: '/lorem',
+        desc: '中英文占位文本生成，可配置段落数与句数',
+        icon: QueueListIcon,
+      },
       {
         name: '键盘测试',
         path: '/keyboard-tester',
