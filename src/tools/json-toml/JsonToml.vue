@@ -95,7 +95,8 @@ import { EditorState } from '@codemirror/state'
 import { json as jsonLang } from '@codemirror/lang-json'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language'
+import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, StreamLanguage } from '@codemirror/language'
+import { toml as tomlLegacy } from '@codemirror/legacy-modes/mode/toml'
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { useTheme } from '../../composables/useTheme.js'
@@ -275,11 +276,11 @@ function createEditors() {
   }
 
   if (tomlEditorEl.value) {
-    // No official CodeMirror TOML language pack — TOML side has no syntax highlighting.
+    // No official @codemirror/lang-toml; use the legacy TOML mode via StreamLanguage.
     tomlEditor = new EditorView({
       state: EditorState.create({
         doc: tomlStr.value,
-        extensions: [...createExtensions(null, tomlOnChange), getThemeExt()],
+        extensions: [...createExtensions(StreamLanguage.define(tomlLegacy), tomlOnChange), getThemeExt()],
       }),
       parent: tomlEditorEl.value,
     })
