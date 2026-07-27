@@ -500,14 +500,37 @@
             v-model="rawInput"
             class="textarea textarea-bordered font-mono text-sm h-28"
             placeholder="transform: translateX(10px) rotate(45deg);&#10;transform-origin: 50% 50% 0px;&#10;perspective: 800px;"
-          ></textarea>
+          />
           <div class="flex items-center gap-2 mt-2">
-            <button class="btn btn-primary btn-sm" @click="applyParse">应用</button>
-            <button class="btn btn-ghost btn-sm" @click="rawInput = ''; parseError = ''; parseWarnings = []">清空</button>
+            <button
+              class="btn btn-primary btn-sm"
+              @click="applyParse"
+            >
+              应用
+            </button>
+            <button
+              class="btn btn-ghost btn-sm"
+              @click="rawInput = ''; parseError = ''; parseWarnings = []"
+            >
+              清空
+            </button>
           </div>
-          <div v-if="parseError" class="text-error text-sm mt-2 whitespace-pre-wrap">{{ parseError }}</div>
-          <div v-if="parseWarnings.length > 0" class="text-warning text-sm mt-2 whitespace-pre-wrap">
-            <div v-for="(w, i) in parseWarnings" :key="i">⚠ {{ w }}</div>
+          <div
+            v-if="parseError"
+            class="text-error text-sm mt-2 whitespace-pre-wrap"
+          >
+            {{ parseError }}
+          </div>
+          <div
+            v-if="parseWarnings.length > 0"
+            class="text-warning text-sm mt-2 whitespace-pre-wrap"
+          >
+            <div
+              v-for="(w, i) in parseWarnings"
+              :key="i"
+            >
+              ⚠ {{ w }}
+            </div>
           </div>
         </div>
       </div>
@@ -663,7 +686,7 @@ function applyParse() {
   state.origin.z = r.state.origin.z
   state.perspective.n = r.state.perspective.n
   state.perspective.unit = r.state.perspective.unit
-  selectedIndex.value = state.functions.length > 0 ? 0 : 0
+  selectedIndex.value = 0
   rawInput.value = ''
 }
 </script>
