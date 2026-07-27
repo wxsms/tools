@@ -494,6 +494,22 @@
             </button>
           </div>
         </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">反解析:粘贴 transform 串 → 回填表单</span></label>
+          <textarea
+            v-model="rawInput"
+            class="textarea textarea-bordered font-mono text-sm h-28"
+            placeholder="transform: translateX(10px) rotate(45deg);&#10;transform-origin: 50% 50% 0px;&#10;perspective: 800px;"
+          ></textarea>
+          <div class="flex items-center gap-2 mt-2">
+            <button class="btn btn-primary btn-sm" @click="applyParse">应用</button>
+            <button class="btn btn-ghost btn-sm" @click="rawInput = ''; parseError = ''; parseWarnings = []">清空</button>
+          </div>
+          <div v-if="parseError" class="text-error text-sm mt-2 whitespace-pre-wrap">{{ parseError }}</div>
+          <div v-if="parseWarnings.length > 0" class="text-warning text-sm mt-2 whitespace-pre-wrap">
+            <div v-for="(w, i) in parseWarnings" :key="i">⚠ {{ w }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -502,7 +518,6 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { ref, reactive, computed } from 'vue'
-// eslint-disable-next-line no-unused-vars -- used by Task 10 (reverse-parse)
 import { functionToCss, stateToCss, parseTransform } from './transform.js'
 
 const addGroups = [
@@ -625,6 +640,31 @@ async function copyCode() {
     copied.value = true
     setTimeout(() => { copied.value = false }, 1500)
   } catch { /* clipboard not available */ }
+}
+
+const rawInput = ref('')
+const parseError = ref('')
+const parseWarnings = ref([])
+
+function applyParse() {
+  if (rawInput.value.trim() === '') return
+  const r = parseTransform(rawInput.value)
+  if (!r.ok) {
+    parseError.value = r.errors.map(e => `第 ${e.line} 行: ${e.message}`).join('\n')
+    parseWarnings.value = []
+    return
+  }
+  parseError.value = ''
+  parseWarnings.value = r.warnings || []
+  // Replace state
+  state.functions.splice(0, state.functions.length, ...r.state.functions)
+  state.origin.x = r.state.origin.x
+  state.origin.y = r.state.origin.y
+  state.origin.z = r.state.origin.z
+  state.perspective.n = r.state.perspective.n
+  state.perspective.unit = r.state.perspective.unit
+  selectedIndex.value = state.functions.length > 0 ? 0 : 0
+  rawInput.value = ''
 }
 </script>
 
