@@ -98,3 +98,38 @@ export function stateToCss(state) {
   }
   return lines.join('\n')
 }
+
+// Radians → degrees, normalized to (-180, 180]
+function radToDegNormalized(rad) {
+  let deg = (rad * 180) / Math.PI
+  while (deg > 180) deg -= 360
+  while (deg <= -180) deg += 360
+  return deg
+}
+
+// QR decomposition of a 2D matrix() into [translate, rotate, scale, skew].
+// Input: m = [a, b, c, d, e, f] (CSS matrix column-major: [[a, c, e], [b, d, f]]).
+// Throws when the linear part is singular (sx ≈ 0).
+export function decomposeMatrix2D(m) {
+  const [a, b, c, d, e, f] = m
+  const tx = e
+  const ty = f
+  // 2x2 linear part [[a, c], [b, d]]
+  const sx = Math.sqrt(a * a + b * b)
+  if (sx < 1e-10) throw new Error('matrix 含 0 缩放,无法分解')
+  const theta = Math.atan2(b, a)  // radians
+  const cos = Math.cos(theta)
+  const sin = Math.sin(theta)
+  // Entries of R(-θ) · M: [[sx, cy], [0, sy]]
+  const cy = c * cos + d * sin
+  const sy = -c * sin + d * cos
+  const phi = Math.atan2(cy, sy)  // skew angle, radians
+  const thetaDeg = radToDegNormalized(theta)
+  const phiDeg = radToDegNormalized(phi)
+  return [
+    { type: 'translate', value: { x: { n: tx, unit: 'px' }, y: { n: ty, unit: 'px' }, z: { n: 0, unit: 'px' } } },
+    { type: 'rotate', value: { deg: thetaDeg } },
+    { type: 'scale', value: { x: sx, y: sy } },
+    { type: 'skew', value: { x: phiDeg, y: 0 } },
+  ]
+}

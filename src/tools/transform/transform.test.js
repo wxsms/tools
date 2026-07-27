@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLength, parseAngle, functionToCss, stateToCss } from './transform.js'
+import { parseLength, parseAngle, functionToCss, stateToCss, decomposeMatrix2D } from './transform.js'
 
 describe('parseLength', () => {
   it('parses px', () => {
@@ -168,5 +168,53 @@ describe('stateToCss', () => {
       origin: { x: { n: 10, unit: 'px' }, y: { n: 20, unit: 'px' }, z: { n: 0, unit: 'px' } },
     }
     expect(stateToCss(s)).toBe('transform-origin: 10px 20px 0px;\nperspective: 800px;')
+  })
+})
+
+describe('decomposeMatrix2D', () => {
+  it('pure translation matrix → translate only (no rotate/scale/skew)', () => {
+    // matrix(1, 0, 0, 1, 10, 20)
+    const r = decomposeMatrix2D([1, 0, 0, 1, 10, 20])
+    expect(r).toHaveLength(4)
+    expect(functionToCss(r[0])).toBe('translate(10px, 20px)')
+    expect(functionToCss(r[1])).toBe('rotate(0deg)')
+    expect(functionToCss(r[2])).toBe('scale(1, 1)')
+    expect(functionToCss(r[3])).toBe('skew(0deg, 0deg)')
+  })
+
+  it('pure rotation 45deg → rotate(45deg)', () => {
+    const c = Math.cos(Math.PI / 4)
+    const s = Math.sin(Math.PI / 4)
+    // matrix(a, b, c, d, e, f) where [[a, c], [b, d]] = R(θ)
+    const r = decomposeMatrix2D([c, s, -s, c, 0, 0])
+    expect(functionToCss(r[1])).toMatch(/^rotate\(45(\.0+)?deg\)$/)
+    expect(functionToCss(r[0])).toBe('translate(0px, 0px)')
+    expect(functionToCss(r[2])).toBe('scale(1, 1)')
+  })
+
+  it('pure scale 2,2 → scale(2, 2)', () => {
+    const r = decomposeMatrix2D([2, 0, 0, 2, 0, 0])
+    expect(functionToCss(r[2])).toBe('scale(2, 2)')
+  })
+
+  it('combined translate + rotate + scale', () => {
+    const c = Math.cos(Math.PI / 6)  // 30deg
+    const s = Math.sin(Math.PI / 6)
+    // scale 2 then rotate 30deg: R·S = [[2c, -2s], [2s, 2c]] → a=2c, b=2s, c=-2s, d=2c
+    const r = decomposeMatrix2D([2 * c, 2 * s, -2 * s, 2 * c, 5, 10])
+    expect(functionToCss(r[0])).toBe('translate(5px, 10px)')
+    expect(functionToCss(r[1])).toMatch(/^rotate\(30(\.0+)?deg\)$/)
+    expect(functionToCss(r[2])).toBe('scale(2, 2)')
+  })
+
+  it('throws on singular matrix (sx ≈ 0)', () => {
+    // matrix(0, 0, 0, 0, 5, 10) — zero linear part
+    expect(() => decomposeMatrix2D([0, 0, 0, 0, 5, 10])).toThrow(/0 缩放/)
+  })
+
+  it('handles negative sy (reflection via scale)', () => {
+    // matrix(1, 0, 0, -1, 0, 0) — flip Y
+    const r = decomposeMatrix2D([1, 0, 0, -1, 0, 0])
+    expect(functionToCss(r[2])).toBe('scale(1, -1)')
   })
 })
