@@ -368,7 +368,9 @@
           <details
             v-else-if="selected.type === 'matrix3d'"
           >
-            <summary class="text-sm cursor-pointer">16 个数字(列主序)</summary>
+            <summary class="text-sm cursor-pointer">
+              16 个数字(列主序)
+            </summary>
             <div class="grid grid-cols-4 gap-2 mt-2">
               <input
                 v-for="i in 16"
@@ -460,12 +462,12 @@
                 class="cube"
                 :style="{ transform: transformForPreview, transformOrigin: originForPreview, transformStyle: 'preserve-3d' }"
               >
-                <div class="face face-front"></div>
-                <div class="face face-back"></div>
-                <div class="face face-right"></div>
-                <div class="face face-left"></div>
-                <div class="face face-top"></div>
-                <div class="face face-bottom"></div>
+                <div class="face face-front" />
+                <div class="face face-back" />
+                <div class="face face-right" />
+                <div class="face face-left" />
+                <div class="face face-top" />
+                <div class="face face-bottom" />
               </div>
             </div>
           </div>
