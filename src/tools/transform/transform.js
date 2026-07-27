@@ -133,3 +133,68 @@ export function decomposeMatrix2D(m) {
     { type: 'skew', value: { x: phiDeg, y: 0 } },
   ]
 }
+
+// Partial decomposition of a CSS matrix3d (column-major, 16 elements) into
+// [translate3d, rotateZ, rotateY, rotateX]. Only translation and rotation are
+// extracted; scale and skew are dropped silently. Rotation is recovered via
+// Shepperd's method (matrix → quaternion → ZYX Euler).
+export function extractMatrix3D(m) {
+  // m is column-major 4x4. Translation = m[12], m[13], m[14].
+  const tx = m[12], ty = m[13], tz = m[14]
+  // 3x3 rotation part: row-major access R[row][col] = m[col * 4 + row].
+  // Scale is dropped by normalizing each column to unit length before the
+  // quaternion extraction (column-major → columns are the images of the basis
+  // vectors, so their norms are the per-axis scale factors).
+  const c0x = m[0], c0y = m[1], c0z = m[2]
+  const c1x = m[4], c1y = m[5], c1z = m[6]
+  const c2x = m[8], c2y = m[9], c2z = m[10]
+  const n0 = Math.sqrt(c0x * c0x + c0y * c0y + c0z * c0z) || 1
+  const n1 = Math.sqrt(c1x * c1x + c1y * c1y + c1z * c1z) || 1
+  const n2 = Math.sqrt(c2x * c2x + c2y * c2y + c2z * c2z) || 1
+  const R = [
+    [c0x / n0, c1x / n1, c2x / n2],
+    [c0y / n0, c1y / n1, c2y / n2],
+    [c0z / n0, c1z / n1, c2z / n2],
+  ]
+  // Shepperd's method → quaternion (qw, qx, qy, qz)
+  const trace = R[0][0] + R[1][1] + R[2][2]
+  let qw, qx, qy, qz
+  if (trace > 0) {
+    const S = Math.sqrt(trace + 1) * 2  // S = 4 * qw
+    qw = 0.25 * S
+    qx = (R[2][1] - R[1][2]) / S
+    qy = (R[0][2] - R[2][0]) / S
+    qz = (R[1][0] - R[0][1]) / S
+  } else if (R[0][0] > R[1][1] && R[0][0] > R[2][2]) {
+    const S = Math.sqrt(1 + R[0][0] - R[1][1] - R[2][2]) * 2  // S = 4 * qx
+    qw = (R[2][1] - R[1][2]) / S
+    qx = 0.25 * S
+    qy = (R[0][1] + R[1][0]) / S
+    qz = (R[0][2] + R[2][0]) / S
+  } else if (R[1][1] > R[2][2]) {
+    const S = Math.sqrt(1 + R[1][1] - R[0][0] - R[2][2]) * 2  // S = 4 * qy
+    qw = (R[0][2] - R[2][0]) / S
+    qx = (R[0][1] + R[1][0]) / S
+    qy = 0.25 * S
+    qz = (R[1][2] + R[2][1]) / S
+  } else {
+    const S = Math.sqrt(1 + R[2][2] - R[0][0] - R[1][1]) * 2  // S = 4 * qz
+    qw = (R[1][0] - R[0][1]) / S
+    qx = (R[0][2] + R[2][0]) / S
+    qy = (R[1][2] + R[2][1]) / S
+    qz = 0.25 * S
+  }
+  // quaternion → ZYX Euler (yaw=Z, pitch=Y, roll=X)
+  const sinp = 2 * (qw * qy - qz * qx)
+  let pitch
+  if (Math.abs(sinp) >= 1) pitch = Math.sign(sinp) * (Math.PI / 2)
+  else pitch = Math.asin(sinp)
+  const roll = Math.atan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy))
+  const yaw = Math.atan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy * qy + qz * qz))
+  return [
+    { type: 'translate3d', value: { x: { n: tx, unit: 'px' }, y: { n: ty, unit: 'px' }, z: { n: tz, unit: 'px' } } },
+    { type: 'rotateZ', value: { deg: radToDegNormalized(yaw) } },
+    { type: 'rotateY', value: { deg: radToDegNormalized(pitch) } },
+    { type: 'rotateX', value: { deg: radToDegNormalized(roll) } },
+  ]
+}

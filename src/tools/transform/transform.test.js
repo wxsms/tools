@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLength, parseAngle, functionToCss, stateToCss, decomposeMatrix2D } from './transform.js'
+import { parseLength, parseAngle, functionToCss, stateToCss, decomposeMatrix2D, extractMatrix3D } from './transform.js'
 
 describe('parseLength', () => {
   it('parses px', () => {
@@ -221,5 +221,67 @@ describe('decomposeMatrix2D', () => {
     expect(functionToCss(r[1])).toBe('rotate(0deg)')
     expect(functionToCss(r[2])).toBe('scale(1, -1)')
     expect(functionToCss(r[3])).toBe('skew(180deg, 0deg)')
+  })
+})
+
+describe('extractMatrix3D', () => {
+  // Helper: build column-major identity
+  const identity = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+
+  it('identity → translate3d(0,0,0) + three rotate 0', () => {
+    const r = extractMatrix3D(identity)
+    expect(r).toHaveLength(4)
+    expect(functionToCss(r[0])).toBe('translate3d(0px, 0px, 0px)')
+    expect(functionToCss(r[1])).toBe('rotateZ(0deg)')
+    expect(functionToCss(r[2])).toBe('rotateY(0deg)')
+    expect(functionToCss(r[3])).toBe('rotateX(0deg)')
+  })
+
+  it('pure translation → translate3d + zero rotations', () => {
+    // matrix3d column-major: m[12]=tx, m[13]=ty, m[14]=tz
+    const m = [1,0,0,0, 0,1,0,0, 0,0,1,0, 5,10,15,1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[0])).toBe('translate3d(5px, 10px, 15px)')
+    expect(functionToCss(r[1])).toBe('rotateZ(0deg)')
+    expect(functionToCss(r[2])).toBe('rotateY(0deg)')
+    expect(functionToCss(r[3])).toBe('rotateX(0deg)')
+  })
+
+  it('pure rotateZ 90deg → rotateZ(90deg), others 0', () => {
+    // Rz(90): [[0,-1,0],[1,0,0],[0,0,1]] → column-major: m[0]=0, m[1]=1, m[2]=0, m[4]=-1, m[5]=0, m[6]=0, m[8]=0, m[9]=0, m[10]=1
+    const m = [0,1,0,0, -1,0,0,0, 0,0,1,0, 0,0,0,1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[1])).toMatch(/^rotateZ\(90(\.0+)?deg\)$/)
+    expect(functionToCss(r[2])).toBe('rotateY(0deg)')
+    expect(functionToCss(r[3])).toBe('rotateX(0deg)')
+  })
+
+  it('pure rotateX 90deg → rotateX(90deg), others 0', () => {
+    // Rx(90): [[1,0,0],[0,0,-1],[0,1,0]] → m[5]=0, m[6]=1, m[9]=-1, m[10]=0
+    const m = [1,0,0,0, 0,0,1,0, 0,-1,0,0, 0,0,0,1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[3])).toMatch(/^rotateX\(90(\.0+)?deg\)$/)
+    expect(functionToCss(r[1])).toBe('rotateZ(0deg)')
+    expect(functionToCss(r[2])).toBe('rotateY(0deg)')
+  })
+
+  it('pure scale (2,2,2) → rotations still 0, scale dropped silently', () => {
+    // S(2,2,2) → m[0]=2, m[5]=2, m[10]=2
+    const m = [2,0,0,0, 0,2,0,0, 0,0,2,0, 0,0,0,1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[0])).toBe('translate3d(0px, 0px, 0px)')
+    expect(functionToCss(r[1])).toBe('rotateZ(0deg)')
+    expect(functionToCss(r[2])).toBe('rotateY(0deg)')
+    expect(functionToCss(r[3])).toBe('rotateX(0deg)')
+  })
+
+  it('rotation + scale combined → rotation extracted, scale dropped', () => {
+    // Rz(45) * S(2) — scale and rotate
+    const c = Math.cos(Math.PI / 4)
+    const s = Math.sin(Math.PI / 4)
+    // R = [[c,-s,0],[s,c,0],[0,0,1]], S=diag(2,2,2), R·S = [[2c,-2s,0],[2s,2c,0],[0,0,2]]
+    const m = [2*c, 2*s, 0, 0, -2*s, 2*c, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[1])).toMatch(/^rotateZ\(45(\.0+)?deg\)$/)
   })
 })
