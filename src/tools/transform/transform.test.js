@@ -265,6 +265,15 @@ describe('extractMatrix3D', () => {
     expect(functionToCss(r[2])).toBe('rotateY(0deg)')
   })
 
+  it('pure rotateY 90deg → rotateY(90deg), exercises gimbal-lock clamp', () => {
+    // Ry(90): [[0,0,1],[0,1,0],[-1,0,0]] row-major
+    // → R[0][0]=0=m[0], R[1][1]=1=m[5], R[2][2]=0=m[10], R[0][2]=1=m[8], R[2][0]=-1=m[2]
+    const m = [0,0,-1,0, 0,1,0,0, 1,0,0,0, 0,0,0,1]
+    const r = extractMatrix3D(m)
+    expect(functionToCss(r[2])).toMatch(/^rotateY\(90(\.0+)?deg\)$/)
+    expect(functionToCss(r[0])).toBe('translate3d(0px, 0px, 0px)')
+  })
+
   it('pure scale (2,2,2) → rotations still 0, scale dropped silently', () => {
     // S(2,2,2) → m[0]=2, m[5]=2, m[10]=2
     const m = [2,0,0,0, 0,2,0,0, 0,0,2,0, 0,0,0,1]
