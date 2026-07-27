@@ -214,7 +214,12 @@ describe('decomposeMatrix2D', () => {
 
   it('handles negative sy (reflection via scale)', () => {
     // matrix(1, 0, 0, -1, 0, 0) — flip Y
+    // Mathematically equivalent to scale(1,-1) and skew(180deg, 0deg); the
+    // decomposition deliberately emits both, so pin all four values here.
     const r = decomposeMatrix2D([1, 0, 0, -1, 0, 0])
+    expect(functionToCss(r[0])).toBe('translate(0px, 0px)')
+    expect(functionToCss(r[1])).toBe('rotate(0deg)')
     expect(functionToCss(r[2])).toBe('scale(1, -1)')
+    expect(functionToCss(r[3])).toBe('skew(180deg, 0deg)')
   })
 })
