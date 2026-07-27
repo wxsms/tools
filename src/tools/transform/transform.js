@@ -28,3 +28,62 @@ export function parseAngle(s) {
   while (deg <= -180) deg += 360
   return deg
 }
+
+// Format a number: 4 decimal places, trailing zeros stripped, -0 → 0
+function fmt(n) {
+  if (!Number.isFinite(n)) return '0'
+  let s = Number(n).toFixed(4)
+  // strip trailing zeros
+  if (s.indexOf('.') >= 0) {
+    s = s.replace(/0+$/, '').replace(/\.$/, '')
+  }
+  // normalize -0
+  if (s === '-0') s = '0'
+  return s
+}
+
+function len({ n, unit }) {
+  return `${fmt(n)}${unit}`
+}
+
+export function functionToCss(fn) {
+  const { type, value } = fn
+  switch (type) {
+    case 'translateX':
+    case 'translateY':
+    case 'translateZ':
+      return `${type}(${len(value)})`
+    case 'translate':
+      return `translate(${len(value.x)}, ${len(value.y)})`
+    case 'translate3d':
+      return `translate3d(${len(value.x)}, ${len(value.y)}, ${len(value.z)})`
+    case 'rotate':
+    case 'rotateX':
+    case 'rotateY':
+    case 'rotateZ':
+      return `${type}(${fmt(value.deg)}deg)`
+    case 'rotate3d':
+      return `rotate3d(${fmt(value.x)}, ${fmt(value.y)}, ${fmt(value.z)}, ${fmt(value.deg)}deg)`
+    case 'scaleX':
+    case 'scaleY':
+    case 'scaleZ':
+      return `${type}(${fmt(value.n)})`
+    case 'scale':
+      return `scale(${fmt(value.x)}, ${fmt(value.y)})`
+    case 'scale3d':
+      return `scale3d(${fmt(value.x)}, ${fmt(value.y)}, ${fmt(value.z)})`
+    case 'skewX':
+    case 'skewY':
+      return `${type}(${fmt(value.deg)}deg)`
+    case 'skew':
+      return `skew(${fmt(value.x)}deg, ${fmt(value.y)}deg)`
+    case 'matrix':
+      return `matrix(${value.map(fmt).join(', ')})`
+    case 'matrix3d':
+      return `matrix3d(${value.map(fmt).join(', ')})`
+    case 'perspective':
+      return `perspective(${len(value)})`
+    default:
+      throw new Error(`未知函数: ${type}`)
+  }
+}

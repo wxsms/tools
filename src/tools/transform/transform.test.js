@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLength, parseAngle } from './transform.js'
+import { parseLength, parseAngle, functionToCss } from './transform.js'
 
 describe('parseLength', () => {
   it('parses px', () => {
@@ -48,5 +48,88 @@ describe('parseAngle', () => {
   it('normalizes to (-180, 180]', () => {
     expect(parseAngle('360deg')).toBe(0)
     expect(parseAngle('270deg')).toBeCloseTo(-90, 5)
+  })
+})
+
+describe('functionToCss', () => {
+  describe('translate family', () => {
+    it('translateX', () => {
+      expect(functionToCss({ type: 'translateX', value: { n: 10, unit: 'px' } })).toBe('translateX(10px)')
+    })
+    it('translateY', () => {
+      expect(functionToCss({ type: 'translateY', value: { n: 20, unit: '%' } })).toBe('translateY(20%)')
+    })
+    it('translateZ', () => {
+      expect(functionToCss({ type: 'translateZ', value: { n: 5, unit: 'px' } })).toBe('translateZ(5px)')
+    })
+    it('translate (two values, no simplification)', () => {
+      expect(functionToCss({ type: 'translate', value: { x: { n: 10, unit: 'px' }, y: { n: 20, unit: 'px' }, z: { n: 0, unit: 'px' } } })).toBe('translate(10px, 20px)')
+    })
+    it('translate3d', () => {
+      expect(functionToCss({ type: 'translate3d', value: { x: { n: 1, unit: 'px' }, y: { n: 2, unit: 'px' }, z: { n: 3, unit: 'px' } } })).toBe('translate3d(1px, 2px, 3px)')
+    })
+  })
+
+  describe('rotate family', () => {
+    it('rotate', () => {
+      expect(functionToCss({ type: 'rotate', value: { deg: 45 } })).toBe('rotate(45deg)')
+    })
+    it('rotateX', () => {
+      expect(functionToCss({ type: 'rotateX', value: { deg: 30 } })).toBe('rotateX(30deg)')
+    })
+    it('rotate3d', () => {
+      expect(functionToCss({ type: 'rotate3d', value: { x: 1, y: 1, z: 0, deg: 45 } })).toBe('rotate3d(1, 1, 0, 45deg)')
+    })
+    it('rotate3d with decimal axis', () => {
+      expect(functionToCss({ type: 'rotate3d', value: { x: 0.5, y: 0.5, z: 0, deg: 30 } })).toBe('rotate3d(0.5, 0.5, 0, 30deg)')
+    })
+  })
+
+  describe('scale family', () => {
+    it('scaleX', () => {
+      expect(functionToCss({ type: 'scaleX', value: { n: 2 } })).toBe('scaleX(2)')
+    })
+    it('scale (two values, no simplification)', () => {
+      expect(functionToCss({ type: 'scale', value: { x: 2, y: 2 } })).toBe('scale(2, 2)')
+    })
+    it('scale3d', () => {
+      expect(functionToCss({ type: 'scale3d', value: { x: 1, y: 2, z: 3 } })).toBe('scale3d(1, 2, 3)')
+    })
+  })
+
+  describe('skew family', () => {
+    it('skewX', () => {
+      expect(functionToCss({ type: 'skewX', value: { deg: 15 } })).toBe('skewX(15deg)')
+    })
+    it('skew (two values)', () => {
+      expect(functionToCss({ type: 'skew', value: { x: 15, y: 0 } })).toBe('skew(15deg, 0deg)')
+    })
+  })
+
+  describe('matrix family', () => {
+    it('matrix', () => {
+      expect(functionToCss({ type: 'matrix', value: [1, 0, 0, 1, 10, 20] })).toBe('matrix(1, 0, 0, 1, 10, 20)')
+    })
+    it('matrix3d', () => {
+      const m = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+      expect(functionToCss({ type: 'matrix3d', value: m })).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)')
+    })
+  })
+
+  describe('perspective', () => {
+    it('perspective', () => {
+      expect(functionToCss({ type: 'perspective', value: { n: 800, unit: 'px' } })).toBe('perspective(800px)')
+    })
+  })
+
+  describe('number formatting', () => {
+    it('truncates to 4 decimals, trailing zeros stripped', () => {
+      expect(functionToCss({ type: 'rotate', value: { deg: 45.123456 } })).toBe('rotate(45.1235deg)')
+      expect(functionToCss({ type: 'rotate', value: { deg: 45.5 } })).toBe('rotate(45.5deg)')
+      expect(functionToCss({ type: 'rotate', value: { deg: 45.1234 } })).toBe('rotate(45.1234deg)')
+    })
+    it('preserves negative zero as 0', () => {
+      expect(functionToCss({ type: 'rotate', value: { deg: -0 } })).toBe('rotate(0deg)')
+    })
   })
 })
