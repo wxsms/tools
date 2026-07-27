@@ -1,58 +1,51 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-6">
-      变换 transform
+      Transform 变换
     </h1>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Left: Controls -->
       <div class="flex flex-col gap-4">
         <!-- Function list -->
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">函数列表(顺序敏感)</span></label>
-          <ul class="flex flex-col gap-1">
-            <li
-              v-for="(fn, i) in state.functions"
-              :key="i"
-              class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer"
-              :class="i === selectedIndex ? 'bg-primary/10 border border-primary' : 'bg-base-200 border border-transparent hover:bg-base-300'"
-              @click="selectedIndex = i"
-            >
-              <span class="font-mono text-xs flex-1 break-all">{{ functionToCss(fn) }}</span>
-              <button
-                class="btn btn-ghost btn-xs btn-square"
-                :disabled="i === 0"
-                title="上移"
-                @click.stop="moveUp(i)"
+          <label class="label"><span class="label-text font-semibold">函数列表</span></label>
+          <draggable
+            v-model="state.functions"
+            item-key="uid"
+            tag="ul"
+            handle=".drag-handle"
+            animation="150"
+            class="flex flex-col gap-1"
+            @end="onDragEnd"
+          >
+            <template #item="{ element, index }">
+              <li
+                class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer select-none"
+                :class="index === selectedIndex ? 'bg-primary/10 border border-primary' : 'bg-base-200 border border-transparent hover:bg-base-300'"
+                @click="selectedIndex = index"
               >
                 <Icon
-                  icon="lucide:chevron-left"
-                  class="w-3 h-3"
+                  icon="lucide:grip-vertical"
+                  class="w-3 h-3 opacity-50 cursor-grab drag-handle"
                 />
-              </button>
-              <button
-                class="btn btn-ghost btn-xs btn-square"
-                :disabled="i === state.functions.length - 1"
-                title="下移"
-                @click.stop="moveDown(i)"
-              >
-                <Icon
-                  icon="lucide:chevron-right"
-                  class="w-3 h-3"
-                />
-              </button>
-              <button
-                class="btn btn-ghost btn-xs btn-square"
-                title="删除"
-                @click.stop="removeFn(i)"
-              >
-                <Icon
-                  icon="lucide:x"
-                  class="w-3 h-3"
-                />
-              </button>
-            </li>
-          </ul>
-          <details class="mt-2">
+                <span class="font-mono text-xs flex-1 break-all">{{ functionToCss(element) }}</span>
+                <button
+                  class="btn btn-ghost btn-xs btn-square"
+                  title="删除"
+                  @click.stop="removeFn(index)"
+                >
+                  <Icon
+                    icon="lucide:x"
+                    class="w-3 h-3"
+                  />
+                </button>
+              </li>
+            </template>
+          </draggable>
+          <details
+            ref="addDetails"
+            class="dropdown mt-2"
+          >
             <summary class="btn btn-outline btn-sm cursor-pointer gap-1 w-fit">
               <Icon
                 icon="lucide:plus"
@@ -60,7 +53,7 @@
               />
               添加函数
             </summary>
-            <div class="mt-2 p-3 bg-base-200 rounded-lg flex flex-col gap-2">
+            <div class="dropdown-content mt-2 p-3 bg-base-200 rounded-lg shadow-lg flex flex-col gap-2 z-10 w-max">
               <div
                 v-for="group in addGroups"
                 :key="group.label"
@@ -541,6 +534,7 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { ref, reactive, computed } from 'vue'
+import draggable from 'vuedraggable'
 import { functionToCss, stateToCss, parseTransform } from './transform.js'
 
 const addGroups = [
@@ -553,50 +547,67 @@ const addGroups = [
 ]
 
 function defaultFn(type) {
+  let fn
   switch (type) {
     case 'translateX':
     case 'translateY':
     case 'translateZ':
-      return { type, value: { n: 0, unit: 'px' } }
+      fn = { type, value: { n: 0, unit: 'px' } }
+      break
     case 'translate':
-      return { type, value: { x: { n: 0, unit: 'px' }, y: { n: 0, unit: 'px' }, z: { n: 0, unit: 'px' } } }
+      fn = { type, value: { x: { n: 0, unit: 'px' }, y: { n: 0, unit: 'px' }, z: { n: 0, unit: 'px' } } }
+      break
     case 'translate3d':
-      return { type, value: { x: { n: 0, unit: 'px' }, y: { n: 0, unit: 'px' }, z: { n: 0, unit: 'px' } } }
+      fn = { type, value: { x: { n: 0, unit: 'px' }, y: { n: 0, unit: 'px' }, z: { n: 0, unit: 'px' } } }
+      break
     case 'rotate':
     case 'rotateX':
     case 'rotateY':
     case 'rotateZ':
-      return { type, value: { deg: 0 } }
+      fn = { type, value: { deg: 0 } }
+      break
     case 'rotate3d':
-      return { type, value: { x: 0, y: 1, z: 0, deg: 0 } }
+      fn = { type, value: { x: 0, y: 1, z: 0, deg: 0 } }
+      break
     case 'scale':
-      return { type, value: { x: 1, y: 1 } }
+      fn = { type, value: { x: 1, y: 1 } }
+      break
     case 'scale3d':
-      return { type, value: { x: 1, y: 1, z: 1 } }
+      fn = { type, value: { x: 1, y: 1, z: 1 } }
+      break
     case 'scaleX':
     case 'scaleY':
     case 'scaleZ':
-      return { type, value: { n: 1 } }
+      fn = { type, value: { n: 1 } }
+      break
     case 'skewX':
     case 'skewY':
-      return { type, value: { deg: 0 } }
+      fn = { type, value: { deg: 0 } }
+      break
     case 'skew':
-      return { type, value: { x: 0, y: 0 } }
+      fn = { type, value: { x: 0, y: 0 } }
+      break
     case 'matrix':
-      return { type, value: [1, 0, 0, 1, 0, 0] }
+      fn = { type, value: [1, 0, 0, 1, 0, 0] }
+      break
     case 'matrix3d':
-      return { type, value: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] }
+      fn = { type, value: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] }
+      break
     case 'perspective':
-      return { type, value: { n: 800, unit: 'px' } }
+      fn = { type, value: { n: 800, unit: 'px' } }
+      break
     default:
       throw new Error(`未知 type: ${type}`)
   }
+  return { uid: ++uidCounter, ...fn }
 }
+
+let uidCounter = 0
 
 const state = reactive({
   functions: [
-    { type: 'rotate', value: { deg: 15 } },
-    { type: 'translateZ', value: { n: 30, unit: 'px' } },
+    { uid: ++uidCounter, type: 'rotate', value: { deg: 15 } },
+    { uid: ++uidCounter, type: 'translateZ', value: { n: 30, unit: 'px' } },
   ],
   origin: { x: { n: 50, unit: '%' }, y: { n: 50, unit: '%' }, z: { n: 0, unit: 'px' } },
   perspective: { n: 800, unit: 'px' },
@@ -604,6 +615,7 @@ const state = reactive({
 
 const selectedIndex = ref(0)
 const copied = ref(false)
+const addDetails = ref(null)
 
 const selected = computed(() => state.functions[selectedIndex.value])
 
@@ -631,6 +643,7 @@ function isSingleScale(t) {
 function addFn(type) {
   state.functions.push(defaultFn(type))
   selectedIndex.value = state.functions.length - 1
+  if (addDetails.value) addDetails.value.removeAttribute('open')
 }
 function removeFn(i) {
   state.functions.splice(i, 1)
@@ -638,19 +651,10 @@ function removeFn(i) {
     selectedIndex.value = Math.max(0, state.functions.length - 1)
   }
 }
-function moveUp(i) {
-  if (i === 0) return
-  const arr = state.functions
-  const tmp = arr[i - 1]
-  arr[i - 1] = arr[i]
-  arr[i] = tmp
-}
-function moveDown(i) {
-  if (i === state.functions.length - 1) return
-  const arr = state.functions
-  const tmp = arr[i + 1]
-  arr[i + 1] = arr[i]
-  arr[i] = tmp
+function onDragEnd(e) {
+  if (selectedIndex.value === e.oldIndex) {
+    selectedIndex.value = e.newIndex
+  }
 }
 function updateOrigin(axis, v) {
   const n = Number(v)
@@ -680,7 +684,7 @@ function applyParse() {
   parseError.value = ''
   parseWarnings.value = r.warnings || []
   // Replace state
-  state.functions.splice(0, state.functions.length, ...r.state.functions)
+  state.functions.splice(0, state.functions.length, ...r.state.functions.map(f => ({ uid: ++uidCounter, ...f })))
   state.origin.x = r.state.origin.x
   state.origin.y = r.state.origin.y
   state.origin.z = r.state.origin.z

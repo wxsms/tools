@@ -257,7 +257,7 @@ export const toolGroups = [
         icon: 'lucide:spline',
       },
       {
-        name: '变换 transform',
+        name: 'Transform 变换',
         path: '/transform',
         desc: 'CSS transform 可视化生成,支持 2D/3D 函数、matrix 反解析',
         icon: 'lucide:move-3d',
