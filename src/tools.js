@@ -256,6 +256,12 @@ export const toolGroups = [
         desc: 'CSS cubic-bezier 缓动曲线可视化编辑，可拖拽控制点、预览动画',
         icon: 'lucide:spline',
       },
+      {
+        name: '变换 transform',
+        path: '/transform',
+        desc: 'CSS transform 可视化生成,支持 2D/3D 函数、matrix 反解析',
+        icon: 'lucide:move-3d',
+      },
     ],
   },
   {

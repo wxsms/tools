@@ -50,6 +50,7 @@ const components = {
   '/triangle': () => import('./tools/triangle/Triangle.vue'),
   '/css-animation': () => import('./tools/css-animation/CssAnimation.vue'),
   '/cubic-bezier': () => import('./tools/cubic-bezier/CubicBezier.vue'),
+  '/transform': () => import('./tools/transform/Transform.vue'),
   '/code-screenshot': () => import('./tools/code-screenshot/CodeScreenshot.vue'),
   '/patch-viewer': () => import('./tools/patch-viewer/PatchViewer.vue'),
   '/cli-format': () => import('./tools/cli-format/CliFormat.vue'),
