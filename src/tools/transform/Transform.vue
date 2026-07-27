@@ -89,11 +89,297 @@
           class="form-control"
         >
           <label class="label"><span class="label-text font-semibold">参数 ({{ selected.type }})</span></label>
-          <component
-            :is="paramComponent"
-            v-bind="paramComponentProps"
-            @update="updateSelected"
-          />
+
+          <!-- Single-length family: translateX / Y / Z / perspective -->
+          <div
+            v-if="isSingleLength(selected.type)"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model.number="selected.value.n"
+              type="range"
+              min="-200"
+              max="200"
+              step="1"
+              class="range range-sm flex-1"
+            >
+            <input
+              v-model.number="selected.value.n"
+              type="number"
+              class="input input-bordered input-sm w-20 font-mono text-sm"
+            >
+            <select
+              v-if="selected.type !== 'perspective'"
+              v-model="selected.value.unit"
+              class="select select-bordered select-sm w-16"
+            >
+              <option value="px">
+                px
+              </option>
+              <option value="%">
+                %
+              </option>
+              <option value="em">
+                em
+              </option>
+              <option value="rem">
+                rem
+              </option>
+            </select>
+            <span
+              v-else
+              class="text-xs w-8"
+            >px</span>
+          </div>
+
+          <!-- translate / translate3d: 3 axes -->
+          <div
+            v-else-if="selected.type === 'translate' || selected.type === 'translate3d'"
+            class="flex flex-col gap-2"
+          >
+            <div
+              v-for="axis in ['x', 'y', 'z']"
+              :key="axis"
+              class="flex items-center gap-2"
+            >
+              <span class="text-sm w-4 uppercase">{{ axis }}</span>
+              <input
+                v-model.number="selected.value[axis].n"
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                class="range range-sm flex-1"
+              >
+              <input
+                v-model.number="selected.value[axis].n"
+                type="number"
+                class="input input-bordered input-sm w-20 font-mono text-sm"
+              >
+              <select
+                v-model="selected.value[axis].unit"
+                class="select select-bordered select-sm w-16"
+              >
+                <option value="px">
+                  px
+                </option>
+                <option value="%">
+                  %
+                </option>
+                <option value="em">
+                  em
+                </option>
+                <option value="rem">
+                  rem
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Single angle family: rotate / rotateX / Y / Z -->
+          <div
+            v-else-if="isSingleAngle(selected.type)"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model.number="selected.value.deg"
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              class="range range-sm flex-1"
+            >
+            <input
+              v-model.number="selected.value.deg"
+              type="number"
+              class="input input-bordered input-sm w-20 font-mono text-sm"
+            >
+            <span class="text-xs w-8">deg</span>
+          </div>
+
+          <!-- rotate3d: 4 inputs -->
+          <div
+            v-else-if="selected.type === 'rotate3d'"
+            class="flex flex-col gap-2"
+          >
+            <div
+              v-for="axis in ['x', 'y', 'z']"
+              :key="axis"
+              class="flex items-center gap-2"
+            >
+              <span class="text-sm w-4 uppercase">{{ axis }}</span>
+              <input
+                v-model.number="selected.value[axis]"
+                type="number"
+                step="0.1"
+                class="input input-bordered input-sm w-24 font-mono text-sm"
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm w-4">deg</span>
+              <input
+                v-model.number="selected.value.deg"
+                type="range"
+                min="-180"
+                max="180"
+                step="1"
+                class="range range-sm flex-1"
+              >
+              <input
+                v-model.number="selected.value.deg"
+                type="number"
+                class="input input-bordered input-sm w-20 font-mono text-sm"
+              >
+            </div>
+          </div>
+
+          <!-- scale / scale3d: 2 or 3 axes, no unit -->
+          <div
+            v-else-if="selected.type === 'scale' || selected.type === 'scale3d'"
+            class="flex flex-col gap-2"
+          >
+            <div
+              v-for="axis in (selected.type === 'scale' ? ['x', 'y'] : ['x', 'y', 'z'])"
+              :key="axis"
+              class="flex items-center gap-2"
+            >
+              <span class="text-sm w-4 uppercase">{{ axis }}</span>
+              <input
+                v-model.number="selected.value[axis]"
+                type="range"
+                min="0"
+                max="3"
+                step="0.05"
+                class="range range-sm flex-1"
+              >
+              <input
+                v-model.number="selected.value[axis]"
+                type="number"
+                step="0.05"
+                class="input input-bordered input-sm w-20 font-mono text-sm"
+              >
+            </div>
+          </div>
+
+          <!-- scaleX / Y / Z: single value, no unit -->
+          <div
+            v-else-if="isSingleScale(selected.type)"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model.number="selected.value.n"
+              type="range"
+              min="0"
+              max="3"
+              step="0.05"
+              class="range range-sm flex-1"
+            >
+            <input
+              v-model.number="selected.value.n"
+              type="number"
+              step="0.05"
+              class="input input-bordered input-sm w-20 font-mono text-sm"
+            >
+          </div>
+
+          <!-- skewX / skewY: single angle -->
+          <div
+            v-else-if="selected.type === 'skewX' || selected.type === 'skewY'"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model.number="selected.value.deg"
+              type="range"
+              min="-90"
+              max="90"
+              step="1"
+              class="range range-sm flex-1"
+            >
+            <input
+              v-model.number="selected.value.deg"
+              type="number"
+              class="input input-bordered input-sm w-20 font-mono text-sm"
+            >
+            <span class="text-xs w-8">deg</span>
+          </div>
+
+          <!-- skew: 2 angles -->
+          <div
+            v-else-if="selected.type === 'skew'"
+            class="flex flex-col gap-2"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-sm w-4">X</span>
+              <input
+                v-model.number="selected.value.x"
+                type="range"
+                min="-90"
+                max="90"
+                step="1"
+                class="range range-sm flex-1"
+              >
+              <input
+                v-model.number="selected.value.x"
+                type="number"
+                class="input input-bordered input-sm w-20 font-mono text-sm"
+              >
+              <span class="text-xs w-8">deg</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm w-4">Y</span>
+              <input
+                v-model.number="selected.value.y"
+                type="range"
+                min="-90"
+                max="90"
+                step="1"
+                class="range range-sm flex-1"
+              >
+              <input
+                v-model.number="selected.value.y"
+                type="number"
+                class="input input-bordered input-sm w-20 font-mono text-sm"
+              >
+              <span class="text-xs w-8">deg</span>
+            </div>
+          </div>
+
+          <!-- matrix: 6 inputs -->
+          <div
+            v-else-if="selected.type === 'matrix'"
+            class="grid grid-cols-3 gap-2"
+          >
+            <div
+              v-for="(label, idx) in ['a', 'b', 'c', 'd', 'e', 'f']"
+              :key="label"
+              class="flex items-center gap-1"
+            >
+              <span class="text-xs w-4">{{ label }}</span>
+              <input
+                v-model.number="selected.value[idx]"
+                type="number"
+                step="0.1"
+                class="input input-bordered input-sm w-full font-mono text-sm"
+              >
+            </div>
+          </div>
+
+          <!-- matrix3d: 16 inputs, collapsible -->
+          <details
+            v-else-if="selected.type === 'matrix3d'"
+          >
+            <summary class="text-sm cursor-pointer">16 个数字(列主序)</summary>
+            <div class="grid grid-cols-4 gap-2 mt-2">
+              <input
+                v-for="i in 16"
+                :key="'m' + i"
+                v-model.number="selected.value[i - 1]"
+                type="number"
+                step="0.1"
+                class="input input-bordered input-xs w-full font-mono text-xs"
+              >
+            </div>
+          </details>
         </div>
 
         <!-- transform-origin -->
@@ -158,8 +444,32 @@
         </div>
       </div>
 
-      <!-- Right: Code (preview + reverse-parse come later) -->
+      <!-- Right: Preview + Code + Reverse-parse -->
       <div class="flex flex-col gap-4">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">预览</span></label>
+          <div
+            class="rounded-lg border border-base-300 min-h-[280px] flex items-center justify-center overflow-hidden"
+            :style="{ backgroundImage: checkerboard, perspective: state.perspective.n + 'px', perspectiveOrigin: 'center' }"
+          >
+            <div
+              class="cube-scene"
+              :style="{ transform: 'rotateX(-20deg) rotateY(-25deg)', transformStyle: 'preserve-3d' }"
+            >
+              <div
+                class="cube"
+                :style="{ transform: transformForPreview, transformOrigin: originForPreview, transformStyle: 'preserve-3d' }"
+              >
+                <div class="face face-front"></div>
+                <div class="face face-back"></div>
+                <div class="face face-right"></div>
+                <div class="face face-left"></div>
+                <div class="face face-top"></div>
+                <div class="face face-bottom"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">CSS 代码</span></label>
           <div class="relative">
@@ -259,12 +569,24 @@ const selected = computed(() => state.functions[selectedIndex.value])
 
 const cssCode = computed(() => stateToCss({ ...state, functions: state.functions }))
 
-// Per-type param form: render inline as a function returning vdom would be cleaner,
-// but inline template branching is fine for one component.
-const paramComponent = computed(() => 'param-form-' + selected.value.type.replace(/[A-Z]/g, m => '-' + m.toLowerCase()).replace('3d', '3d'))
-const paramComponentProps = computed(() => ({ fn: selected.value }))
+const transformForPreview = computed(() =>
+  state.functions.map(functionToCss).join(' ')
+)
+const originForPreview = computed(() =>
+  `${state.origin.x.n}${state.origin.x.unit} ${state.origin.y.n}${state.origin.y.unit} ${state.origin.z.n}${state.origin.z.unit}`
+)
 
-function updateSelected() { /* placeholder, replaced by inline template below */ }
+const checkerboard = `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="10" height="10" fill="%23f0f0f0"/><rect x="10" y="10" width="10" height="10" fill="%23f0f0f0"/><rect x="10" width="10" height="10" fill="%23e0e0e0"/><rect y="10" width="10" height="10" fill="%23e0e0e0"/></svg>')`
+
+function isSingleLength(t) {
+  return t === 'translateX' || t === 'translateY' || t === 'translateZ' || t === 'perspective'
+}
+function isSingleAngle(t) {
+  return t === 'rotate' || t === 'rotateX' || t === 'rotateY' || t === 'rotateZ'
+}
+function isSingleScale(t) {
+  return t === 'scaleX' || t === 'scaleY' || t === 'scaleZ'
+}
 
 function addFn(type) {
   state.functions.push(defaultFn(type))
@@ -303,3 +625,30 @@ async function copyCode() {
   } catch { /* clipboard not available */ }
 }
 </script>
+
+<style scoped>
+.cube-scene {
+  width: 120px;
+  height: 120px;
+  position: relative;
+}
+.cube {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+.face {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  opacity: 0.7;
+}
+.face-front  { background: #f87171; transform: translateZ(60px); }
+.face-back   { background: #60a5fa; transform: translateZ(-60px) rotateY(180deg); }
+.face-right  { background: #34d399; transform: translateX(60px) rotateY(90deg); }
+.face-left   { background: #fbbf24; transform: translateX(-60px) rotateY(-90deg); }
+.face-top    { background: #a78bfa; transform: translateY(-60px) rotateX(90deg); }
+.face-bottom { background: #f472b6; transform: translateY(60px) rotateX(-90deg); }
+</style>
