@@ -198,3 +198,249 @@ export function extractMatrix3D(m) {
     { type: 'rotateX', value: { deg: radToDegNormalized(roll) } },
   ]
 }
+
+const KNOWN_TYPES = new Set([
+  'translateX', 'translateY', 'translateZ', 'translate', 'translate3d',
+  'rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d',
+  'scale', 'scaleX', 'scaleY', 'scaleZ', 'scale3d',
+  'skew', 'skewX', 'skewY',
+  'matrix', 'matrix3d', 'perspective',
+])
+
+// Split "name(args)" tokens out of a single line's transform string.
+// Returns array of { name, argsRaw } or throws Error("括号未闭合").
+function tokenizeFunctions(str) {
+  const tokens = []
+  let i = 0
+  while (i < str.length) {
+    while (i < str.length && /[\s,]/.test(str[i])) i++
+    if (i >= str.length) break
+    const nameStart = i
+    while (i < str.length && /[a-zA-Z0-9]/.test(str[i])) i++
+    const name = str.slice(nameStart, i)
+    if (!name) throw new Error('括号未闭合')
+    while (i < str.length && str[i] === ' ') i++
+    if (i >= str.length || str[i] !== '(') throw new Error('括号未闭合')
+    i++
+    const argStart = i
+    let depth = 1
+    while (i < str.length && depth > 0) {
+      if (str[i] === '(') depth++
+      else if (str[i] === ')') depth--
+      if (depth > 0) i++
+    }
+    if (depth !== 0) throw new Error('括号未闭合')
+    const argsRaw = str.slice(argStart, i)
+    i++
+    tokens.push({ name, argsRaw })
+  }
+  return tokens
+}
+
+function splitArgs(argsRaw) {
+  return argsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0)
+}
+
+function parseNum(s) {
+  const n = parseFloat(s)
+  if (!Number.isFinite(n)) throw new Error(`无法解析数值: ${s}`)
+  return n
+}
+
+function expectArgs(name, args, expected) {
+  let min, max
+  if (Array.isArray(expected)) { [min, max] = expected }
+  else { min = max = expected }
+  const actual = args.length
+  if (actual < min || actual > max) {
+    const expStr = min === max ? `${min} 个参数` : `${min}-${max} 个参数`
+    throw new Error(`${name} 期望 ${expStr},实际 ${actual} 个`)
+  }
+  if (name.startsWith('scale')) {
+    args.forEach((a, i) => {
+      if (/[a-zA-Z%]/.test(a)) throw new Error(`${name} 不接受单位(参数 ${i + 1}: ${a})`)
+    })
+  }
+}
+
+function parseFunctionToken(token) {
+  const { name, argsRaw } = token
+  if (!KNOWN_TYPES.has(name)) throw new Error(`未知函数 ${name}`)
+  const args = splitArgs(argsRaw)
+  switch (name) {
+    case 'translateX':
+    case 'translateY':
+    case 'translateZ': {
+      expectArgs(name, args, 1)
+      return { type: name, value: parseLength(args[0]) }
+    }
+    case 'translate': {
+      expectArgs(name, args, [1, 2])
+      const x = parseLength(args[0])
+      const y = args[1] ? parseLength(args[1]) : { ...x }
+      return { type: 'translate', value: { x, y, z: { n: 0, unit: 'px' } } }
+    }
+    case 'translate3d': {
+      expectArgs(name, args, 3)
+      return { type: 'translate3d', value: { x: parseLength(args[0]), y: parseLength(args[1]), z: parseLength(args[2]) } }
+    }
+    case 'rotate':
+    case 'rotateX':
+    case 'rotateY':
+    case 'rotateZ': {
+      expectArgs(name, args, 1)
+      return { type: name, value: { deg: parseAngle(args[0]) } }
+    }
+    case 'rotate3d': {
+      expectArgs(name, args, 4)
+      return { type: 'rotate3d', value: { x: parseNum(args[0]), y: parseNum(args[1]), z: parseNum(args[2]), deg: parseAngle(args[3]) } }
+    }
+    case 'scale': {
+      expectArgs(name, args, [1, 2])
+      const x = parseNum(args[0])
+      const y = args[1] ? parseNum(args[1]) : x
+      return { type: 'scale', value: { x, y } }
+    }
+    case 'scale3d': {
+      expectArgs(name, args, 3)
+      return { type: 'scale3d', value: { x: parseNum(args[0]), y: parseNum(args[1]), z: parseNum(args[2]) } }
+    }
+    case 'scaleX':
+    case 'scaleY':
+    case 'scaleZ': {
+      expectArgs(name, args, 1)
+      return { type: name, value: { n: parseNum(args[0]) } }
+    }
+    case 'skewX':
+    case 'skewY': {
+      expectArgs(name, args, 1)
+      return { type: name, value: { deg: parseAngle(args[0]) } }
+    }
+    case 'skew': {
+      expectArgs(name, args, [1, 2])
+      const x = parseAngle(args[0])
+      const y = args[1] ? parseAngle(args[1]) : 0
+      return { type: 'skew', value: { x, y } }
+    }
+    case 'perspective': {
+      expectArgs(name, args, 1)
+      return { type: 'perspective', value: parseLength(args[0]) }
+    }
+    case 'matrix': {
+      expectArgs(name, args, 6)
+      return { type: 'matrix', value: args.map(parseNum) }
+    }
+    case 'matrix3d': {
+      expectArgs(name, args, 16)
+      return { type: 'matrix3d', value: args.map(parseNum) }
+    }
+    default:
+      throw new Error(`未知函数 ${name}`)
+  }
+}
+
+// Parse a single token; matrix/matrix3d decompose into multiple functions.
+function parseTokenOrDecompose(token) {
+  if (token.name === 'matrix') {
+    const args = splitArgs(token.argsRaw)
+    expectArgs('matrix', args, 6)
+    const nums = args.map(parseNum)
+    try {
+      return { functions: decomposeMatrix2D(nums), warnings: [] }
+    } catch {
+      return { functions: [{ type: 'matrix', value: nums }], warnings: ['matrix 含 0 缩放,无法分解,保留原 matrix 项'] }
+    }
+  }
+  if (token.name === 'matrix3d') {
+    const args = splitArgs(token.argsRaw)
+    expectArgs('matrix3d', args, 16)
+    const nums = args.map(parseNum)
+    const fns = extractMatrix3D(nums)
+    return { functions: fns, warnings: ['matrix3d 仅提取平移与旋转,缩放与斜切分量已丢弃'] }
+  }
+  return { functions: [parseFunctionToken(token)], warnings: [] }
+}
+
+export function parseTransform(rawStr) {
+  const functions = []
+  const warnings = []
+  const errors = []
+  let origin = null
+  let perspective = null
+
+  const lines = rawStr.split('\n')
+  lines.forEach((line, idx) => {
+    const lineNo = idx + 1
+    let trimmed = line.trim()
+    if (trimmed === '') return
+    // Strip a single trailing ';' (CSS statement terminator).
+    if (trimmed.endsWith(';')) trimmed = trimmed.slice(0, -1).trimEnd()
+    if (trimmed === '') return
+
+    const propMatch = trimmed.match(/^([a-zA-Z-]+)\s*:\s*(.+)$/)
+    if (propMatch) {
+      const prop = propMatch[1]
+      const value = propMatch[2]
+      if (prop === 'transform') {
+        try {
+          const tokens = tokenizeFunctions(value)
+          for (const tok of tokens) {
+            const r = parseTokenOrDecompose(tok)
+            functions.push(...r.functions)
+            warnings.push(...r.warnings)
+          }
+        } catch (e) {
+          errors.push({ line: lineNo, message: e.message })
+        }
+      } else if (prop === 'transform-origin') {
+        const parts = value.trim().split(/\s+/)
+        if (parts.length === 2) parts.push('0px')
+        if (parts.length !== 3) {
+          errors.push({ line: lineNo, message: 'transform-origin 期望 2-3 个值' })
+          return
+        }
+        try {
+          const x = parseLength(parts[0])
+          const y = parseLength(parts[1])
+          const z = parseLength(parts[2])
+          if (z.unit !== 'px') {
+            errors.push({ line: lineNo, message: 'transform-origin Z 必须为 px' })
+            return
+          }
+          origin = { x, y, z }
+        } catch (e) {
+          errors.push({ line: lineNo, message: e.message })
+        }
+      } else if (prop === 'perspective') {
+        try {
+          perspective = parseLength(value.trim())
+        } catch (e) {
+          errors.push({ line: lineNo, message: e.message })
+        }
+      } else {
+        errors.push({ line: lineNo, message: `未知属性 ${prop}` })
+      }
+      return
+    }
+
+    try {
+      const tokens = tokenizeFunctions(trimmed)
+      for (const tok of tokens) {
+        const r = parseTokenOrDecompose(tok)
+        functions.push(...r.functions)
+        warnings.push(...r.warnings)
+      }
+    } catch (e) {
+      errors.push({ line: lineNo, message: e.message })
+    }
+  })
+
+  if (errors.length > 0) return { ok: false, errors }
+
+  const state = {
+    functions,
+    origin: origin || { x: { n: 50, unit: '%' }, y: { n: 50, unit: '%' }, z: { n: 0, unit: 'px' } },
+    perspective: perspective || { n: 800, unit: 'px' },
+  }
+  return { ok: true, state, warnings }
+}

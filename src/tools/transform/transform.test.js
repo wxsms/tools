@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLength, parseAngle, functionToCss, stateToCss, decomposeMatrix2D, extractMatrix3D } from './transform.js'
+import { parseLength, parseAngle, functionToCss, stateToCss, decomposeMatrix2D, extractMatrix3D, parseTransform } from './transform.js'
 
 describe('parseLength', () => {
   it('parses px', () => {
@@ -292,5 +292,172 @@ describe('extractMatrix3D', () => {
     const m = [2*c, 2*s, 0, 0, -2*s, 2*c, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1]
     const r = extractMatrix3D(m)
     expect(functionToCss(r[1])).toMatch(/^rotateZ\(45(\.0+)?deg\)$/)
+  })
+})
+
+describe('parseTransform — function families', () => {
+  it('translateX', () => {
+    const r = parseTransform('translateX(10px)')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions).toHaveLength(1)
+    expect(r.state.functions[0]).toEqual({ type: 'translateX', value: { n: 10, unit: 'px' } })
+  })
+
+  it('translate with one arg → Y defaults to X', () => {
+    const r = parseTransform('translate(10px)')
+    expect(r.state.functions[0]).toEqual({ type: 'translate', value: { x: { n: 10, unit: 'px' }, y: { n: 10, unit: 'px' }, z: { n: 0, unit: 'px' } } })
+  })
+
+  it('translate3d', () => {
+    const r = parseTransform('translate3d(1px, 2px, 3px)')
+    expect(r.state.functions[0].type).toBe('translate3d')
+    expect(r.state.functions[0].value.x.n).toBe(1)
+  })
+
+  it('rotate3d', () => {
+    const r = parseTransform('rotate3d(1, 0.5, 0, 45deg)')
+    expect(r.state.functions[0]).toEqual({ type: 'rotate3d', value: { x: 1, y: 0.5, z: 0, deg: 45 } })
+  })
+
+  it('scale with one arg → Y defaults to X', () => {
+    const r = parseTransform('scale(2)')
+    expect(r.state.functions[0]).toEqual({ type: 'scale', value: { x: 2, y: 2 } })
+  })
+
+  it('multiple functions preserve order', () => {
+    const r = parseTransform('translateX(10px) rotate(45deg) scale(2)')
+    expect(r.state.functions.map(f => f.type)).toEqual(['translateX', 'rotate', 'scale'])
+  })
+
+  it('skew with one arg → Y defaults to 0', () => {
+    const r = parseTransform('skew(15deg)')
+    expect(r.state.functions[0]).toEqual({ type: 'skew', value: { x: 15, y: 0 } })
+  })
+})
+
+describe('parseTransform — matrix decomposition (2D)', () => {
+  it('pure translation matrix', () => {
+    const r = parseTransform('matrix(1, 0, 0, 1, 10, 20)')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions.map(f => f.type)).toEqual(['translate', 'rotate', 'scale', 'skew'])
+    expect(r.state.functions[0].value.x.n).toBe(10)
+  })
+
+  it('rotation matrix → rotate(45deg)', () => {
+    const c = Math.cos(Math.PI / 4)
+    const s = Math.sin(Math.PI / 4)
+    const r = parseTransform(`matrix(${c}, ${s}, ${-s}, ${c}, 0, 0)`)
+    expect(r.ok).toBe(true)
+    const rotate = r.state.functions.find(f => f.type === 'rotate')
+    expect(Math.abs(rotate.value.deg - 45)).toBeLessThan(0.01)
+  })
+
+  it('singular matrix → kept as matrix item with warning', () => {
+    const r = parseTransform('matrix(0, 0, 0, 0, 5, 10)')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions[0].type).toBe('matrix')
+    expect(r.warnings).toEqual(expect.arrayContaining([expect.stringMatching(/0 缩放/)]))
+  })
+})
+
+describe('parseTransform — matrix3d partial extraction', () => {
+  it('identity matrix3d', () => {
+    const r = parseTransform('matrix3d(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions.map(f => f.type)).toEqual(['translate3d', 'rotateZ', 'rotateY', 'rotateX'])
+    expect(r.warnings).toEqual(expect.arrayContaining([expect.stringMatching(/matrix3d 仅提取/)]))
+  })
+
+  it('matrix3d with translation', () => {
+    const r = parseTransform('matrix3d(1,0,0,0, 0,1,0,0, 0,0,1,0, 5,10,15,1)')
+    expect(r.state.functions[0].value.x.n).toBe(5)
+    expect(r.state.functions[0].value.z.n).toBe(15)
+  })
+})
+
+describe('parseTransform — multi-line', () => {
+  it('parses transform + origin + perspective', () => {
+    const r = parseTransform('transform: rotate(45deg);\ntransform-origin: 0% 0% 0px;\nperspective: 1200px;')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions).toHaveLength(1)
+    expect(r.state.origin.x).toEqual({ n: 0, unit: '%' })
+    expect(r.state.perspective).toEqual({ n: 1200, unit: 'px' })
+  })
+
+  it('bare function string (no transform: prefix) is allowed', () => {
+    const r = parseTransform('rotate(45deg)')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions).toHaveLength(1)
+  })
+
+  it('multiple transform lines concatenate', () => {
+    const r = parseTransform('transform: translateX(10px);\ntransform: rotate(45deg)')
+    expect(r.state.functions).toHaveLength(2)
+  })
+})
+
+describe('parseTransform — errors', () => {
+  it('unknown function', () => {
+    const r = parseTransform('foo(10px)')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].line).toBe(1)
+    expect(r.errors[0].message).toMatch(/未知函数 foo/)
+  })
+
+  it('unclosed paren', () => {
+    const r = parseTransform('translateX(10px')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].message).toMatch(/括号未闭合/)
+  })
+
+  it('wrong arg count for translate3d', () => {
+    const r = parseTransform('translate3d(1px, 2px)')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].message).toMatch(/期望 3 个参数/)
+  })
+
+  it('scale rejects unit', () => {
+    const r = parseTransform('scale(2px)')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].message).toMatch(/不接受单位/)
+  })
+
+  it('error on second line reports line 2', () => {
+    const r = parseTransform('translateX(10px)\nfoo(20px)')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].line).toBe(2)
+  })
+
+  it('empty input → ok with empty functions', () => {
+    const r = parseTransform('')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions).toEqual([])
+  })
+
+  it('whitespace-only input → ok', () => {
+    const r = parseTransform('   \n  ')
+    expect(r.ok).toBe(true)
+    expect(r.state.functions).toEqual([])
+  })
+})
+
+describe('parseTransform — round-trip', () => {
+  it('stateToCss → parseTransform produces equivalent state', () => {
+    const original = {
+      functions: [
+        { type: 'translateX', value: { n: 10, unit: 'px' } },
+        { type: 'rotate', value: { deg: 45 } },
+        { type: 'scale', value: { x: 2, y: 2 } },
+      ],
+      origin: { x: { n: 50, unit: '%' }, y: { n: 50, unit: '%' }, z: { n: 0, unit: 'px' } },
+      perspective: { n: 800, unit: 'px' },
+    }
+    const css = stateToCss(original)
+    const r = parseTransform(css)
+    expect(r.ok).toBe(true)
+    expect(r.state.functions.map(f => f.type)).toEqual(['translateX', 'rotate', 'scale'])
+    expect(r.state.functions[0].value.n).toBeCloseTo(10, 5)
+    expect(r.state.functions[1].value.deg).toBeCloseTo(45, 5)
+    expect(r.state.perspective.n).toBe(800)
   })
 })
