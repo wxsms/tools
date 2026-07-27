@@ -422,6 +422,12 @@ describe('parseTransform — errors', () => {
     expect(r.errors[0].message).toMatch(/不接受单位/)
   })
 
+  it('scale3d rejects unit on any arg', () => {
+    const r = parseTransform('scale3d(1px, 2, 3)')
+    expect(r.ok).toBe(false)
+    expect(r.errors[0].message).toMatch(/不接受单位/)
+  })
+
   it('error on second line reports line 2', () => {
     const r = parseTransform('translateX(10px)\nfoo(20px)')
     expect(r.ok).toBe(false)

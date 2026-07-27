@@ -326,14 +326,8 @@ function parseFunctionToken(token) {
       expectArgs(name, args, 1)
       return { type: 'perspective', value: parseLength(args[0]) }
     }
-    case 'matrix': {
-      expectArgs(name, args, 6)
-      return { type: 'matrix', value: args.map(parseNum) }
-    }
-    case 'matrix3d': {
-      expectArgs(name, args, 16)
-      return { type: 'matrix3d', value: args.map(parseNum) }
-    }
+    // matrix / matrix3d are handled by parseTokenOrDecompose before this
+    // function is reached, so they never enter this switch.
     default:
       throw new Error(`未知函数 ${name}`)
   }
