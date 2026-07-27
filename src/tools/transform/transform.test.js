@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseLength, parseAngle, functionToCss } from './transform.js'
+import { parseLength, parseAngle, functionToCss, stateToCss } from './transform.js'
 
 describe('parseLength', () => {
   it('parses px', () => {
@@ -131,5 +131,42 @@ describe('functionToCss', () => {
     it('preserves negative zero as 0', () => {
       expect(functionToCss({ type: 'rotate', value: { deg: -0 } })).toBe('rotate(0deg)')
     })
+  })
+})
+
+describe('stateToCss', () => {
+  const baseState = {
+    functions: [],
+    origin: { x: { n: 50, unit: '%' }, y: { n: 50, unit: '%' }, z: { n: 0, unit: 'px' } },
+    perspective: { n: 800, unit: 'px' },
+  }
+
+  it('empty functions → only origin + perspective', () => {
+    expect(stateToCss(baseState)).toBe('transform-origin: 50% 50% 0px;\nperspective: 800px;')
+  })
+
+  it('with one function → all three lines', () => {
+    const s = { ...baseState, functions: [{ type: 'translateX', value: { n: 10, unit: 'px' } }] }
+    expect(stateToCss(s)).toBe('transform-origin: 50% 50% 0px;\nperspective: 800px;\ntransform: translateX(10px);')
+  })
+
+  it('multiple functions preserve order', () => {
+    const s = {
+      ...baseState,
+      functions: [
+        { type: 'translateX', value: { n: 10, unit: 'px' } },
+        { type: 'rotate', value: { deg: 45 } },
+        { type: 'scale', value: { x: 2, y: 2 } },
+      ],
+    }
+    expect(stateToCss(s)).toBe('transform-origin: 50% 50% 0px;\nperspective: 800px;\ntransform: translateX(10px) rotate(45deg) scale(2, 2);')
+  })
+
+  it('origin with px units', () => {
+    const s = {
+      ...baseState,
+      origin: { x: { n: 10, unit: 'px' }, y: { n: 20, unit: 'px' }, z: { n: 0, unit: 'px' } },
+    }
+    expect(stateToCss(s)).toBe('transform-origin: 10px 20px 0px;\nperspective: 800px;')
   })
 })

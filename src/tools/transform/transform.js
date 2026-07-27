@@ -87,3 +87,14 @@ export function functionToCss(fn) {
       throw new Error(`未知函数: ${type}`)
   }
 }
+
+export function stateToCss(state) {
+  const { origin, perspective, functions } = state
+  const lines = []
+  lines.push(`transform-origin: ${len(origin.x)} ${len(origin.y)} ${len(origin.z)};`)
+  lines.push(`perspective: ${len(perspective)};`)
+  if (functions && functions.length > 0) {
+    lines.push(`transform: ${functions.map(functionToCss).join(' ')};`)
+  }
+  return lines.join('\n')
+}
