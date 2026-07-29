@@ -262,6 +262,12 @@ export const toolGroups = [
         desc: 'CSS transform 可视化生成,支持 2D/3D 函数、matrix 反解析',
         icon: 'lucide:move-3d',
       },
+      {
+        name: 'Flexbox 可视化',
+        path: '/flexbox',
+        desc: 'CSS Flexbox 布局可视化编辑，实时调整容器与子项属性',
+        icon: 'lucide:align-horizontal-justify-center',
+      },
     ],
   },
   {

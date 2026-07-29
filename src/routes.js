@@ -94,4 +94,11 @@ export default [
       description: 'Unix 文件权限可视化计算，数字 / 符号 / 二进制三模式同步',
     },
   },
+  {
+    path: '/flexbox',
+    meta: {
+      title: 'Flexbox 可视化',
+      description: 'CSS Flexbox 布局可视化编辑，实时调整容器与子项属性并生成代码',
+    },
+  },
 ]
