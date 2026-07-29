@@ -69,6 +69,7 @@
           <div class="flex gap-2 items-center">
             <select
               v-model="fileType"
+              data-testid="file-type-select"
               class="select select-bordered select-sm w-32 font-mono"
               :title="'文件类型符（ls -l 首位）'"
             >
@@ -83,6 +84,7 @@
             <input
               v-model="lsInput"
               type="text"
+              data-testid="ls-input"
               maxlength="10"
               class="input input-bordered input-sm font-mono flex-1"
               placeholder="drwxr-xr-x"
@@ -105,6 +107,7 @@
           <input
             v-model="symbolicInput"
             type="text"
+            data-testid="symbolic-input"
             class="input input-bordered input-sm w-full font-mono"
             placeholder="u=rwx,g=rx,o=rx"
             @blur="onSymbolicBlur"
@@ -125,6 +128,7 @@
           <input
             v-model="octalInput"
             type="text"
+            data-testid="octal-input"
             maxlength="3"
             class="input input-bordered input-sm w-full font-mono"
             @blur="onOctalBlur"
@@ -145,6 +149,7 @@
           <input
             v-model="binaryInput"
             type="text"
+            data-testid="binary-input"
             maxlength="11"
             class="input input-bordered input-sm w-full font-mono"
             placeholder="111 101 101"
@@ -288,33 +293,38 @@ const cmdMode = ref('octal')
 const filename = ref('file.txt')
 const fileType = ref('-')
 const copied = ref(false)
-// When an input blur handler updates bits, we set this to the field name(s) that
-// should NOT be overwritten by the bits watcher (the one the user just edited).
-// Reset on next tick after watchers flush.
-let suppressOctalSync = false
-let suppressSymbolicSync = false
-let suppressBinarySync = false
-let suppressLsSync = false
+// When an input blur handler updates bits, we set this to the field name that
+// should NOT be overwritten by the bits watcher (the one the user just edited),
+// so their just-typed text is preserved. Reset on next tick after watchers flush.
+// null means "no field is protected" (e.g. checkbox-driven change → sync all).
+let lastEditedField = null // 'octal' | 'symbolic' | 'binary' | 'ls' | null
 
 const description = computed(() => describePerm(bits.value))
 const command = computed(() => buildChmodCommand(bits.value, { mode: cmdMode.value, filename: filename.value }))
 
-// When bits change (via checkbox), refresh all input fields to mirror state.
-// Each input's suppress flag protects it from being overwritten right after the user
-// edited that specific field (so their just-typed text is preserved).
+// When bits change, refresh all input fields to mirror state — except the field
+// that just drove the change (lastEditedField), which keeps the user's text.
 watch(bits, () => {
-  if (!suppressOctalSync)    octalInput.value    = bitsToOctal(bits.value)
-  if (!suppressSymbolicSync) symbolicInput.value = bitsToSymbolic(bits.value)
-  if (!suppressBinarySync)   binaryInput.value   = bitsToBinary(bits.value)
-  if (!suppressLsSync)       lsInput.value       = bitsToLsFormat(bits.value, fileType.value)
+  if (lastEditedField !== 'octal')    octalInput.value    = bitsToOctal(bits.value)
+  if (lastEditedField !== 'symbolic') symbolicInput.value = bitsToSymbolic(bits.value)
+  if (lastEditedField !== 'binary')   binaryInput.value   = bitsToBinary(bits.value)
+  if (lastEditedField !== 'ls')       lsInput.value       = bitsToLsFormat(bits.value, fileType.value)
 }, { deep: true })
 
 // When the file type selector changes on its own (user click), refresh ls input.
+// Skip when ls-driven (that path sets fileType itself and owns the lsInput text).
 watch(fileType, () => {
-  if (!suppressLsSync) {
+  if (lastEditedField !== 'ls') {
     lsInput.value = bitsToLsFormat(bits.value, fileType.value)
   }
 })
+
+function driveFromInput(field, parsed) {
+  lastEditedField = field
+  bits.value = parsed
+  if (field === 'ls') fileType.value = parsed.type
+  nextTick(() => { lastEditedField = null })
+}
 
 function onOctalBlur() {
   const parsed = octalToBits(octalInput.value)
@@ -324,9 +334,7 @@ function onOctalBlur() {
     return
   }
   octalError.value = ''
-  suppressOctalSync = true
-  bits.value = parsed
-  nextTick(() => { suppressOctalSync = false })
+  driveFromInput('octal', parsed)
 }
 
 function onSymbolicBlur() {
@@ -337,9 +345,7 @@ function onSymbolicBlur() {
     return
   }
   symbolicError.value = ''
-  suppressSymbolicSync = true
-  bits.value = parsed
-  nextTick(() => { suppressSymbolicSync = false })
+  driveFromInput('symbolic', parsed)
 }
 
 function onBinaryBlur() {
@@ -350,9 +356,7 @@ function onBinaryBlur() {
     return
   }
   binaryError.value = ''
-  suppressBinarySync = true
-  bits.value = parsed
-  nextTick(() => { suppressBinarySync = false })
+  driveFromInput('binary', parsed)
 }
 
 function onLsBlur() {
@@ -363,10 +367,7 @@ function onLsBlur() {
     return
   }
   lsError.value = ''
-  suppressLsSync = true
-  bits.value = parsed
-  fileType.value = parsed.type
-  nextTick(() => { suppressLsSync = false })
+  driveFromInput('ls', parsed)
 }
 
 async function copyCommand() {
