@@ -87,6 +87,7 @@
             v-model="symbolicInput"
             type="text"
             class="input input-bordered input-sm font-mono"
+            placeholder="u=rwx,g=rx,o=rx 或 rwxr-xr-x / drwxr-xr-x"
             @blur="onSymbolicBlur"
           >
           <p
@@ -101,6 +102,29 @@
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">二进制</span></label>
           <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm">{{ binaryStr }}</pre>
+        </div>
+
+        <!-- ls -l format (read-only) -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">ls -l 格式</span>
+          </label>
+          <div class="flex gap-2 items-center">
+            <select
+              v-model="fileType"
+              class="select select-bordered select-sm w-32 font-mono"
+              :title="'文件类型符（ls -l 首位）'"
+            >
+              <option
+                v-for="t in fileTypes"
+                :key="t.value"
+                :value="t.value"
+              >
+                {{ t.value }} {{ t.label }}
+              </option>
+            </select>
+            <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm flex-1">{{ lsFormat }}</pre>
+          </div>
         </div>
 
         <!-- Command -->
@@ -162,7 +186,12 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { ref, computed, watch } from 'vue'
-import { bitsToOctal, octalToBits, bitsToSymbolic, symbolicToBits, bitsToBinary, buildChmodCommand } from './chmod.js'
+import {
+  bitsToOctal, octalToBits,
+  bitsToSymbolic, symbolicToBits,
+  bitsToBinary, buildChmodCommand,
+  bitsToLsFormat, lsFormatToBits,
+} from './chmod.js'
 
 const rows = [
   { key: 'owner', label: 'u (user)',  tip: '文件所有者' },
@@ -174,6 +203,16 @@ const cols = [
   { key: 'read',   label: 'r (read)', tip: '读权限（数值 4）' },
   { key: 'write',  label: 'w (write)', tip: '写权限（数值 2）' },
   { key: 'execute', label: 'x (execute)', tip: '执行权限（数值 1）' },
+]
+
+const fileTypes = [
+  { value: '-', label: '普通文件' },
+  { value: 'd', label: '目录' },
+  { value: 'l', label: '符号链接' },
+  { value: 'b', label: '块设备' },
+  { value: 'c', label: '字符设备' },
+  { value: 'p', label: '管道' },
+  { value: 's', label: '套接字' },
 ]
 
 const bits = ref({
@@ -189,15 +228,25 @@ const symbolicError = ref('')
 
 const cmdMode = ref('octal')
 const filename = ref('file.txt')
+const fileType = ref('-')
 const copied = ref(false)
+// Set by onSymbolicBlur after it parsed user input, so the bits-watch does not
+// overwrite the user's just-typed string with the canonical form.
+let suppressSymbolicSync = false
 
 const binaryStr = computed(() => bitsToBinary(bits.value))
+const lsFormat = computed(() => bitsToLsFormat(bits.value, fileType.value))
 const command = computed(() => buildChmodCommand(bits.value, { mode: cmdMode.value, filename: filename.value }))
 
 // When bits change (via checkbox), refresh the input fields to mirror state.
+// Skip symbolicInput if the change originated from onSymbolicBlur (user just typed it).
 watch(bits, () => {
   octalInput.value = bitsToOctal(bits.value)
-  symbolicInput.value = bitsToSymbolic(bits.value)
+  if (suppressSymbolicSync) {
+    suppressSymbolicSync = false
+  } else {
+    symbolicInput.value = bitsToSymbolic(bits.value)
+  }
 }, { deep: true })
 
 function onOctalBlur() {
@@ -212,14 +261,24 @@ function onOctalBlur() {
 }
 
 function onSymbolicBlur() {
-  const parsed = symbolicToBits(symbolicInput.value)
-  if (parsed === null) {
-    symbolicError.value = '无效的符号表示（格式 u=...,g=...,o=...，仅 r/w/x）'
-    symbolicInput.value = bitsToSymbolic(bits.value)
-  } else {
+  // Try chmod symbolic form first (u=rwx,g=rx,o=rx), then ls -l form (rwxr-xr-x / drwxr-xr-x).
+  const sym = symbolicToBits(symbolicInput.value)
+  if (sym !== null) {
     symbolicError.value = ''
-    bits.value = parsed
+    suppressSymbolicSync = true
+    bits.value = sym
+    return
   }
+  const ls = lsFormatToBits(symbolicInput.value.trim())
+  if (ls !== null) {
+    symbolicError.value = ''
+    suppressSymbolicSync = true
+    bits.value = ls
+    fileType.value = ls.type
+    return
+  }
+  symbolicError.value = '无效的符号表示（接受 u=...,g=...,o=... 或 rwxr-xr-x / drwxr-xr-x）'
+  symbolicInput.value = bitsToSymbolic(bits.value)
 }
 
 async function copyCommand() {

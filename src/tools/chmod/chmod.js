@@ -145,3 +145,73 @@ export function buildChmodCommand(bits, { mode, filename = 'file.txt' }) {
   if (mode === 'symbolic') return `chmod ${bitsToSymbolic(bits)} ${target}`
   throw new Error(`buildChmodCommand: unknown mode ${mode}`)
 }
+
+/**
+ * Valid Unix file type characters as shown by ls -l.
+ * d=directory, -=regular file, l=symlink, b=block device, c=char device,
+ * p=FIFO/pipe, s=socket.
+ */
+const FILE_TYPES = ['-', 'd', 'l', 'b', 'c', 'p', 's']
+
+/**
+ * @param {{ read: boolean, write: boolean, execute: boolean }} triple
+ * @returns {string} 3 chars of "r"/"w"/"x"/"-", e.g. "rwx" or "r-x"
+ */
+function tripleToLsLetters(triple) {
+  return (triple.read ? 'r' : '-')
+    + (triple.write ? 'w' : '-')
+    + (triple.execute ? 'x' : '-')
+}
+
+/**
+ * @param {PermBits} bits
+ * @param {string} typeChar  single-char file type prefix ('-', 'd', 'l', ...)
+ * @returns {string} 10-char ls -l permission string, e.g. "-rwxr-xr-x"
+ */
+export function bitsToLsFormat(bits, typeChar = '-') {
+  return typeChar + tripleToLsLetters(bits.owner) + tripleToLsLetters(bits.group) + tripleToLsLetters(bits.other)
+}
+
+/**
+ * @param {string} str
+ * @returns {{ type: string, owner: Object, group: Object, other: Object } | null}
+ *   null if input is not a 9-char rwx-style string (with optional leading type char).
+ *   When input is 9 chars (no type prefix), type defaults to "-".
+ */
+export function lsFormatToBits(str) {
+  if (typeof str !== 'string') return null
+  let typeChar = '-'
+  let perm = str
+  if (str.length === 10) {
+    typeChar = str[0]
+    perm = str.slice(1)
+  } else if (str.length !== 9) {
+    return null
+  }
+  if (!FILE_TYPES.includes(typeChar)) return null
+  const re = /^([rwx-]{3})([rwx-]{3})([rwx-]{3})$/
+  const m = perm.match(re)
+  if (!m) return null
+  const owner = lettersOrDashToTriple(m[1])
+  const group = lettersOrDashToTriple(m[2])
+  const other = lettersOrDashToTriple(m[3])
+  if (!owner || !group || !other) return null
+  return { type: typeChar, owner, group, other }
+}
+
+/**
+ * Parse a 3-char "rwx" / "r-x" / "---" segment into a triple.
+ * Returns null if any char is not r/w/x/-.
+ * @param {string} seg
+ * @returns {{ read: boolean, write: boolean, execute: boolean } | null}
+ */
+function lettersOrDashToTriple(seg) {
+  const triple = { read: false, write: false, execute: false }
+  for (const ch of seg) {
+    if (ch === 'r') triple.read = true
+    else if (ch === 'w') triple.write = true
+    else if (ch === 'x') triple.execute = true
+    else if (ch !== '-') return null
+  }
+  return triple
+}

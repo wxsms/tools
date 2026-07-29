@@ -3,6 +3,7 @@ import {
   bitsToOctal, octalToBits,
   bitsToSymbolic, symbolicToBits,
   bitsToBinary, buildChmodCommand,
+  bitsToLsFormat, lsFormatToBits,
 } from './chmod.js'
 
 const ALL_FALSE = {
@@ -278,5 +279,97 @@ describe('buildChmodCommand', () => {
   it('handles filenames with spaces by shell-quoting', () => {
     expect(buildChmodCommand(BITS_755, { mode: 'octal', filename: 'my file.txt' }))
       .toBe('chmod 755 "my file.txt"')
+  })
+})
+
+describe('bitsToLsFormat', () => {
+  it('converts 755', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: true },
+      group: { read: true, write: false, execute: true },
+      other: { read: true, write: false, execute: true },
+    }
+    expect(bitsToLsFormat(bits, '-')).toBe('-rwxr-xr-x')
+  })
+
+  it('converts 644 with d prefix', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: false },
+      group: { read: true, write: false, execute: false },
+      other: { read: true, write: false, execute: false },
+    }
+    expect(bitsToLsFormat(bits, 'd')).toBe('drw-r--r--')
+  })
+
+  it('converts 000 with - prefix', () => {
+    const bits = {
+      owner: { read: false, write: false, execute: false },
+      group: { read: false, write: false, execute: false },
+      other: { read: false, write: false, execute: false },
+    }
+    expect(bitsToLsFormat(bits, '-')).toBe('----------')
+  })
+
+  it('converts 777 with l prefix', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: true },
+      group: { read: true, write: true, execute: true },
+      other: { read: true, write: true, execute: true },
+    }
+    expect(bitsToLsFormat(bits, 'l')).toBe('lrwxrwxrwx')
+  })
+})
+
+describe('lsFormatToBits', () => {
+  it('parses -rwxr-xr-x', () => {
+    const bits = lsFormatToBits('-rwxr-xr-x')
+    expect(bits.type).toBe('-')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: true })
+    expect(bits.group).toEqual({ read: true, write: false, execute: true })
+    expect(bits.other).toEqual({ read: true, write: false, execute: true })
+  })
+
+  it('parses drw-r--r--', () => {
+    const bits = lsFormatToBits('drw-r--r--')
+    expect(bits.type).toBe('d')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: false })
+    expect(bits.group).toEqual({ read: true, write: false, execute: false })
+    expect(bits.other).toEqual({ read: true, write: false, execute: false })
+  })
+
+  it('parses lrwxrwxrwx', () => {
+    const bits = lsFormatToBits('lrwxrwxrwx')
+    expect(bits.type).toBe('l')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: true })
+  })
+
+  it('parses ----------', () => {
+    const bits = lsFormatToBits('----------')
+    expect(bits.type).toBe('-')
+    expect(bits.owner).toEqual({ read: false, write: false, execute: false })
+    expect(bits.group).toEqual({ read: false, write: false, execute: false })
+    expect(bits.other).toEqual({ read: false, write: false, execute: false })
+  })
+
+  it('parses rwxr-xr-x without type prefix (defaults to -)', () => {
+    const bits = lsFormatToBits('rwxr-xr-x')
+    expect(bits.type).toBe('-')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: true })
+  })
+
+  it('returns null for too-short input', () => {
+    expect(lsFormatToBits('rwx')).toBeNull()
+  })
+
+  it('returns null for too-long input', () => {
+    expect(lsFormatToBits('-rwxr-xr-x-')).toBeNull()
+  })
+
+  it('returns null for invalid chars in permission section', () => {
+    expect(lsFormatToBits('-rwxr-xr-z')).toBeNull()
+  })
+
+  it('returns null for empty string', () => {
+    expect(lsFormatToBits('')).toBeNull()
   })
 })
