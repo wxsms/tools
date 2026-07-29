@@ -11,15 +11,14 @@
           <table class="table table-zebra w-full">
             <thead>
               <tr>
-                <th class="w-20" />
-                <th class="text-center">
-                  r
-                </th>
-                <th class="text-center">
-                  w
-                </th>
-                <th class="text-center">
-                  x
+                <th class="w-40" />
+                <th
+                  v-for="col in cols"
+                  :key="col.key"
+                  class="text-center cursor-help"
+                  :title="col.tip"
+                >
+                  {{ col.label }}
                 </th>
               </tr>
             </thead>
@@ -28,7 +27,10 @@
                 v-for="row in rows"
                 :key="row.key"
               >
-                <td class="font-mono font-semibold">
+                <td
+                  class="font-mono font-semibold cursor-help"
+                  :title="row.tip"
+                >
                   {{ row.label }}
                 </td>
                 <td class="text-center">
@@ -154,19 +156,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Cheatsheet -->
-    <div class="mt-6">
-      <h2 class="text-lg font-semibold mb-2">
-        权限小抄
-      </h2>
-      <div class="bg-base-200 rounded-lg p-4 font-mono text-sm">
-        <div>r = 4  w = 2  x = 1</div>
-        <div class="mt-2">
-          7 = rwx  6 = rw-  5 = r-x  4 = r--  3 = -wx  2 = -w-  1 = --x  0 = ---
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -176,9 +165,15 @@ import { ref, computed, watch } from 'vue'
 import { bitsToOctal, octalToBits, bitsToSymbolic, symbolicToBits, bitsToBinary, buildChmodCommand } from './chmod.js'
 
 const rows = [
-  { key: 'owner', label: 'u' },
-  { key: 'group', label: 'g' },
-  { key: 'other', label: 'o' },
+  { key: 'owner', label: 'u (user)',  tip: '文件所有者' },
+  { key: 'group', label: 'g (group)', tip: '文件所属组' },
+  { key: 'other', label: 'o (other)', tip: '其他用户' },
+]
+
+const cols = [
+  { key: 'read',   label: 'r (read)', tip: '读权限（数值 4）' },
+  { key: 'write',  label: 'w (write)', tip: '写权限（数值 2）' },
+  { key: 'execute', label: 'x (execute)', tip: '执行权限（数值 1）' },
 ]
 
 const bits = ref({
