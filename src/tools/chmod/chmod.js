@@ -215,3 +215,62 @@ function lettersOrDashToTriple(seg) {
   }
   return triple
 }
+
+/**
+ * @param {string} str  e.g. "111 101 101" or "111101101"
+ * @returns {PermBits | null} null if not exactly 9 binary digits (with optional single spaces)
+ */
+export function binaryToBits(str) {
+  if (typeof str !== 'string') return null
+  const compact = str.replace(/\s+/g, '')
+  if (!/^[01]{9}$/.test(compact)) return null
+  const seg = (start) => ({
+    read:   compact[start] === '1',
+    write:  compact[start + 1] === '1',
+    execute: compact[start + 2] === '1',
+  })
+  return {
+    owner: seg(0),
+    group: seg(3),
+    other: seg(6),
+  }
+}
+
+/**
+ * @param {{ read: boolean, write: boolean, execute: boolean }} triple
+ * @returns {string}
+ */
+function describeTriple(triple) {
+  const caps = []
+  if (triple.read) caps.push('可读')
+  if (triple.write) caps.push('可写')
+  if (triple.execute) caps.push('可执行')
+  if (caps.length === 0) return '无任何权限 — 不能查看、修改或运行'
+
+  const ops = []
+  if (triple.read) ops.push('可查看内容')
+  if (triple.write) ops.push('修改')
+  if (triple.execute) ops.push('作为程序运行')
+  const opsText = ops.join('、')
+
+  const missing = []
+  if (!triple.read && (triple.write || triple.execute)) missing.push('查看')
+  if (!triple.write && (triple.read || triple.execute)) missing.push('修改')
+  if (!triple.execute && (triple.read || triple.write)) missing.push('运行')
+  const tail = missing.length > 0 ? `不能${missing.join('、')}` : ''
+
+  const head = caps.join(' · ')
+  return tail ? `${head} — ${opsText}, ${tail}` : `${head} — ${opsText}`
+}
+
+/**
+ * @param {PermBits} bits
+ * @returns {{ owner: string, group: string, other: string }}
+ */
+export function describePerm(bits) {
+  return {
+    owner: describeTriple(bits.owner),
+    group: describeTriple(bits.group),
+    other: describeTriple(bits.other),
+  }
+}

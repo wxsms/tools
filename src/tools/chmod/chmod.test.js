@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   bitsToOctal, octalToBits,
   bitsToSymbolic, symbolicToBits,
-  bitsToBinary, buildChmodCommand,
+  bitsToBinary, binaryToBits,
+  buildChmodCommand,
   bitsToLsFormat, lsFormatToBits,
+  describePerm,
 } from './chmod.js'
 
 const ALL_FALSE = {
@@ -371,5 +373,119 @@ describe('lsFormatToBits', () => {
 
   it('returns null for empty string', () => {
     expect(lsFormatToBits('')).toBeNull()
+  })
+})
+
+describe('binaryToBits', () => {
+  it('parses 111 101 101', () => {
+    const bits = binaryToBits('111 101 101')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: true })
+    expect(bits.group).toEqual({ read: true, write: false, execute: true })
+    expect(bits.other).toEqual({ read: true, write: false, execute: true })
+  })
+
+  it('parses 111101101 without spaces', () => {
+    const bits = binaryToBits('111101101')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: true })
+    expect(bits.group).toEqual({ read: true, write: false, execute: true })
+    expect(bits.other).toEqual({ read: true, write: false, execute: true })
+  })
+
+  it('parses 110 100 100', () => {
+    const bits = binaryToBits('110 100 100')
+    expect(bits.owner).toEqual({ read: true, write: true, execute: false })
+    expect(bits.group).toEqual({ read: true, write: false, execute: false })
+    expect(bits.other).toEqual({ read: true, write: false, execute: false })
+  })
+
+  it('parses 000 000 000 as all false', () => {
+    const bits = binaryToBits('000 000 000')
+    expect(bits.owner).toEqual({ read: false, write: false, execute: false })
+    expect(bits.group).toEqual({ read: false, write: false, execute: false })
+    expect(bits.other).toEqual({ read: false, write: false, execute: false })
+  })
+
+  it('returns null for too-short input', () => {
+    expect(binaryToBits('111')).toBeNull()
+  })
+
+  it('returns null for too-long input', () => {
+    expect(binaryToBits('111 101 101 1')).toBeNull()
+  })
+
+  it('returns null for invalid chars', () => {
+    expect(binaryToBits('111 101 10a')).toBeNull()
+  })
+
+  it('returns null for empty string', () => {
+    expect(binaryToBits('')).toBeNull()
+  })
+
+  it('roundtrips with bitsToBinary', () => {
+    const bits = {
+      owner: { read: true, write: false, execute: true },
+      group: { read: false, write: true, execute: false },
+      other: { read: true, write: true, execute: false },
+    }
+    expect(binaryToBits(bitsToBinary(bits))).toEqual(bits)
+  })
+})
+
+describe('describePerm', () => {
+  it('describes 755', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: true },
+      group: { read: true, write: false, execute: true },
+      other: { read: true, write: false, execute: true },
+    }
+    const d = describePerm(bits)
+    expect(d.owner).toBe('可读 · 可写 · 可执行 — 可查看内容、修改、作为程序运行')
+    expect(d.group).toBe('可读 · 可执行 — 可查看内容、作为程序运行, 不能修改')
+    expect(d.other).toBe('可读 · 可执行 — 可查看内容、作为程序运行, 不能修改')
+  })
+
+  it('describes 644', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: false },
+      group: { read: true, write: false, execute: false },
+      other: { read: true, write: false, execute: false },
+    }
+    const d = describePerm(bits)
+    expect(d.owner).toBe('可读 · 可写 — 可查看内容、修改, 不能运行')
+    expect(d.group).toBe('可读 — 可查看内容, 不能修改、运行')
+    expect(d.other).toBe('可读 — 可查看内容, 不能修改、运行')
+  })
+
+  it('describes 000', () => {
+    const bits = {
+      owner: { read: false, write: false, execute: false },
+      group: { read: false, write: false, execute: false },
+      other: { read: false, write: false, execute: false },
+    }
+    const d = describePerm(bits)
+    expect(d.owner).toBe('无任何权限 — 不能查看、修改或运行')
+    expect(d.group).toBe('无任何权限 — 不能查看、修改或运行')
+    expect(d.other).toBe('无任何权限 — 不能查看、修改或运行')
+  })
+
+  it('describes 777', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: true },
+      group: { read: true, write: true, execute: true },
+      other: { read: true, write: true, execute: true },
+    }
+    const d = describePerm(bits)
+    expect(d.other).toBe('可读 · 可写 · 可执行 — 可查看内容、修改、作为程序运行')
+  })
+
+  it('describes 700', () => {
+    const bits = {
+      owner: { read: true, write: true, execute: true },
+      group: { read: false, write: false, execute: false },
+      other: { read: false, write: false, execute: false },
+    }
+    const d = describePerm(bits)
+    expect(d.owner).toBe('可读 · 可写 · 可执行 — 可查看内容、修改、作为程序运行')
+    expect(d.group).toBe('无任何权限 — 不能查看、修改或运行')
   })
 })

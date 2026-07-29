@@ -4,10 +4,12 @@
       chmod 权限计算
     </h1>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Left: checkbox matrix -->
+      <!-- Left: checkbox matrix + 5 input fields -->
       <div class="flex flex-col gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">权限位</span></label>
+          <div class="text-sm font-semibold mb-1">
+            权限位
+          </div>
           <table class="table table-zebra w-full">
             <thead>
               <tr>
@@ -58,57 +60,12 @@
             </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- Right: representations + command -->
-      <div class="flex flex-col gap-4">
-        <!-- Octal -->
+        <!-- ls -l 格式 (editable + file type selector) -->
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">数字模式</span></label>
-          <input
-            v-model="octalInput"
-            type="text"
-            maxlength="3"
-            class="input input-bordered input-sm w-24 font-mono"
-            @blur="onOctalBlur"
-          >
-          <p
-            v-if="octalError"
-            class="text-xs text-error mt-1"
-          >
-            {{ octalError }}
-          </p>
-        </div>
-
-        <!-- Symbolic -->
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">符号模式</span></label>
-          <input
-            v-model="symbolicInput"
-            type="text"
-            class="input input-bordered input-sm font-mono"
-            placeholder="u=rwx,g=rx,o=rx 或 rwxr-xr-x / drwxr-xr-x"
-            @blur="onSymbolicBlur"
-          >
-          <p
-            v-if="symbolicError"
-            class="text-xs text-error mt-1"
-          >
-            {{ symbolicError }}
-          </p>
-        </div>
-
-        <!-- Binary (read-only) -->
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">二进制</span></label>
-          <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm">{{ binaryStr }}</pre>
-        </div>
-
-        <!-- ls -l format (read-only) -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text font-semibold">ls -l 格式</span>
-          </label>
+          <div class="text-sm font-semibold mb-1">
+            ls -l 格式
+          </div>
           <div class="flex gap-2 items-center">
             <select
               v-model="fileType"
@@ -123,13 +80,108 @@
                 {{ t.value }} {{ t.label }}
               </option>
             </select>
-            <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm flex-1">{{ lsFormat }}</pre>
+            <input
+              v-model="lsInput"
+              type="text"
+              maxlength="10"
+              class="input input-bordered input-sm font-mono flex-1"
+              placeholder="drwxr-xr-x"
+              @blur="onLsBlur"
+            >
+          </div>
+          <p
+            v-if="lsError"
+            class="text-xs text-error mt-1"
+          >
+            {{ lsError }}
+          </p>
+        </div>
+
+        <!-- 符号格式 -->
+        <div class="form-control">
+          <div class="text-sm font-semibold mb-1">
+            符号格式
+          </div>
+          <input
+            v-model="symbolicInput"
+            type="text"
+            class="input input-bordered input-sm w-full font-mono"
+            placeholder="u=rwx,g=rx,o=rx"
+            @blur="onSymbolicBlur"
+          >
+          <p
+            v-if="symbolicError"
+            class="text-xs text-error mt-1"
+          >
+            {{ symbolicError }}
+          </p>
+        </div>
+
+        <!-- 数字格式 -->
+        <div class="form-control">
+          <div class="text-sm font-semibold mb-1">
+            数字格式
+          </div>
+          <input
+            v-model="octalInput"
+            type="text"
+            maxlength="3"
+            class="input input-bordered input-sm w-full font-mono"
+            @blur="onOctalBlur"
+          >
+          <p
+            v-if="octalError"
+            class="text-xs text-error mt-1"
+          >
+            {{ octalError }}
+          </p>
+        </div>
+
+        <!-- 二进制格式 -->
+        <div class="form-control">
+          <div class="text-sm font-semibold mb-1">
+            二进制格式
+          </div>
+          <input
+            v-model="binaryInput"
+            type="text"
+            maxlength="11"
+            class="input input-bordered input-sm w-full font-mono"
+            placeholder="111 101 101"
+            @blur="onBinaryBlur"
+          >
+          <p
+            v-if="binaryError"
+            class="text-xs text-error mt-1"
+          >
+            {{ binaryError }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Right: explanation + command -->
+      <div class="flex flex-col gap-4">
+        <!-- Explanation -->
+        <div class="form-control">
+          <div class="text-sm font-semibold mb-1">
+            权限含义
+          </div>
+          <div class="bg-base-200 rounded-lg p-4 flex flex-col gap-2 text-sm">
+            <div
+              v-for="row in rows"
+              :key="row.key"
+            >
+              <span class="font-semibold">{{ row.label }}:</span>
+              <span class="ml-1">{{ description[row.key] }}</span>
+            </div>
           </div>
         </div>
 
         <!-- Command -->
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">chmod 命令</span></label>
+          <div class="text-sm font-semibold mb-1">
+            chmod 命令
+          </div>
           <div class="flex gap-2 mb-2">
             <label class="flex items-center gap-1 cursor-pointer">
               <input
@@ -185,12 +237,14 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   bitsToOctal, octalToBits,
   bitsToSymbolic, symbolicToBits,
-  bitsToBinary, buildChmodCommand,
+  bitsToBinary, binaryToBits,
+  buildChmodCommand,
   bitsToLsFormat, lsFormatToBits,
+  describePerm,
 } from './chmod.js'
 
 const rows = [
@@ -223,62 +277,96 @@ const bits = ref({
 
 const octalInput = ref(bitsToOctal(bits.value))
 const symbolicInput = ref(bitsToSymbolic(bits.value))
+const binaryInput = ref(bitsToBinary(bits.value))
+const lsInput = ref(bitsToLsFormat(bits.value, '-'))
 const octalError = ref('')
 const symbolicError = ref('')
+const binaryError = ref('')
+const lsError = ref('')
 
 const cmdMode = ref('octal')
 const filename = ref('file.txt')
 const fileType = ref('-')
 const copied = ref(false)
-// Set by onSymbolicBlur after it parsed user input, so the bits-watch does not
-// overwrite the user's just-typed string with the canonical form.
+// When an input blur handler updates bits, we set this to the field name(s) that
+// should NOT be overwritten by the bits watcher (the one the user just edited).
+// Reset on next tick after watchers flush.
+let suppressOctalSync = false
 let suppressSymbolicSync = false
+let suppressBinarySync = false
+let suppressLsSync = false
 
-const binaryStr = computed(() => bitsToBinary(bits.value))
-const lsFormat = computed(() => bitsToLsFormat(bits.value, fileType.value))
+const description = computed(() => describePerm(bits.value))
 const command = computed(() => buildChmodCommand(bits.value, { mode: cmdMode.value, filename: filename.value }))
 
-// When bits change (via checkbox), refresh the input fields to mirror state.
-// Skip symbolicInput if the change originated from onSymbolicBlur (user just typed it).
+// When bits change (via checkbox), refresh all input fields to mirror state.
+// Each input's suppress flag protects it from being overwritten right after the user
+// edited that specific field (so their just-typed text is preserved).
 watch(bits, () => {
-  octalInput.value = bitsToOctal(bits.value)
-  if (suppressSymbolicSync) {
-    suppressSymbolicSync = false
-  } else {
-    symbolicInput.value = bitsToSymbolic(bits.value)
-  }
+  if (!suppressOctalSync)    octalInput.value    = bitsToOctal(bits.value)
+  if (!suppressSymbolicSync) symbolicInput.value = bitsToSymbolic(bits.value)
+  if (!suppressBinarySync)   binaryInput.value   = bitsToBinary(bits.value)
+  if (!suppressLsSync)       lsInput.value       = bitsToLsFormat(bits.value, fileType.value)
 }, { deep: true })
+
+// When the file type selector changes on its own (user click), refresh ls input.
+watch(fileType, () => {
+  if (!suppressLsSync) {
+    lsInput.value = bitsToLsFormat(bits.value, fileType.value)
+  }
+})
 
 function onOctalBlur() {
   const parsed = octalToBits(octalInput.value)
   if (parsed === null) {
     octalError.value = '无效的八进制（仅 0-7，1-3 位）'
     octalInput.value = bitsToOctal(bits.value)
-  } else {
-    octalError.value = ''
-    bits.value = parsed
+    return
   }
+  octalError.value = ''
+  suppressOctalSync = true
+  bits.value = parsed
+  nextTick(() => { suppressOctalSync = false })
 }
 
 function onSymbolicBlur() {
-  // Try chmod symbolic form first (u=rwx,g=rx,o=rx), then ls -l form (rwxr-xr-x / drwxr-xr-x).
-  const sym = symbolicToBits(symbolicInput.value)
-  if (sym !== null) {
-    symbolicError.value = ''
-    suppressSymbolicSync = true
-    bits.value = sym
+  const parsed = symbolicToBits(symbolicInput.value)
+  if (parsed === null) {
+    symbolicError.value = '无效的符号表示（格式 u=...,g=...,o=...）'
+    symbolicInput.value = bitsToSymbolic(bits.value)
     return
   }
-  const ls = lsFormatToBits(symbolicInput.value.trim())
-  if (ls !== null) {
-    symbolicError.value = ''
-    suppressSymbolicSync = true
-    bits.value = ls
-    fileType.value = ls.type
+  symbolicError.value = ''
+  suppressSymbolicSync = true
+  bits.value = parsed
+  nextTick(() => { suppressSymbolicSync = false })
+}
+
+function onBinaryBlur() {
+  const parsed = binaryToBits(binaryInput.value.trim())
+  if (parsed === null) {
+    binaryError.value = '无效的二进制（需要 9 位 0/1，可带空格）'
+    binaryInput.value = bitsToBinary(bits.value)
     return
   }
-  symbolicError.value = '无效的符号表示（接受 u=...,g=...,o=... 或 rwxr-xr-x / drwxr-xr-x）'
-  symbolicInput.value = bitsToSymbolic(bits.value)
+  binaryError.value = ''
+  suppressBinarySync = true
+  bits.value = parsed
+  nextTick(() => { suppressBinarySync = false })
+}
+
+function onLsBlur() {
+  const parsed = lsFormatToBits(lsInput.value.trim())
+  if (parsed === null) {
+    lsError.value = '无效的 ls -l 格式（接受 rwxr-xr-x 或 drwxr-xr-x）'
+    lsInput.value = bitsToLsFormat(bits.value, fileType.value)
+    return
+  }
+  lsError.value = ''
+  suppressLsSync = true
+  bits.value = parsed
+  fileType.value = parsed.type
+  nextTick(() => { suppressLsSync = false })
 }
 
 async function copyCommand() {
