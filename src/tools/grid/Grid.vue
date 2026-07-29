@@ -214,7 +214,10 @@
                 选中项 #{{ selectedIndex + 1 }} 属性
               </div>
               <div class="form-control">
-                <label class="label"><span class="label-text font-semibold">grid-area (row-start / col-start / row-end / col-end)</span></label>
+                <label class="label flex-col items-start gap-0.5">
+                  <span class="label-text font-semibold">grid-area</span>
+                  <span class="label-text-alt font-mono text-xs opacity-60">row-start / col-start / row-end / col-end</span>
+                </label>
                 <input
                   v-model="selected.gridArea"
                   type="text"
