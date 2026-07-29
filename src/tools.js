@@ -383,6 +383,12 @@ export const toolGroups = [
         desc: '在线键盘按键检测，支持 ANSI 104 全键盘与 87 TKL 布局切换',
         icon: 'lucide:keyboard',
       },
+      {
+        name: 'chmod 权限计算',
+        path: '/chmod',
+        desc: 'Unix 文件权限可视化计算，数字 / 符号 / 二进制三模式同步',
+        icon: 'mdi:file-lock-outline',
+      },
     ],
   },
 ]
