@@ -62,28 +62,14 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-**Write plans incrementally to disk.**
-
-When writing a multi-section plan (e.g. `docs/superpowers/plans/*.md`), do NOT hold the whole plan in memory and dump it at the end. Instead:
-
-- Create the file with the header + file structure first, save, then continue
-- Append each task section to the file as you write it (one `Write` to create, then `cat >>` or `Edit` per section)
-- After each section lands on disk, briefly state what was saved before moving to the next
-
-This way: progress is durable (a crash mid-write doesn't lose everything), the user can review sections as they're written, and you stay honest about what's actually committed to disk vs. what's still in your head.
+**Write plans incrementally to disk.** Create the file with the header first, then append each task section and save before writing the next. Don't hold the whole plan in memory and dump it at the end — progress should be durable and reviewable as it's written.
 
 ### 5. Git Commands
 
-**Use `git -C <path>` instead of `cd` before git.**
-
-- Prefer `git -C . status` (or `git -C $(pwd) status`) over `cd <path> && git status`
-- This keeps the working directory stable and avoids side effects from `cd`
-
-**Work on a feature branch, not master.**
-
-- Before making any changes (code, docs, specs), create a branch from `master`: `git checkout -b feat/<topic>` or `docs/<topic>` (run from the repo root, no need for `-C`).
-- Commit work to the feature branch. Do not commit directly to `master`.
-- `master` should only move via PR merge. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>` then `git checkout master && git reset --hard origin/master`) before pushing anything.
+- **Use `git -C <path>` instead of `cd`** — keeps the working directory stable (e.g. `git -C . status`).
+- **Work on a feature branch, not master** — `git checkout -b feat/<topic>` from `master` before any change. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>`) then reset `master` to `origin/master`.
+- **`master` moves only via PR merge** — never push directly to `master`.
+- **No squash merge on GitHub** — use `gh pr merge <N> --merge --delete-branch`. Squash discards per-commit history; this repo keeps the full narrative. (Local `git rebase -i` to clean up a branch before pushing is fine.)
 
 ---
 
