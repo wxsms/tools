@@ -4,8 +4,8 @@
       Flexbox 可视化
     </h1>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Left: Controls -->
-      <div class="flex flex-col gap-4">
+      <!-- Left: Controls (xl 及以上内部拆两栏:容器属性 | 子项) -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <!-- Container properties -->
         <div class="collapse collapse-arrow border border-base-300 bg-base-200">
           <input
