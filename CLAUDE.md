@@ -85,6 +85,13 @@ This way: progress is durable (a crash mid-write doesn't lose everything), the u
 - Commit work to the feature branch. Do not commit directly to `master`.
 - `master` should only move via PR merge. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>` then `git checkout master && git reset --hard origin/master`) before pushing anything.
 
+**Do NOT use squash merge on GitHub PRs.**
+
+- When merging a PR via `gh pr merge`, use `--merge` (create a merge commit) — NOT `--squash`.
+- Squash merge discards the per-commit history and the branch's logical progression. This repo keeps the full commit narrative on master so reviewers and future readers can see how the work was built.
+- The branch should already be clean (squash via `git rebase -i` locally before pushing if needed) — but the GitHub merge itself must be a real merge commit.
+- `gh pr merge <N> --merge --delete-branch` is the default command.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
