@@ -62,6 +62,7 @@ const components = {
   '/emoji': () => import('./tools/emoji/Emoji.vue'),
   '/chmod': () => import('./tools/chmod/Chmod.vue'),
   '/flexbox': () => import('./tools/flexbox/Flexbox.vue'),
+  '/grid': () => import('./tools/grid/Grid.vue'),
 }
 
 const routes = routeDefs.map(r => ({
