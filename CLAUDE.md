@@ -74,23 +74,10 @@ This way: progress is durable (a crash mid-write doesn't lose everything), the u
 
 ### 5. Git Commands
 
-**Use `git -C <path>` instead of `cd` before git.**
-
-- Prefer `git -C . status` (or `git -C $(pwd) status`) over `cd <path> && git status`
-- This keeps the working directory stable and avoids side effects from `cd`
-
-**Work on a feature branch, not master.**
-
-- Before making any changes (code, docs, specs), create a branch from `master`: `git checkout -b feat/<topic>` or `docs/<topic>` (run from the repo root, no need for `-C`).
-- Commit work to the feature branch. Do not commit directly to `master`.
-- `master` should only move via PR merge. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>` then `git checkout master && git reset --hard origin/master`) before pushing anything.
-
-**Do NOT use squash merge on GitHub PRs.**
-
-- When merging a PR via `gh pr merge`, use `--merge` (create a merge commit) — NOT `--squash`.
-- Squash merge discards the per-commit history and the branch's logical progression. This repo keeps the full commit narrative on master so reviewers and future readers can see how the work was built.
-- The branch should already be clean (squash via `git rebase -i` locally before pushing if needed) — but the GitHub merge itself must be a real merge commit.
-- `gh pr merge <N> --merge --delete-branch` is the default command.
+- **Use `git -C <path>` instead of `cd`** — keeps the working directory stable (e.g. `git -C . status`).
+- **Work on a feature branch, not master** — `git checkout -b feat/<topic>` from `master` before any change. If you accidentally committed to `master` and haven't pushed, move the commit to a branch (`git checkout -b <branch>`) then reset `master` to `origin/master`.
+- **`master` moves only via PR merge** — never push directly to `master`.
+- **No squash merge on GitHub** — use `gh pr merge <N> --merge --delete-branch`. Squash discards per-commit history; this repo keeps the full narrative. (Local `git rebase -i` to clean up a branch before pushing is fine.)
 
 ---
 
