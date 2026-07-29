@@ -87,4 +87,11 @@ export default [
       description: 'Emoji 查询与复制，支持字符、shortcode、码点、HTML 实体、URL 编码多种格式',
     },
   },
+  {
+    path: '/chmod',
+    meta: {
+      title: 'chmod 权限计算',
+      description: 'Unix 文件权限可视化计算，数字 / 符号 / 二进制三模式同步',
+    },
+  },
 ]

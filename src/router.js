@@ -60,6 +60,7 @@ const components = {
   '/svg-preview': () => import('./tools/svg-preview/SvgPreview.vue'),
   '/keyboard-tester': () => import('./tools/keyboard-tester/KeyboardTester.vue'),
   '/emoji': () => import('./tools/emoji/Emoji.vue'),
+  '/chmod': () => import('./tools/chmod/Chmod.vue'),
 }
 
 const routes = routeDefs.map(r => ({

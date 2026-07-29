@@ -1,0 +1,239 @@
+<template>
+  <div>
+    <h1 class="text-3xl font-bold mb-6">
+      chmod 权限计算
+    </h1>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left: checkbox matrix -->
+      <div class="flex flex-col gap-4">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">权限位</span></label>
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th class="w-20" />
+                <th class="text-center">
+                  r
+                </th>
+                <th class="text-center">
+                  w
+                </th>
+                <th class="text-center">
+                  x
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="row in rows"
+                :key="row.key"
+              >
+                <td class="font-mono font-semibold">
+                  {{ row.label }}
+                </td>
+                <td class="text-center">
+                  <input
+                    v-model="bits[row.key].read"
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary"
+                  >
+                </td>
+                <td class="text-center">
+                  <input
+                    v-model="bits[row.key].write"
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary"
+                  >
+                </td>
+                <td class="text-center">
+                  <input
+                    v-model="bits[row.key].execute"
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary"
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: representations + command -->
+      <div class="flex flex-col gap-4">
+        <!-- Octal -->
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">数字模式</span></label>
+          <input
+            v-model="octalInput"
+            type="text"
+            maxlength="3"
+            class="input input-bordered input-sm w-24 font-mono"
+            @blur="onOctalBlur"
+          >
+          <p
+            v-if="octalError"
+            class="text-xs text-error mt-1"
+          >
+            {{ octalError }}
+          </p>
+        </div>
+
+        <!-- Symbolic -->
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">符号模式</span></label>
+          <input
+            v-model="symbolicInput"
+            type="text"
+            class="input input-bordered input-sm font-mono"
+            @blur="onSymbolicBlur"
+          >
+          <p
+            v-if="symbolicError"
+            class="text-xs text-error mt-1"
+          >
+            {{ symbolicError }}
+          </p>
+        </div>
+
+        <!-- Binary (read-only) -->
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">二进制</span></label>
+          <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm">{{ binaryStr }}</pre>
+        </div>
+
+        <!-- Command -->
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">chmod 命令</span></label>
+          <div class="flex gap-2 mb-2">
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input
+                v-model="cmdMode"
+                type="radio"
+                value="octal"
+                name="chmod-cmd-mode"
+                class="radio radio-sm radio-primary"
+              >
+              <span class="text-sm">数字</span>
+            </label>
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input
+                v-model="cmdMode"
+                type="radio"
+                value="symbolic"
+                name="chmod-cmd-mode"
+                class="radio radio-sm radio-primary"
+              >
+              <span class="text-sm">符号</span>
+            </label>
+          </div>
+          <input
+            v-model="filename"
+            type="text"
+            class="input input-bordered input-sm w-full mb-2 font-mono"
+            placeholder="文件名"
+          >
+          <div class="relative">
+            <pre class="bg-base-200 rounded-lg p-3 font-mono text-sm break-all whitespace-pre-wrap">{{ command }}</pre>
+            <button
+              class="btn btn-ghost btn-xs btn-square absolute right-2 top-2"
+              :title="copied ? '已复制！' : '复制'"
+              @click="copyCommand"
+            >
+              <Icon
+                v-if="copied"
+                icon="lucide:check"
+                class="w-4 h-4 text-success"
+              />
+              <Icon
+                v-else
+                icon="lucide:clipboard"
+                class="w-4 h-4"
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cheatsheet -->
+    <div class="mt-6">
+      <h2 class="text-lg font-semibold mb-2">
+        权限小抄
+      </h2>
+      <div class="bg-base-200 rounded-lg p-4 font-mono text-sm">
+        <div>r = 4  w = 2  x = 1</div>
+        <div class="mt-2">
+          7 = rwx  6 = rw-  5 = r-x  4 = r--  3 = -wx  2 = -w-  1 = --x  0 = ---
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { Icon } from '@iconify/vue'
+import { ref, computed, watch } from 'vue'
+import { bitsToOctal, octalToBits, bitsToSymbolic, symbolicToBits, bitsToBinary, buildChmodCommand } from './chmod.js'
+
+const rows = [
+  { key: 'owner', label: 'u' },
+  { key: 'group', label: 'g' },
+  { key: 'other', label: 'o' },
+]
+
+const bits = ref({
+  owner: { read: true, write: true, execute: true },
+  group: { read: true, write: false, execute: true },
+  other: { read: true, write: false, execute: true },
+})
+
+const octalInput = ref(bitsToOctal(bits.value))
+const symbolicInput = ref(bitsToSymbolic(bits.value))
+const octalError = ref('')
+const symbolicError = ref('')
+
+const cmdMode = ref('octal')
+const filename = ref('file.txt')
+const copied = ref(false)
+
+const binaryStr = computed(() => bitsToBinary(bits.value))
+const command = computed(() => buildChmodCommand(bits.value, { mode: cmdMode.value, filename: filename.value }))
+
+// When bits change (via checkbox), refresh the input fields to mirror state.
+watch(bits, () => {
+  octalInput.value = bitsToOctal(bits.value)
+  symbolicInput.value = bitsToSymbolic(bits.value)
+}, { deep: true })
+
+function onOctalBlur() {
+  const parsed = octalToBits(octalInput.value)
+  if (parsed === null) {
+    octalError.value = '无效的八进制（仅 0-7，1-3 位）'
+    octalInput.value = bitsToOctal(bits.value)
+  } else {
+    octalError.value = ''
+    bits.value = parsed
+  }
+}
+
+function onSymbolicBlur() {
+  const parsed = symbolicToBits(symbolicInput.value)
+  if (parsed === null) {
+    symbolicError.value = '无效的符号表示（格式 u=...,g=...,o=...，仅 r/w/x）'
+    symbolicInput.value = bitsToSymbolic(bits.value)
+  } else {
+    symbolicError.value = ''
+    bits.value = parsed
+  }
+}
+
+async function copyCommand() {
+  try {
+    await navigator.clipboard.writeText(command.value)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    // clipboard unavailable; silently ignore
+  }
+}
+</script>
