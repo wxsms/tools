@@ -99,6 +99,7 @@ export default [
     meta: {
       title: 'Flexbox 可视化',
       description: 'CSS Flexbox 布局可视化编辑，实时调整容器与子项属性并生成代码',
+      wide: true,
     },
   },
 ]
