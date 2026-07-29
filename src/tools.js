@@ -268,6 +268,12 @@ export const toolGroups = [
         desc: 'CSS Flexbox 布局可视化编辑，实时调整容器与子项属性',
         icon: 'lucide:align-horizontal-justify-center',
       },
+      {
+        name: 'Grid 可视化',
+        path: '/grid',
+        desc: 'CSS Grid 布局可视化编辑，实时调整容器与子项属性',
+        icon: 'lucide:layout-grid',
+      },
     ],
   },
   {

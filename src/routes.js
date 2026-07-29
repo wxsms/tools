@@ -102,4 +102,12 @@ export default [
       wide: true,
     },
   },
+  {
+    path: '/grid',
+    meta: {
+      title: 'Grid 可视化',
+      description: 'CSS Grid 布局可视化编辑，实时调整容器与子项属性并生成代码',
+      wide: true,
+    },
+  },
 ]
