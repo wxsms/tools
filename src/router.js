@@ -61,6 +61,7 @@ const components = {
   '/keyboard-tester': () => import('./tools/keyboard-tester/KeyboardTester.vue'),
   '/emoji': () => import('./tools/emoji/Emoji.vue'),
   '/chmod': () => import('./tools/chmod/Chmod.vue'),
+  '/flexbox': () => import('./tools/flexbox/Flexbox.vue'),
 }
 
 const routes = routeDefs.map(r => ({
