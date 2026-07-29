@@ -62,15 +62,7 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-**Write plans incrementally to disk.**
-
-When writing a multi-section plan (e.g. `docs/superpowers/plans/*.md`), do NOT hold the whole plan in memory and dump it at the end. Instead:
-
-- Create the file with the header + file structure first, save, then continue
-- Append each task section to the file as you write it (one `Write` to create, then `cat >>` or `Edit` per section)
-- After each section lands on disk, briefly state what was saved before moving to the next
-
-This way: progress is durable (a crash mid-write doesn't lose everything), the user can review sections as they're written, and you stay honest about what's actually committed to disk vs. what's still in your head.
+**Write plans incrementally to disk.** Create the file with the header first, then append each task section and save before writing the next. Don't hold the whole plan in memory and dump it at the end — progress should be durable and reviewable as it's written.
 
 ### 5. Git Commands
 
