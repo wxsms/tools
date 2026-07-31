@@ -221,7 +221,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import {
-  MODELS,
   MODEL_BY_ID,
   PRECISION_OPTIONS,
   INDEXER_PRECISION_OPTIONS,

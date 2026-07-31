@@ -545,6 +545,9 @@ function expectedBytesForModel(model, tokens = 1024) {
     ? INDEXER_PRECISION_OPTIONS[defaultIndexerPrecisionId(model)].bytesPerElement
     : 0
   const draftLayers = 0
+  // Initial values are overwritten in every switch case below; eslint's
+  // no-useless-assignment doesn't track control flow through cases.
+  // eslint-disable-next-line no-useless-assignment
   let kvElements = 0
   let indexerElements = 0
 
