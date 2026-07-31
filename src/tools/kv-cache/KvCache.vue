@@ -1,214 +1,216 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-2">
-      KV Cache 尺寸计算器
+      KV Cache Calculator
     </h1>
     <p class="opacity-60 mb-6 text-sm">
-      估算给定 token 数下 KV Cache 占用的显存,或反推在指定 GPU 显存下最多可缓存的 token 数。参考
+      估算给定 token 数下 KV Cache 占用的显存。算法与模型表来自
       <a
-        href="https://docs.lmcache.ai/getting_started/kv_cache_calculator.html"
+        href="https://kvcache.ai/tools/kv-cache-size-calculator/"
         target="_blank"
         class="link"
-      >LMCache</a>。
+      >kvcache.ai</a>，源码
+      <a
+        href="https://github.com/kvcache-ai/kvcache-blog"
+        target="_blank"
+        class="link"
+      >kvcache-ai/kvcache-blog</a>。
     </p>
 
-    <!-- Mode switch -->
-    <div
-      role="group"
-      class="join mb-6 w-fit"
-    >
-      <button
-        type="button"
-        class="btn join-item"
-        :class="mode === 'forward' ? 'btn-primary' : ''"
-        @click="mode = 'forward'"
-      >
-        正向：tokens → 显存
-      </button>
-      <button
-        type="button"
-        class="btn join-item"
-        :class="mode === 'reverse' ? 'btn-primary' : ''"
-        @click="mode = 'reverse'"
-      >
-        反算：显存 → tokens
-      </button>
-    </div>
-
-    <!-- Shared model + dtype selectors -->
-    <div class="grid md:grid-cols-2 gap-4 max-w-3xl">
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">模型</span></label>
-        <select
-          v-model="model"
-          class="select select-bordered w-full font-mono text-sm"
-        >
-          <option
-            v-for="name in modelNames"
-            :key="name"
-            :value="name"
-          >
-            {{ name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">KV 数据类型</span></label>
-        <select
-          v-model="dtype"
-          class="select select-bordered w-full"
-          :disabled="isDSA"
-        >
-          <option
-            v-for="opt in dtypeOptions"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-        <p
-          v-if="isDSA"
-          class="text-xs opacity-60 mt-1"
-        >
-          DeepSeek V4 使用原生混合精度，数据类型选项不生效
-        </p>
-      </div>
-    </div>
-
-    <!-- DSA precision customization -->
-    <div
-      v-if="isDSA"
-      class="mt-4 max-w-3xl card bg-base-200"
-    >
-      <div class="card-body p-4 gap-3">
+    <div class="grid md:grid-cols-2 gap-6 max-w-5xl">
+      <!-- Input panel -->
+      <div class="space-y-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">V4 KV 精度（bytes / dim）</span></label>
+          <label class="label"><span class="label-text font-semibold">模型</span></label>
           <select
-            v-model="precisionMode"
-            class="select select-bordered w-full"
+            v-model="modelId"
+            class="select select-bordered w-full font-mono text-sm"
           >
-            <option value="default">
-              Paper default — FP8 NoPE / BF16 RoPE / FP4 indexer
-            </option>
-            <option value="custom">
-              自定义…
-            </option>
+            <optgroup
+              v-for="(models, family) in groupedModels"
+              :key="family"
+              :label="family"
+            >
+              <option
+                v-for="m in models"
+                :key="m.id"
+                :value="m.id"
+              >
+                {{ m.label }}
+              </option>
+            </optgroup>
           </select>
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Tokens / 序列</span></label>
+            <input
+              v-model.number="tokens"
+              type="number"
+              min="1"
+              step="1"
+              class="input input-bordered w-full font-mono"
+            >
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Sequences (batch)</span></label>
+            <input
+              v-model.number="sequences"
+              type="number"
+              min="1"
+              step="1"
+              class="input input-bordered w-full font-mono"
+            >
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">KV 精度</span></label>
+            <select
+              v-model="precision"
+              class="select select-bordered w-full"
+            >
+              <option
+                v-for="opt in precisionOptionsList"
+                :key="opt.id"
+                :value="opt.id"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+          <div
+            v-if="showIndexerPrecision"
+            class="form-control"
+          >
+            <label class="label"><span class="label-text font-semibold">Indexer 精度</span></label>
+            <select
+              v-model="indexerPrecision"
+              class="select select-bordered w-full"
+            >
+              <option
+                v-for="opt in indexerPrecisionOptionsList"
+                :key="opt.id"
+                :value="opt.id"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
         <div
-          v-if="precisionMode === 'custom'"
-          class="grid grid-cols-3 gap-3"
+          v-if="showDraftToggle"
+          class="form-control"
         >
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">NoPE bytes/dim</span></label>
+          <label class="label cursor-pointer justify-start gap-3">
             <input
-              v-model.number="nopeBytes"
-              type="number"
-              min="0"
-              step="0.1"
-              class="input input-bordered input-sm w-full"
+              v-model="includeDraftKvCache"
+              type="checkbox"
+              class="checkbox checkbox-sm"
             >
-          </div>
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">RoPE bytes/dim</span></label>
+            <span class="label-text">Include draft KV cache (MTP / Next-N)</span>
+          </label>
+        </div>
+
+        <div
+          v-if="showLinearStateToggle"
+          class="form-control"
+        >
+          <label class="label cursor-pointer justify-start gap-3">
             <input
-              v-model.number="ropeBytes"
-              type="number"
-              min="0"
-              step="0.1"
-              class="input input-bordered input-sm w-full"
+              v-model="includeLinearAttentionState"
+              type="checkbox"
+              class="checkbox checkbox-sm"
             >
+            <span class="label-text">Include linear-attention state</span>
+          </label>
+        </div>
+
+        <div
+          v-if="showKdaPolicy"
+          class="form-control bg-base-200 p-3 rounded"
+        >
+          <div class="text-sm font-semibold mb-2">
+            KDA Checkpoint Policy
           </div>
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">Indexer bytes/dim</span></label>
+          <label class="label cursor-pointer justify-start gap-3">
             <input
-              v-model.number="indexerBytes"
-              type="number"
-              min="0"
-              step="0.1"
-              class="input input-bordered input-sm w-full"
+              v-model="kdaCheckpointPolicy"
+              type="radio"
+              :value="KDA_CHECKPOINT_POLICY_PROMPT_END"
+              class="radio radio-sm"
+            >
+            <span class="label-text">Prompt-End State (single checkpoint)</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3">
+            <input
+              v-model="kdaCheckpointPolicy"
+              type="radio"
+              :value="KDA_CHECKPOINT_POLICY_FIXED_INTERVAL"
+              class="radio radio-sm"
+            >
+            <span class="label-text">Fixed Interval Checkpoints</span>
+          </label>
+          <div
+            v-if="kdaCheckpointPolicy === KDA_CHECKPOINT_POLICY_FIXED_INTERVAL"
+            class="form-control mt-2"
+          >
+            <label class="label"><span class="label-text text-xs">Checkpoint interval (tokens)</span></label>
+            <input
+              v-model="kdaCheckpointIntervalInput"
+              type="text"
+              class="input input-bordered input-sm w-full font-mono"
+              placeholder="e.g. 10240 or ∞"
             >
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Forward mode -->
-    <div
-      v-if="mode === 'forward'"
-      class="mt-4 max-w-3xl"
-    >
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">Token 数 (K)</span></label>
-        <input
-          v-model.number="tokensK"
-          type="number"
-          min="0.001"
-          step="1"
-          placeholder="e.g. 1 (= 1024 tokens)"
-          class="input input-bordered w-full font-mono"
+      <!-- Result panel -->
+      <div v-if="result">
+        <div
+          v-if="result.error"
+          class="alert alert-error"
         >
-        <p class="text-xs opacity-60 mt-1">
-          以 K 为单位，1K = 1024 tokens
-        </p>
-      </div>
-    </div>
-
-    <!-- Reverse mode -->
-    <div
-      v-if="mode === 'reverse'"
-      class="mt-4 max-w-3xl"
-    >
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">GPU 显存 (GB)</span></label>
-        <input
-          v-model.number="gpuRam"
-          type="number"
-          min="0.1"
-          step="0.1"
-          placeholder="e.g. 20"
-          class="input input-bordered w-full font-mono"
+          {{ result.error }}
+        </div>
+        <div
+          v-else
+          class="card bg-base-200"
         >
-      </div>
-    </div>
-
-    <!-- Result -->
-    <div
-      v-if="result"
-      class="mt-6 max-w-3xl"
-    >
-      <div
-        v-if="result.error"
-        class="alert alert-error"
-      >
-        {{ result.error }}
-      </div>
-      <div
-        v-else
-        class="card bg-base-200"
-      >
-        <div class="card-body">
-          <div class="text-2xl font-bold text-primary">
-            {{ result.headline }}
-          </div>
-          <div class="divider my-2" />
-          <div class="text-sm leading-relaxed opacity-80 kv-details">
-            <div
-              v-for="(line, i) in result.details"
-              :key="i"
-              class="kv-line"
-            >
-              <span class="font-semibold">{{ line.k }}</span>
-              <span class="font-mono">{{ line.v }}</span>
+          <div class="card-body">
+            <div class="text-2xl font-bold text-primary">
+              {{ formatBytes(result.totalBytes) }}
+            </div>
+            <div class="text-sm opacity-60 font-mono">
+              {{ result.totalBytes.toLocaleString() }} bytes · {{ result.totalGiB.toFixed(5) }} GiB
+            </div>
+            <div class="divider my-2" />
+            <div class="text-sm leading-relaxed opacity-80 kv-details">
+              <div
+                v-for="(line, i) in resultDetails"
+                :key="i"
+                class="kv-line"
+              >
+                <span class="font-semibold">{{ line.k }}</span>
+                <span class="font-mono">{{ line.v }}</span>
+              </div>
             </div>
             <div
-              v-if="result.note"
+              v-if="result.elementPlan && result.elementPlan.note"
               class="text-xs opacity-70 mt-3 italic"
             >
-              {{ result.note }}
+              {{ result.elementPlan.note }}
             </div>
+            <details class="mt-3">
+              <summary class="text-sm cursor-pointer opacity-70">
+                Formula breakdown
+              </summary>
+              <pre class="text-xs mt-2 p-3 bg-base-100 rounded overflow-x-auto whitespace-pre-wrap">{{ result.elementPlan.formulaText }}</pre>
+            </details>
           </div>
         </div>
       </div>
@@ -218,66 +220,104 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { MODELS, MODEL_NAMES, DTYPE_SIZES, detectArch, computeForward, computeReverse } from './kv-cache.js'
+import {
+  MODELS,
+  MODEL_BY_ID,
+  PRECISION_OPTIONS,
+  INDEXER_PRECISION_OPTIONS,
+  groupModelsByFamily,
+  hasIndexerCache,
+  hasDraftKvCache,
+  hasLinearAttentionState,
+  hasKdaCheckpointInterval,
+  defaultPrecisionId,
+  defaultIndexerPrecisionId,
+  calculate,
+  KDA_CHECKPOINT_POLICY_PROMPT_END,
+  KDA_CHECKPOINT_POLICY_FIXED_INTERVAL,
+  BYTES_PER_GIB,
+} from './kv-cache'
 
-const mode = ref('forward')
-const model = ref('Qwen/Qwen3-8B')
-const dtype = ref('bf16')
+const groupedModels = groupModelsByFamily()
 
-// DSA / V4 precision state
-const precisionMode = ref('default')
-const nopeBytes = ref(1)
-const ropeBytes = ref(2)
-const indexerBytes = ref(0.5)
+const modelId = ref('qwen3-8b')
+const tokens = ref(1024)
+const sequences = ref(1)
+const precision = ref(defaultPrecisionId(MODEL_BY_ID['qwen3-8b']))
+const indexerPrecision = ref(defaultIndexerPrecisionId(MODEL_BY_ID['qwen3-8b']))
+const includeDraftKvCache = ref(false)
+const includeLinearAttentionState = ref(false)
+const kdaCheckpointPolicy = ref(KDA_CHECKPOINT_POLICY_PROMPT_END)
+const kdaCheckpointIntervalInput = ref('10240')
 
-const tokensK = ref(1)
-const gpuRam = ref(20)
 const result = ref(null)
 
-const modelNames = MODEL_NAMES
-const config = computed(() => MODELS[model.value] || {})
-const isDSA = computed(() => detectArch(config.value) === 'dsa')
+const precisionOptionsList = Object.entries(PRECISION_OPTIONS).map(([id, v]) => ({ id, ...v }))
+const indexerPrecisionOptionsList = Object.entries(INDEXER_PRECISION_OPTIONS).map(([id, v]) => ({ id, ...v }))
 
-const dtypeOptions = Object.keys(DTYPE_SIZES).map(value => {
-  const bits = DTYPE_SIZES[value] * 8
-  return { value, label: `${value} (${bits}-bit)` }
-})
+const model = computed(() => MODEL_BY_ID[modelId.value])
+const showIndexerPrecision = computed(() => hasIndexerCache(model.value))
+const showDraftToggle = computed(() => hasDraftKvCache(model.value))
+const showLinearStateToggle = computed(() => hasLinearAttentionState(model.value))
+const showKdaPolicy = computed(() => hasKdaCheckpointInterval(model.value))
 
-const dsaPrec = computed(() => precisionMode.value === 'custom'
-  ? { mode: 'custom', nope: nopeBytes.value, rope: ropeBytes.value, indexer: indexerBytes.value }
-  : { mode: 'default' })
-
-function recompute() {
-  let res
-  if (mode.value === 'forward') {
-    const k = tokensK.value
-    const n = Number.isFinite(k) && k > 0 ? Math.round(k * 1024) : 0
-    res = computeForward({
-      config: config.value,
-      tokens: n,
-      dtype: dtype.value,
-      prec: dsaPrec.value,
-    })
-    if (!res.error) {
-      // Prepend input echo line (K + raw token count) for clarity in the UI
-      res.details = [['Token 数', `${k} K (${n.toLocaleString()} tokens)`], ...res.details]
-    }
-  } else {
-    res = computeReverse({
-      config: config.value,
-      gpuRamGB: gpuRam.value,
-      dtype: dtype.value,
-      prec: dsaPrec.value,
-    })
-  }
-  // Convert [k, v] pairs to { k, v } for template binding
-  if (res.details) res.details = res.details.map(([k, v]) => ({ k, v: String(v) }))
-  result.value = res
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return '—'
+  if (bytes >= BYTES_PER_GIB) return `${(bytes / BYTES_PER_GIB).toFixed(5)} GiB`
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(5)} MiB`
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(5)} KiB`
+  return `${bytes.toFixed(5)} B`
 }
 
-watch(mode, recompute)
+const resultDetails = computed(() => {
+  if (!result.value || result.value.error) return []
+  const r = result.value
+  const lines = []
+  lines.push({ k: 'Model', v: `${r.modelLabel} (${r.modelId})` })
+  lines.push({ k: 'Formula', v: r.formulaLabel })
+  lines.push({ k: 'KV precision', v: r.precisionLabel })
+  if (r.indexerPrecisionLabel) lines.push({ k: 'Indexer precision', v: r.indexerPrecisionLabel })
+  lines.push({ k: 'Tokens × Sequences', v: `${r.tokens.toLocaleString()} × ${r.sequences} = ${r.totalCachedTokens.toLocaleString()}` })
+  if (r.cacheGroups.length > 1) {
+    for (const g of r.cacheGroups) {
+      lines.push({ k: g.label, v: formatBytes(g.bytes) })
+    }
+  }
+  lines.push({ k: 'Per token', v: formatBytes(r.bytesPerToken) })
+  if (Number.isFinite(r.hitRateBytesPerToken)) {
+    lines.push({ k: 'Reusable MLA / token', v: formatBytes(r.hitRateBytesPerToken) })
+  }
+  if (r.tensorParallel > 1) {
+    lines.push({ k: 'Per device', v: formatBytes(r.perDeviceBytes) })
+  }
+  return lines
+})
+
+function recompute() {
+  result.value = calculate(model.value, {
+    tokens: tokens.value,
+    sequences: sequences.value,
+    precision: precision.value,
+    indexerPrecision: indexerPrecision.value,
+    includeDraftKvCache: includeDraftKvCache.value,
+    includeLinearAttentionState: includeLinearAttentionState.value,
+    kdaCheckpointPolicy: kdaCheckpointPolicy.value,
+    kdaCheckpointInterval: kdaCheckpointIntervalInput.value,
+  })
+}
+
+watch(modelId, (newId) => {
+  const m = MODEL_BY_ID[newId]
+  precision.value = defaultPrecisionId(m)
+  indexerPrecision.value = defaultIndexerPrecisionId(m)
+  if (!hasKdaCheckpointInterval(m)) {
+    kdaCheckpointPolicy.value = KDA_CHECKPOINT_POLICY_PROMPT_END
+  }
+})
+
 watch(
-  [model, dtype, precisionMode, nopeBytes, ropeBytes, indexerBytes, tokensK, gpuRam],
+  [modelId, tokens, sequences, precision, indexerPrecision, includeDraftKvCache,
+   includeLinearAttentionState, kdaCheckpointPolicy, kdaCheckpointIntervalInput],
   recompute,
   { immediate: true },
 )
