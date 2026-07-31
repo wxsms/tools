@@ -533,3 +533,114 @@ describe('calculate — MiniMax M3 disables draft KV', () => {
     expect(rOn.totalBytes).toBe(rOff.totalBytes)
   })
 })
+
+// ============================================================
+// Per-model expected-value tests (all 53 models)
+// ============================================================
+
+function expectedBytesForModel(model, tokens = 1024) {
+  const f = model.fields
+  const kvBytes = PRECISION_OPTIONS[defaultPrecisionId(model)].bytesPerElement
+  const idxBytes = hasIndexerCache(model)
+    ? INDEXER_PRECISION_OPTIONS[defaultIndexerPrecisionId(model)].bytesPerElement
+    : 0
+  const draftLayers = 0
+  let kvElements = 0
+  let indexerElements = 0
+
+  switch (model.formula) {
+    case 'standard_gqa': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      kvElements = layers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      break
+    }
+    case 'mla': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      kvElements = layers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      break
+    }
+    case 'dsa_mla': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      const main = f.indexer_full_layers != null ? Number(f.indexer_full_layers) : layers
+      const activeIdx = main + 0
+      kvElements = layers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      indexerElements = activeIdx * Number(f.index_head_dim) * tokens
+      break
+    }
+    case 'kimi_kda_mla_hybrid': {
+      const fullLayers = Number(f.full_attention_layers)
+      kvElements = fullLayers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      break
+    }
+    case 'qwen_linear_full_hybrid': {
+      const fullLayers = Number(f.full_attention_layers)
+      kvElements = fullLayers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      break
+    }
+    case 'mixed_full_sliding_gqa': {
+      const fullLayers = Number(f.full_attention_layers)
+      const slidingLayers = Number(f.sliding_attention_layers)
+      const slidingWindow = Number(f.sliding_window)
+      const retained = Math.min(tokens, slidingWindow)
+      const kvHeads = Number(f.num_key_value_heads)
+      const headDim = Number(f.head_dim)
+      const fullKvHeads = f.num_global_key_value_heads != null ? Number(f.num_global_key_value_heads) : kvHeads
+      const fullHeadDim = f.global_head_dim != null ? Number(f.global_head_dim) : headDim
+      const fullVDim = f.global_v_head_dim != null ? Number(f.global_v_head_dim)
+                    : (f.v_head_dim != null ? Number(f.v_head_dim) : fullHeadDim)
+      const slidingKvHeads = f.swa_num_key_value_heads != null ? Number(f.swa_num_key_value_heads)
+                          : (f.sliding_num_key_value_heads != null ? Number(f.sliding_num_key_value_heads) : kvHeads)
+      const slidingHeadDim = f.swa_head_dim != null ? Number(f.swa_head_dim)
+                          : (f.sliding_head_dim != null ? Number(f.sliding_head_dim) : headDim)
+      const slidingVDim = f.swa_v_head_dim != null ? Number(f.swa_v_head_dim)
+                       : (f.sliding_v_head_dim != null ? Number(f.sliding_v_head_dim)
+                       : (f.v_head_dim != null ? Number(f.v_head_dim) : slidingHeadDim))
+      kvElements = tokens * fullLayers * fullKvHeads * (fullHeadDim + fullVDim)
+                + retained * slidingLayers * slidingKvHeads * (slidingHeadDim + slidingVDim)
+      break
+    }
+    case 'minimax_msa': {
+      const layers = Number(f.num_hidden_layers)
+      const sparseLayers = Number(f.sparse_attention_layers)
+      kvElements = layers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      indexerElements = sparseLayers * Number(f.index_head_dim) * tokens
+      break
+    }
+    case 'deepseek_v4_hybrid': {
+      const headDim = Number(f.head_dim)
+      const indexDim = Number(f.index_head_dim)
+      const slidingWindow = Number(f.sliding_window)
+      const layers = Number(f.num_hidden_layers)
+      const ratios = f.compress_ratios.map(Number).slice(0, layers)
+      let win = 0, comp = 0, idx = 0
+      for (const r of ratios) {
+        win += slidingWindow * headDim
+        if (r > 0) comp += Math.floor(tokens / r) * headDim
+        if (r === 4) idx += Math.floor(tokens / 4) * indexDim
+      }
+      kvElements = win + comp
+      indexerElements = idx
+      break
+    }
+    default:
+      throw new Error(`No expected-bytes helper for formula ${model.formula}`)
+  }
+  return kvElements * kvBytes + indexerElements * idxBytes
+}
+
+describe('calculate — every model matches independent expected-bytes computation', () => {
+  for (const model of MODELS) {
+    it(`${model.id} (${model.formula})`, () => {
+      const res = calculate(model, {
+        tokens: 1024,
+        sequences: 1,
+        includeDraftKvCache: false,
+        includeLinearAttentionState: false,
+        kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_PROMPT_END,
+      })
+      expect(res.error).toBeUndefined()
+      const expected = expectedBytesForModel(model, 1024)
+      expect(res.totalBytes).toBe(expected)
+    })
+  }
+})
