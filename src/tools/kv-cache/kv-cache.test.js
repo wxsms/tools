@@ -1,436 +1,649 @@
 import { describe, it, expect } from 'vitest'
 import {
-  DTYPE_SIZES,
+  BYTES_PER_GB,
+  BYTES_PER_GIB,
+  PRECISION_OPTIONS,
+  INDEXER_PRECISION_OPTIONS,
   MODELS,
-  MODEL_NAMES,
-  detectArch,
-  archLabel,
-  computeForward,
-  computeReverse,
+  MODEL_BY_ID,
+  groupModelsByFamily,
+  isDeepSeekV4,
+  hasIndexerCache,
+  hasDraftKvCache,
+  hasLinearAttentionState,
+  hasKdaCheckpointInterval,
+  draftLayerCount,
+  defaultPrecisionId,
+  defaultIndexerPrecisionId,
+  parseKdaCheckpointInterval,
+  defaultKdaCheckpointInterval,
+  indexerLayerPlan,
 } from './kv-cache'
 
-describe('kv-cache utils — exports', () => {
-  it('DTYPE_SIZES has correct byte sizes', () => {
-    expect(DTYPE_SIZES.fp32).toBe(4)
-    expect(DTYPE_SIZES.fp16).toBe(2)
-    expect(DTYPE_SIZES.bf16).toBe(2)
-    expect(DTYPE_SIZES.fp8).toBe(1)
+describe('constants', () => {
+  it('uses 1e9 for GB and 1024^3 for GiB (kvcache.ai convention)', () => {
+    expect(BYTES_PER_GB).toBe(1e9)
+    expect(BYTES_PER_GIB).toBe(1024 ** 3)
   })
 
-  it('MODELS contains 39 entries from LMCache dev branch', () => {
-    expect(Object.keys(MODELS).length).toBe(39)
-  })
-
-  it('MODEL_NAMES is sorted and contains Qwen3-8B', () => {
-    expect(MODEL_NAMES).toContain('Qwen/Qwen3-8B')
-    // Numeric sort: Qwen3-0.6B should come before Qwen3-4B
-    expect(MODEL_NAMES.indexOf('Qwen/Qwen3-0.6B')).toBeLessThan(MODEL_NAMES.indexOf('Qwen/Qwen3-4B'))
+  it('exposes three precision options with correct byte sizes', () => {
+    expect(PRECISION_OPTIONS.bf16_fp16.bytesPerElement).toBe(2)
+    expect(PRECISION_OPTIONS.fp8_int8.bytesPerElement).toBe(1)
+    expect(PRECISION_OPTIONS.fp4_int4.bytesPerElement).toBe(0.5)
+    expect(INDEXER_PRECISION_OPTIONS.fp4_int4.bytesPerElement).toBe(0.5)
   })
 })
 
-describe('detectArch', () => {
-  it('detects DSA for V4-Pro / V4-Flash', () => {
-    expect(detectArch(MODELS['deepseek-ai/DeepSeek-V4-Pro'])).toBe('dsa')
-    expect(detectArch(MODELS['deepseek-ai/DeepSeek-V4-Flash'])).toBe('dsa')
+describe('models data', () => {
+  it('contains 53 models from kvcache.ai', () => {
+    expect(MODELS.length).toBe(53)
   })
 
-  it('detects MLA for DeepSeek-V3, R1, Kimi-K2.6, GLM-5.1', () => {
-    expect(detectArch(MODELS['deepseek-ai/DeepSeek-V3'])).toBe('mla')
-    expect(detectArch(MODELS['deepseek-ai/DeepSeek-R1'])).toBe('mla')
-    expect(detectArch(MODELS['moonshotai/Kimi-K2.6'])).toBe('mla')
-    expect(detectArch(MODELS['zai-org/GLM-5.1'])).toBe('mla')
+  it('indexes models by id', () => {
+    expect(MODEL_BY_ID['qwen3-8b'].formula).toBe('standard_gqa')
+    expect(MODEL_BY_ID['deepseek-v4-pro'].formula).toBe('deepseek_v4_hybrid')
   })
 
-  it('detects hybrid-linear for Qwen3.5-397B and Nemotron-3', () => {
-    expect(detectArch(MODELS['Qwen/Qwen3.5-397B-A17B-FP8'])).toBe('hybrid-linear')
-    expect(detectArch(MODELS['nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8'])).toBe('hybrid-linear')
+  it('groups models into 12 families in stable order', () => {
+    const groups = groupModelsByFamily()
+    const families = Object.keys(groups)
+    expect(families).toEqual([
+      'DeepSeek', 'GLM', 'Kimi', 'Qwen3.6', 'Qwen3.5',
+      'Qwen3', 'Qwen2.5', 'Llama', 'Gemma', 'Cohere', 'MiMo', 'MiniMax',
+    ])
+    expect(groups.DeepSeek.length).toBe(5)
+    expect(groups.Qwen3.length).toBe(8)
+    expect(groups.MiniMax.length).toBe(5)
   })
 
-  it('detects hybrid-swa for gemma-4 / gpt-oss / Laguna', () => {
-    expect(detectArch(MODELS['google/gemma-4-31B-it'])).toBe('hybrid-swa')
-    expect(detectArch(MODELS['openai/gpt-oss-120b'])).toBe('hybrid-swa')
-    expect(detectArch(MODELS['openai/gpt-oss-20b'])).toBe('hybrid-swa')
-    expect(detectArch(MODELS['poolside/Laguna-XS.2'])).toBe('hybrid-swa')
-  })
-
-  it('detects gqa for models with explicit head_dim', () => {
-    expect(detectArch(MODELS['Qwen/Qwen3-8B'])).toBe('gqa')
-    expect(detectArch(MODELS['zai-org/GLM-4.5'])).toBe('gqa')
-  })
-
-  it('detects standard for models without explicit head_dim', () => {
-    expect(detectArch(MODELS['meta-llama/Llama-3.1-8B-Instruct'])).toBe('standard')
-    expect(detectArch(MODELS['Qwen/Qwen2.5-7B-Instruct'])).toBe('standard')
+  it('sorts models within family by numeric label', () => {
+    const groups = groupModelsByFamily()
+    const qwen3Labels = groups.Qwen3.map(m => m.label)
+    expect(qwen3Labels.indexOf('Qwen3-0.6B')).toBeLessThan(qwen3Labels.indexOf('Qwen3-8B'))
+    expect(qwen3Labels.indexOf('Qwen3-8B')).toBeLessThan(qwen3Labels.indexOf('Qwen3-235B-A22B'))
   })
 })
 
-describe('archLabel', () => {
-  it('returns human-readable label for each architecture', () => {
-    expect(archLabel(MODELS['deepseek-ai/DeepSeek-V4-Pro'])).toContain('DeepSeek V4 DSA')
-    expect(archLabel(MODELS['deepseek-ai/DeepSeek-V3'])).toContain('MLA')
-    expect(archLabel(MODELS['Qwen/Qwen3.5-397B-A17B-FP8'])).toContain('Linear')
-    expect(archLabel(MODELS['google/gemma-4-31B-it'])).toContain('Sliding-Window')
-    expect(archLabel(MODELS['Qwen/Qwen3-8B'])).toContain('GQA')
-    expect(archLabel(MODELS['meta-llama/Llama-3.1-8B-Instruct'])).toContain('Standard')
+describe('isDeepSeekV4', () => {
+  it('returns true for V4 Pro and V4 Flash', () => {
+    expect(isDeepSeekV4(MODEL_BY_ID['deepseek-v4-pro'])).toBe(true)
+    expect(isDeepSeekV4(MODEL_BY_ID['deepseek-v4-flash'])).toBe(true)
+  })
+
+  it('returns false for V3 and R1', () => {
+    expect(isDeepSeekV4(MODEL_BY_ID['deepseek-v3'])).toBe(false)
+    expect(isDeepSeekV4(MODEL_BY_ID['deepseek-r1'])).toBe(false)
   })
 })
+
+describe('hasIndexerCache', () => {
+  it('true for dsa_mla, minimax_msa, and deepseek_v4_hybrid models', () => {
+    expect(hasIndexerCache(MODEL_BY_ID['deepseek-v3.2'])).toBe(true)
+    expect(hasIndexerCache(MODEL_BY_ID['glm-5'])).toBe(true)
+    expect(hasIndexerCache(MODEL_BY_ID['minimax-m3'])).toBe(true)
+    expect(hasIndexerCache(MODEL_BY_ID['deepseek-v4-pro'])).toBe(true)
+  })
+
+  it('false for plain mla and standard_gqa models', () => {
+    expect(hasIndexerCache(MODEL_BY_ID['deepseek-v3'])).toBe(false)
+    expect(hasIndexerCache(MODEL_BY_ID['qwen3-8b'])).toBe(false)
+  })
+})
+
+describe('hasDraftKvCache', () => {
+  it('true for DeepSeek V4 (compress_ratios has draft layer)', () => {
+    expect(hasDraftKvCache(MODEL_BY_ID['deepseek-v4-pro'])).toBe(true)
+    expect(hasDraftKvCache(MODEL_BY_ID['deepseek-v4-flash'])).toBe(true)
+  })
+
+  it('true for DeepSeek V3 (num_nextn_predict_layers=1)', () => {
+    expect(hasDraftKvCache(MODEL_BY_ID['deepseek-v3'])).toBe(true)
+  })
+
+  it('false for MiniMax M3 (disable_draft_kv_cache=true)', () => {
+    expect(hasDraftKvCache(MODEL_BY_ID['minimax-m3'])).toBe(false)
+  })
+
+  it('false for Qwen3-8B (no draft fields)', () => {
+    expect(hasDraftKvCache(MODEL_BY_ID['qwen3-8b'])).toBe(false)
+  })
+})
+
+describe('draftLayerCount', () => {
+  it('returns num_nextn_predict_layers when set', () => {
+    expect(draftLayerCount(MODEL_BY_ID['deepseek-v3'])).toBe(1)
+  })
+
+  it('returns 0 when disable_draft_kv_cache=true', () => {
+    expect(draftLayerCount(MODEL_BY_ID['minimax-m3'])).toBe(0)
+  })
+})
+
+describe('hasLinearAttentionState', () => {
+  it('true for qwen_linear_full_hybrid and kimi_kda_mla_hybrid', () => {
+    expect(hasLinearAttentionState(MODEL_BY_ID['qwen3.5-397b-a17b'])).toBe(true)
+    expect(hasLinearAttentionState(MODEL_BY_ID['kimi-k3'])).toBe(true)
+  })
+
+  it('false for standard_gqa', () => {
+    expect(hasLinearAttentionState(MODEL_BY_ID['qwen3-8b'])).toBe(false)
+  })
+})
+
+describe('hasKdaCheckpointInterval', () => {
+  it('true only for kimi_kda_mla_hybrid', () => {
+    expect(hasKdaCheckpointInterval(MODEL_BY_ID['kimi-k3'])).toBe(true)
+    expect(hasKdaCheckpointInterval(MODEL_BY_ID['qwen3.5-397b-a17b'])).toBe(false)
+  })
+})
+
+describe('defaultPrecisionId', () => {
+  it('uses model default when set', () => {
+    expect(defaultPrecisionId(MODEL_BY_ID['kimi-k3'])).toBe('bf16_fp16')
+  })
+
+  it('defaults to fp8_int8 for DeepSeek V4', () => {
+    expect(defaultPrecisionId(MODEL_BY_ID['deepseek-v4-pro'])).toBe('fp8_int8')
+  })
+
+  it('defaults to bf16_fp16 for everything else', () => {
+    expect(defaultPrecisionId(MODEL_BY_ID['qwen3-8b'])).toBe('bf16_fp16')
+  })
+})
+
+describe('defaultIndexerPrecisionId', () => {
+  it('defaults to fp4_int4 for DeepSeek V4', () => {
+    expect(defaultIndexerPrecisionId(MODEL_BY_ID['deepseek-v4-pro'])).toBe('fp4_int4')
+  })
+
+  it('falls back to KV precision when no fixed default', () => {
+    expect(defaultIndexerPrecisionId(MODEL_BY_ID['deepseek-v3.2'], undefined, 'bf16_fp16')).toBe('bf16_fp16')
+  })
+})
+
+describe('parseKdaCheckpointInterval', () => {
+  it('returns Infinity for "infinity" string', () => {
+    expect(parseKdaCheckpointInterval('infinity')).toBe(Infinity)
+  })
+
+  it('returns Infinity for "∞" sentinel', () => {
+    expect(parseKdaCheckpointInterval('∞')).toBe(Infinity)
+  })
+
+  it('returns positive integer for numeric input', () => {
+    expect(parseKdaCheckpointInterval(10240)).toBe(10240)
+    expect(parseKdaCheckpointInterval('10240')).toBe(10240)
+  })
+
+  it('floors non-integer numeric input', () => {
+    expect(parseKdaCheckpointInterval(10240.9)).toBe(10240)
+  })
+
+  it('returns fallback for invalid input', () => {
+    expect(parseKdaCheckpointInterval(0, 512)).toBe(512)
+    expect(parseKdaCheckpointInterval(-1, 512)).toBe(512)
+    expect(parseKdaCheckpointInterval('abc', 512)).toBe(512)
+  })
+})
+
+describe('defaultKdaCheckpointInterval', () => {
+  it('returns Infinity for Kimi K3 (default "infinity" in yaml)', () => {
+    expect(defaultKdaCheckpointInterval(MODEL_BY_ID['kimi-k3'])).toBe(Infinity)
+  })
+})
+
+describe('indexerLayerPlan', () => {
+  it('uses indexer_full_layers when set, derives shared from remainder', () => {
+    const plan = indexerLayerPlan(MODEL_BY_ID['glm-5.2'], 78, 1)
+    expect(plan.mainIndexerLayers).toBe(21)
+    expect(plan.sharedIndexerLayers).toBe(57)
+    expect(plan.draftIndexerLayers).toBe(1)
+    expect(plan.activeIndexerLayers).toBe(22)
+  })
+
+  it('defaults main to num_hidden_layers when no indexer_full_layers field', () => {
+    const plan = indexerLayerPlan(MODEL_BY_ID['deepseek-v3.2'], 61, 0)
+    expect(plan.mainIndexerLayers).toBe(61)
+    expect(plan.sharedIndexerLayers).toBe(0)
+    expect(plan.draftIndexerLayers).toBe(0)
+    expect(plan.activeIndexerLayers).toBe(61)
+  })
+})
+
+import { calculateElementsPerSequence } from './kv-cache'
 
 // ============================================================
-// computeForward — per-architecture numeric correctness
+// calculateElementsPerSequence — per-formula correctness
 // ============================================================
 
-describe('computeForward — input validation', () => {
-  it('rejects NaN / 0 / negative / fractional tokens', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    for (const t of [NaN, 0, -1, 1.5, -0.5]) {
-      const res = computeForward({ config: cfg, tokens: t, dtype: 'bf16' })
-      expect(res.error).toContain('正整数')
+describe('calculateElementsPerSequence — standard_gqa (Qwen3-8B)', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+  it('computes correct elementsPerToken for 1024 tokens, no draft', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(36 * 2 * 8 * 128)
+    expect(r.elementsPerSequence).toBe(73728 * 1024)
+    expect(r.formulaLabel).toBe('Standard MHA/GQA')
+    expect(r.byteGroups.length).toBe(1)
+    expect(r.byteGroups[0].role).toBe('kv')
+  })
+
+  it('does not add draft layers when model has no draft fields', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.elementsPerToken).toBe(36 * 2 * 8 * 128)
+  })
+})
+
+describe('calculateElementsPerSequence — mla (DeepSeek V3)', () => {
+  const model = MODEL_BY_ID['deepseek-v3']
+  it('computes correct elementsPerToken', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(61 * (512 + 64))
+    expect(r.elementsPerSequence).toBe(35136 * 1024)
+    expect(r.formulaLabel).toBe('MLA latent KV')
+  })
+
+  it('adds draft layer when includeDraftKvCache=true (num_nextn_predict_layers=1)', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.elementsPerToken).toBe(62 * (512 + 64))
+  })
+})
+
+describe('calculateElementsPerSequence — dsa_mla (DeepSeek V3.2)', () => {
+  const model = MODEL_BY_ID['deepseek-v3.2']
+  it('computes correct split between KV and indexer elements', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(35136 + 7808)
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[0].role).toBe('kv')
+    expect(r.byteGroups[1].role).toBe('indexer')
+  })
+})
+
+describe('calculateElementsPerSequence — kimi_kda_mla_hybrid (Kimi K3)', () => {
+  const model = MODEL_BY_ID['kimi-k3']
+  it('computes MLA elements per token without linear state', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(13824)
+    expect(r.byteGroups.length).toBe(1)
+    expect(r.byteGroups[0].role).toBe('kv')
+  })
+
+  it('adds KDA checkpoint state with prompt-end (Infinity) interval = 1 checkpoint', () => {
+    const r = calculateElementsPerSequence(model, 1024, {
+      includeLinearAttentionState: true,
+      kdaCheckpointInterval: Infinity,
+    })
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[1].role).toBe('linear_state')
+    // kda_conv_elements = 69 × 3 × (96×128 + 96×128 + 96×128) = 7,630,848
+    // kda_recurrent_elements = 69 × 96 × 128 × 128 = 108,527,616
+    // kda_state_bytes = 7,630,848 × 2 + 108,527,616 × 4 = 15,261,696 + 434,110,464 = 449,372,160
+    expect(r.byteGroups[1].bytesPerSequence).toBe(449372160)
+  })
+
+  it('uses ceil(tokens/interval) checkpoints for finite interval', () => {
+    const r = calculateElementsPerSequence(model, 1024, {
+      includeLinearAttentionState: true,
+      kdaCheckpointInterval: 100,
+    })
+    expect(r.byteGroups[1].bytesPerSequence).toBe(11 * 449372160)
+  })
+})
+
+describe('calculateElementsPerSequence — qwen_linear_full_hybrid (Qwen3.5-397B)', () => {
+  const model = MODEL_BY_ID['qwen3.5-397b-a17b']
+  it('computes full-attention elements without linear state', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(15360)
+    expect(r.byteGroups.length).toBe(1)
+  })
+
+  it('adds linear-attention state when enabled', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeLinearAttentionState: true })
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[1].role).toBe('linear_state')
+    expect(r.byteGroups[1].bytesPerSequence).toBe(193167360)
+  })
+})
+
+describe('calculateElementsPerSequence — mixed_full_sliding_gqa (Gemma 4 31B)', () => {
+  const model = MODEL_BY_ID['gemma-4-31b']
+  it('caps sliding tokens at sliding_window when tokens > window', () => {
+    const r = calculateElementsPerSequence(model, 10000, {})
+    // full_elements = 10000 × 10 × 4 × (512 + 512) = 409,600,000
+    // sliding_elements = 1024 × 50 × 16 × (256 + 256) = 419,430,400
+    expect(r.byteGroups[0].elements).toBe(409600000)
+    expect(r.byteGroups[1].elements).toBe(419430400)
+  })
+
+  it('uses full tokens for sliding when tokens < window', () => {
+    const r = calculateElementsPerSequence(model, 500, {})
+    expect(r.byteGroups[0].elements).toBe(20480000)
+    expect(r.byteGroups[1].elements).toBe(204800000)
+  })
+})
+
+describe('calculateElementsPerSequence — minimax_msa (MiniMax M3)', () => {
+  const model = MODEL_BY_ID['minimax-m3']
+  it('computes correct KV and indexer elements', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(61440 + 7296)
+    expect(r.byteGroups[0].role).toBe('kv')
+    expect(r.byteGroups[1].role).toBe('indexer')
+  })
+})
+
+describe('calculateElementsPerSequence — deepseek_v4_hybrid (V4 Pro)', () => {
+  const model = MODEL_BY_ID['deepseek-v4-pro']
+  it('matches an independent computation for 1024 tokens with draft enabled', () => {
+    const ratios = model.fields.compress_ratios.map(Number)
+    const layers = 61
+    const mainRatios = ratios.slice(0, layers)
+    const draftRatios = ratios.slice(layers)
+    const activeRatios = mainRatios.concat(draftRatios)
+    let windowElements = 0
+    let compressedElements = 0
+    let indexerElements = 0
+    for (const ratio of activeRatios) {
+      windowElements += 128 * 512
+      if (ratio > 0) compressedElements += Math.floor(1024 / ratio) * 512
+      if (ratio === 4) indexerElements += Math.floor(1024 / 4) * 128
     }
+    const expectedAttention = windowElements + compressedElements
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.byteGroups[0].elements).toBe(expectedAttention)
+    expect(r.byteGroups[1].elements).toBe(indexerElements)
   })
 
-  it('rejects unknown dtype', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'int4' })
-    expect(res.error).toContain('未知的数据类型')
-  })
-
-  it('rejects unknown dtype in reverse mode too', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const res = computeReverse({ config: cfg, gpuRamGB: 10, dtype: 'int4' })
-    expect(res.error).toContain('未知的数据类型')
+  it('excludes draft ratio when includeDraftKvCache=false', () => {
+    const rWith = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    const rWithout = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: false })
+    expect(rWith.byteGroups[0].elements - rWithout.byteGroups[0].elements).toBe(65536)
   })
 })
 
-describe('computeForward — GQA (Qwen3-8B)', () => {
-  it('matches the canonical GQA formula', () => {
-    // 2 × layers(36) × tokens × kv_heads(8) × head_dim(128) × dtype_size
-    // BF16: 2×36×1024×8×128×2 = 150,994,944 bytes = 0.14062 GB
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.error).toBeUndefined()
-    expect(res.totalBytes).toBe(2 * 36 * 1024 * 8 * 128 * 2)
-    expect(res.sizeGB).toBeCloseTo(0.14062, 4)
-    expect(res.headline).toMatch(/0\.1406\d?\s*GB/)
+import { calculate, KDA_CHECKPOINT_POLICY_PROMPT_END, KDA_CHECKPOINT_POLICY_FIXED_INTERVAL } from './kv-cache'
+
+// ============================================================
+// calculate — top-level integration
+// ============================================================
+
+describe('calculate — input validation', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('returns error for unknown precision', () => {
+    const res = calculate(model, { tokens: 1024, precision: 'fp7' })
+    expect(res.error).toContain('未知精度')
   })
 
-  it('scales linearly with token count', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const r1 = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const r10 = computeForward({ config: cfg, tokens: 10240, dtype: 'bf16' })
-    expect(r10.totalBytes / r1.totalBytes).toBeCloseTo(10, 5)
+  it('returns error for unknown indexer precision', () => {
+    const res = calculate(MODEL_BY_ID['deepseek-v3.2'], { tokens: 1024, indexerPrecision: 'fp7' })
+    expect(res.error).toContain('未知 indexer 精度')
   })
 
-  it('halves result when switching BF16 → FP8', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const bf16 = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const fp8 = computeForward({ config: cfg, tokens: 1024, dtype: 'fp8' })
+  it('coerces invalid tokens to default', () => {
+    const res = calculate(model, { tokens: -1 })
+    expect(res.tokens).toBe(model.default_tokens)
+  })
+
+  it('coerces invalid sequences to 1', () => {
+    const res = calculate(model, { tokens: 1024, sequences: 0 })
+    expect(res.sequences).toBe(1)
+  })
+})
+
+describe('calculate — Qwen3-8B (standard_gqa, 1024 tokens, bf16, 1 seq)', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+  const res = calculate(model, { tokens: 1024, sequences: 1, precision: 'bf16_fp16' })
+
+  it('produces correct totalBytes', () => {
+    expect(res.totalBytes).toBe(36 * 2 * 8 * 128 * 1024 * 2)
+  })
+
+  it('reports totalGB (10^9) and totalGiB (1024^3)', () => {
+    // totalBytes = 150,994,944 (36×2×8×128×1024×2 bytes for bf16)
+    expect(res.totalGB).toBeCloseTo(150994944 / 1e9, 5)
+    expect(res.totalGiB).toBeCloseTo(150994944 / 1024 ** 3, 5)
+  })
+
+  it('reports bytesPerToken = bytesPerSequence / tokens', () => {
+    expect(res.bytesPerToken).toBeCloseTo(res.bytesPerSequence / 1024, 5)
+  })
+
+  it('kvBytes equals totalBytes (no indexer)', () => {
+    expect(res.kvBytes).toBe(res.totalBytes)
+    expect(res.indexerBytes).toBe(0)
+  })
+
+  it('precisionLabel is BF16 / FP16', () => {
+    expect(res.precisionLabel).toBe('BF16 / FP16')
+  })
+})
+
+describe('calculate — sequences scaling', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('totalBytes scales linearly with sequences', () => {
+    const r1 = calculate(model, { tokens: 1024, sequences: 1 })
+    const r4 = calculate(model, { tokens: 1024, sequences: 4 })
+    expect(r4.totalBytes).toBe(r1.totalBytes * 4)
+    expect(r4.totalCachedTokens).toBe(4096)
+  })
+})
+
+describe('calculate — tensor parallel splits bytes', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('perDeviceBytes = totalBytes / tensorParallel', () => {
+    const r = calculate(model, { tokens: 1024, sequences: 1, tensorParallel: 2 })
+    expect(r.perDeviceBytes).toBe(r.totalBytes / 2)
+    expect(r.perDeviceGiB).toBeCloseTo(r.totalBytes / 2 / 1024 ** 3, 5)
+  })
+})
+
+describe('calculate — precision switch halves bytes', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('bf16 → fp8 halves totalBytes', () => {
+    const bf16 = calculate(model, { tokens: 1024, precision: 'bf16_fp16' })
+    const fp8 = calculate(model, { tokens: 1024, precision: 'fp8_int8' })
     expect(bf16.totalBytes / fp8.totalBytes).toBe(2)
   })
 
-  it('doubles result when switching BF16 → FP32', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const bf16 = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const fp32 = computeForward({ config: cfg, tokens: 1024, dtype: 'fp32' })
-    expect(fp32.totalBytes / bf16.totalBytes).toBe(2)
-  })
-
-  it('exposes tokens echo in result', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const res = computeForward({ config: cfg, tokens: 5000, dtype: 'bf16' })
-    expect(res.tokens).toBe(5000)
+  it('fp8 → fp4 halves again', () => {
+    const fp8 = calculate(model, { tokens: 1024, precision: 'fp8_int8' })
+    const fp4 = calculate(model, { tokens: 1024, precision: 'fp4_int4' })
+    expect(fp8.totalBytes / fp4.totalBytes).toBe(2)
   })
 })
 
-describe('computeForward — Standard Transformer (Llama-3.1-8B)', () => {
-  it('computes head_size = hidden_size / num_attention_heads', () => {
-    // hidden=4096, attn_heads=32 → head_size=128; layers=32, kv_heads=8
-    // 2 × 32 × 1024 × 8 × 128 × 2 = 134,217,728 bytes = 0.125 GB
-    const cfg = MODELS['meta-llama/Llama-3.1-8B-Instruct']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.totalBytes).toBe(2 * 32 * 1024 * 8 * (4096 / 32) * 2)
-    expect(res.sizeGB).toBeCloseTo(0.125, 4)
+describe('calculate — DeepSeek V3.2 (dsa_mla) separates KV and indexer bytes', () => {
+  const model = MODEL_BY_ID['deepseek-v3.2']
+  const res = calculate(model, { tokens: 1024, sequences: 1 })
+
+  it('kvBytes and indexerBytes sum to totalBytes', () => {
+    expect(res.kvBytes + res.indexerBytes).toBe(res.totalBytes)
+  })
+
+  it('indexerBytes > 0', () => {
+    expect(res.indexerBytes).toBeGreaterThan(0)
+  })
+
+  it('indexer precision defaults to bf16 (no fixed default for V3.2)', () => {
+    expect(res.indexerPrecisionLabel).toBe('BF16 / FP16')
   })
 })
 
-describe('computeForward — MLA (DeepSeek-V3)', () => {
-  it('uses kv_lora_rank + qk_rope_head_dim as latent_dim', () => {
-    // latent_dim = 512 + 64 = 576; layers=61; 1024 tokens BF16
-    // 61 × 1024 × 576 × 2 = 71,995,392 bytes ≈ 0.0670 GB
-    const cfg = MODELS['deepseek-ai/DeepSeek-V3']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.totalBytes).toBe(61 * 1024 * (512 + 64) * 2)
-    expect(res.sizeGB).toBeCloseTo(0.0670, 4)
+describe('calculate — DeepSeek V4 Pro defaults to fp8 KV + fp4 indexer', () => {
+  const model = MODEL_BY_ID['deepseek-v4-pro']
+
+  it('default precision is fp8_int8', () => {
+    const res = calculate(model, { tokens: 1024 })
+    expect(res.precisionLabel).toBe('FP8 / INT8')
+    expect(res.indexerPrecisionLabel).toBe('FP4 / INT4')
   })
 
-  it('includes indexer dim for MLA-with-indexer (GLM-5.1)', () => {
-    // latent_dim = 512 + 64 = 576, indexer_dim = 128; layers=78; 1024 tokens BF16
-    // 78 × 1024 × (576 + 128) × 2 = 112,407,336 bytes ≈ 0.1047 GB
-    const cfg = MODELS['zai-org/GLM-5.1']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.totalBytes).toBe(78 * 1024 * (576 + 128) * 2)
-    expect(res.sizeGB).toBeCloseTo(0.1047, 4)
-    expect(res.details.find(([k]) => k === 'Indexer Head Dim (DSA)')).toBeTruthy()
+  it('indexer bytes use 0.5 bytes/element, KV uses 1 byte/element', () => {
+    const res = calculate(model, { tokens: 1024 })
+    const plan = calculateElementsPerSequence(model, 1024, {})
+    expect(res.kvBytes).toBe(plan.byteGroups[0].elements * 1)
+    expect(res.indexerBytes).toBe(plan.byteGroups[1].elements * 0.5)
   })
 })
 
-describe('computeForward — Hybrid SWA (gemma-4-31B-it)', () => {
-  it('caps sliding layers at the window once tokens > window', () => {
-    const cfg = MODELS['google/gemma-4-31B-it']
-    // window=1024. With 100 tokens (< window):
-    //   perLayer = 2 × 16 × 256 = 8192
-    //   swaTokens = min(100, 1024) = 100
-    //   total = 8192 × (10 × 100 + 50 × 100) × 2 = 9,830,400 bytes
-    const rShort = computeForward({ config: cfg, tokens: 100, dtype: 'bf16' })
-    const perLayer = 2 * 16 * 256
-    expect(rShort.totalBytes).toBe(perLayer * (10 * 100 + 50 * 100) * 2)
+describe('calculate — Kimi K3 prompt-end vs fixed-interval', () => {
+  const model = MODEL_BY_ID['kimi-k3']
 
-    // With 10000 tokens (> window):
-    //   swaTokens = 1024
-    //   total = 8192 × (10 × 10000 + 50 × 1024) × 2 = 1,677,516,800 bytes
-    const rLong = computeForward({ config: cfg, tokens: 10000, dtype: 'bf16' })
-    expect(rLong.totalBytes).toBe(perLayer * (10 * 10000 + 50 * 1024) * 2)
-
-    // Sanity: long-context is much larger than short, but linear only in full-attention layers
-    expect(rLong.totalBytes).toBeGreaterThan(rShort.totalBytes * 10)
-  })
-
-  it('details line shows sliding layer using capped token count', () => {
-    const cfg = MODELS['google/gemma-4-31B-it']
-    const res = computeForward({ config: cfg, tokens: 10000, dtype: 'bf16' })
-    const swaLine = res.details.find(([k]) => k === 'Sliding-Attention Layers')
-    expect(swaLine[1]).toContain('using 1024 tokens')
-  })
-})
-
-describe('computeForward — Hybrid Linear (Qwen3.5-397B)', () => {
-  it('only counts full-attention layers (linear layers recurrent, not counted)', () => {
-    const cfg = MODELS['Qwen/Qwen3.5-397B-A17B-FP8']
-    // perLayer = 2 × kv_heads(2) × head_dim(256) = 1024
-    // nFull = 15; 1024 tokens BF16
-    // total = 1024 × 15 × 1024 × 2 = 31,457,280 bytes
-    const perLayer = 2 * 2 * 256
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.totalBytes).toBe(perLayer * 15 * 1024 * 2)
-    expect(res.note).toContain('Gated DeltaNet') // default linear_attention_type
-  })
-
-  it('uses model-provided linear_attention_type in note (Nemotron-3 → Mamba2 SSM)', () => {
-    const cfg = MODELS['nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8']
-    const res = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    expect(res.note).toContain('Mamba2 SSM')
-  })
-})
-
-describe('computeForward — DSA (DeepSeek V4)', () => {
-  it('ignores dtype selector — uses native mixed precision (FP8 NoPE / BF16 RoPE / FP4 indexer)', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    const bf16 = computeForward({ config: cfg, tokens: 1000, dtype: 'bf16' })
-    const fp8 = computeForward({ config: cfg, tokens: 1000, dtype: 'fp8' })
-    // Same bytes regardless of dtype selector
-    expect(bf16.totalBytes).toBe(fp8.totalBytes)
-  })
-
-  it('V4-Pro 1000 tokens ≈ 4.62 GB (matches LMCache source calculation)', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    const res = computeForward({ config: cfg, tokens: 1000000, dtype: 'bf16' })
-    // Independently verified:
-    //   Σ(1/r for r>0) = 7.7421875
-    //   kv_bytes_per_entry = (512-64)*1 + 64*2 = 576
-    //   indexer_bytes_per_entry = 128*0.5 = 64
-    //   bytes_per_token = (576+64)*7.7421875 = 4955
-    //   window_bytes = 62 × 128 × 576 = 4,571,136
-    //   total = 4955 × 1,000,000 + 4,571,136 = ~4.619 GB
-    expect(res.sizeGB).toBeCloseTo(4.619, 2)
-  })
-
-  it('V4-Flash 1M tokens ≈ 3.23 GB', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Flash']
-    const res = computeForward({ config: cfg, tokens: 1000000, dtype: 'bf16' })
-    expect(res.sizeGB).toBeCloseTo(3.225, 2)
-  })
-
-  it('respects custom precision override (NoPE 2B doubles KV entry bytes for NoPE dims)', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    const def = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const custom = computeForward({
-      config: cfg, tokens: 1024, dtype: 'bf16',
-      prec: { mode: 'custom', nope: 2, rope: 2, indexer: 0.5 },
+  it('prompt-end (default Infinity) → 1 checkpoint', () => {
+    const res = calculate(model, {
+      tokens: 1024,
+      includeLinearAttentionState: true,
+      kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_PROMPT_END,
     })
-    // Default NoPE=1, custom NoPE=2 → KV entry bytes grow
-    //   default: (512-64)*1 + 64*2 = 576
-    //   custom:  (512-64)*2 + 64*2 = 1056
-    expect(custom.totalBytes).toBeGreaterThan(def.totalBytes)
+    expect(res.elementPlan.components.find(c => c[0] === 'KDA checkpoints per sequence')[1]).toBe(1)
   })
 
-  it('precision details line reflects default vs custom mode', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    const def = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const defLine = def.details.find(([k]) => k === 'Precision')
-    expect(defLine[1]).toContain('paper default')
-
-    const custom = computeForward({
-      config: cfg, tokens: 1024, dtype: 'bf16',
-      prec: { mode: 'custom', nope: 1, rope: 2, indexer: 0.5 },
+  it('fixed-interval=500 → ceil(1024/500) = 3 checkpoints', () => {
+    const res = calculate(model, {
+      tokens: 1024,
+      includeLinearAttentionState: true,
+      kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_FIXED_INTERVAL,
+      kdaCheckpointInterval: 500,
     })
-    const customLine = custom.details.find(([k]) => k === 'Precision')
-    expect(customLine[1]).toContain('custom')
+    expect(res.elementPlan.components.find(c => c[0] === 'KDA checkpoints per sequence')[1]).toBe(3)
+  })
+
+  it('without linear-attention-state, KDA bytes are excluded', () => {
+    const res = calculate(model, { tokens: 1024, includeLinearAttentionState: false })
+    expect(res.cacheGroups.length).toBe(1)
+    expect(res.cacheGroups[0].role).toBe('kv')
+  })
+})
+
+describe('calculate — MiniMax M3 disables draft KV', () => {
+  const model = MODEL_BY_ID['minimax-m3']
+
+  it('hasDraftKvCache is false (disable_draft_kv_cache=true)', () => {
+    expect(hasDraftKvCache(model)).toBe(false)
+  })
+
+  it('calculate ignores includeDraftKvCache=true', () => {
+    const rOff = calculate(model, { tokens: 1024, includeDraftKvCache: false })
+    const rOn = calculate(model, { tokens: 1024, includeDraftKvCache: true })
+    expect(rOn.totalBytes).toBe(rOff.totalBytes)
   })
 })
 
 // ============================================================
-// computeReverse — per-architecture
+// Per-model expected-value tests (all 53 models)
 // ============================================================
 
-describe('computeReverse — input validation', () => {
-  it('rejects 0 / negative / NaN GPU RAM', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    for (const r of [0, -1, NaN]) {
-      const res = computeReverse({ config: cfg, gpuRamGB: r, dtype: 'bf16' })
-      expect(res.error).toContain('GPU 显存')
+function expectedBytesForModel(model, tokens = 1024) {
+  const f = model.fields
+  const kvBytes = PRECISION_OPTIONS[defaultPrecisionId(model)].bytesPerElement
+  const idxBytes = hasIndexerCache(model)
+    ? INDEXER_PRECISION_OPTIONS[defaultIndexerPrecisionId(model)].bytesPerElement
+    : 0
+  const draftLayers = 0
+  // Initial values are overwritten in every switch case below; eslint's
+  // no-useless-assignment doesn't track control flow through cases.
+  // eslint-disable-next-line no-useless-assignment
+  let kvElements = 0
+  let indexerElements = 0
+
+  switch (model.formula) {
+    case 'standard_gqa': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      kvElements = layers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      break
     }
-  })
-})
+    case 'mla': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      kvElements = layers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      break
+    }
+    case 'dsa_mla': {
+      const layers = Number(f.num_hidden_layers) + draftLayers
+      const main = f.indexer_full_layers != null ? Number(f.indexer_full_layers) : layers
+      const activeIdx = main + 0
+      kvElements = layers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      indexerElements = activeIdx * Number(f.index_head_dim) * tokens
+      break
+    }
+    case 'kimi_kda_mla_hybrid': {
+      const fullLayers = Number(f.full_attention_layers)
+      kvElements = fullLayers * (Number(f.kv_lora_rank) + Number(f.qk_rope_head_dim)) * tokens
+      break
+    }
+    case 'qwen_linear_full_hybrid': {
+      const fullLayers = Number(f.full_attention_layers)
+      kvElements = fullLayers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      break
+    }
+    case 'mixed_full_sliding_gqa': {
+      const fullLayers = Number(f.full_attention_layers)
+      const slidingLayers = Number(f.sliding_attention_layers)
+      const slidingWindow = Number(f.sliding_window)
+      const retained = Math.min(tokens, slidingWindow)
+      const kvHeads = Number(f.num_key_value_heads)
+      const headDim = Number(f.head_dim)
+      const fullKvHeads = f.num_global_key_value_heads != null ? Number(f.num_global_key_value_heads) : kvHeads
+      const fullHeadDim = f.global_head_dim != null ? Number(f.global_head_dim) : headDim
+      const fullVDim = f.global_v_head_dim != null ? Number(f.global_v_head_dim)
+                    : (f.v_head_dim != null ? Number(f.v_head_dim) : fullHeadDim)
+      const slidingKvHeads = f.swa_num_key_value_heads != null ? Number(f.swa_num_key_value_heads)
+                          : (f.sliding_num_key_value_heads != null ? Number(f.sliding_num_key_value_heads) : kvHeads)
+      const slidingHeadDim = f.swa_head_dim != null ? Number(f.swa_head_dim)
+                          : (f.sliding_head_dim != null ? Number(f.sliding_head_dim) : headDim)
+      const slidingVDim = f.swa_v_head_dim != null ? Number(f.swa_v_head_dim)
+                       : (f.sliding_v_head_dim != null ? Number(f.sliding_v_head_dim)
+                       : (f.v_head_dim != null ? Number(f.v_head_dim) : slidingHeadDim))
+      kvElements = tokens * fullLayers * fullKvHeads * (fullHeadDim + fullVDim)
+                + retained * slidingLayers * slidingKvHeads * (slidingHeadDim + slidingVDim)
+      break
+    }
+    case 'minimax_msa': {
+      const layers = Number(f.num_hidden_layers)
+      const sparseLayers = Number(f.sparse_attention_layers)
+      kvElements = layers * 2 * Number(f.num_key_value_heads) * Number(f.head_dim) * tokens
+      indexerElements = sparseLayers * Number(f.index_head_dim) * tokens
+      break
+    }
+    case 'deepseek_v4_hybrid': {
+      const headDim = Number(f.head_dim)
+      const indexDim = Number(f.index_head_dim)
+      const slidingWindow = Number(f.sliding_window)
+      const layers = Number(f.num_hidden_layers)
+      const ratios = f.compress_ratios.map(Number).slice(0, layers)
+      let win = 0, comp = 0, idx = 0
+      for (const r of ratios) {
+        win += slidingWindow * headDim
+        if (r > 0) comp += Math.floor(tokens / r) * headDim
+        if (r === 4) idx += Math.floor(tokens / 4) * indexDim
+      }
+      kvElements = win + comp
+      indexerElements = idx
+      break
+    }
+    default:
+      throw new Error(`No expected-bytes helper for formula ${model.formula}`)
+  }
+  return kvElements * kvBytes + indexerElements * idxBytes
+}
 
-describe('computeReverse — GQA', () => {
-  it('inverts the forward formula exactly when RAM is a clean multiple', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    // bytes_per_token = 2 × 36 × 8 × 128 × 2 = 73728
-    // For 1024 tokens, total = 75,497,472 bytes → 0.0703 GB
-    // Reverse at 0.0703 GB should give back ~1024 tokens (with floor)
-    const fwd = computeForward({ config: cfg, tokens: 1024, dtype: 'bf16' })
-    const rev = computeReverse({ config: cfg, gpuRamGB: fwd.sizeGB, dtype: 'bf16' })
-    expect(rev.maxTokens).toBeGreaterThan(1000)
-    expect(rev.maxTokens).toBeLessThanOrEqual(1024)
-  })
-
-  it('halves max tokens when switching BF16 → FP32', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const bf16 = computeReverse({ config: cfg, gpuRamGB: 10, dtype: 'bf16' })
-    const fp32 = computeReverse({ config: cfg, gpuRamGB: 10, dtype: 'fp32' })
-    // BF16 (2B) gives roughly 2x the tokens of FP32 (4B)
-    expect(bf16.maxTokens / fp32.maxTokens).toBeCloseTo(2, 1)
-  })
-
-  it('headline contains both K and raw token count', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const res = computeReverse({ config: cfg, gpuRamGB: 10, dtype: 'bf16' })
-    expect(res.headline).toMatch(/Maximum Tokens:\s*[\d.]+K\s*\(.*\)/)
-    expect(res.headline).toContain(res.maxTokens.toLocaleString())
-  })
-
-  it('uses integer K when maxTokens divides evenly by 1024', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    // Construct target bytes directly: 1024 × 1024 tokens × 73728 bytes/token
-    const targetTokens = 1024 * 1024
-    const targetBytes = targetTokens * (2 * 36 * 8 * 128 * 2)
-    const res = computeReverse({ config: cfg, gpuRamGB: targetBytes / 1024 ** 3, dtype: 'bf16' })
-    expect(res.maxTokens % 1024).toBe(0)
-    expect(res.headline).toMatch(/Maximum Tokens:\s*\d+K/) // no decimal in K
-  })
-})
-
-describe('computeReverse — MLA (DeepSeek-V3)', () => {
-  it('accounts for latent_dim in max tokens', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V3']
-    // bytes_per_token = 61 × 576 × 2 = 70,272
-    // 1 GB → 1,073,741,824 / 70,272 = 15,287 tokens
-    const res = computeReverse({ config: cfg, gpuRamGB: 1, dtype: 'bf16' })
-    expect(res.maxTokens).toBe(Math.floor(1024 ** 3 / (61 * 576 * 2)))
-  })
-})
-
-describe('computeReverse — Hybrid SWA (gemma-4)', () => {
-  it('uses all-layer regime when tokens ≤ window', () => {
-    const cfg = MODELS['google/gemma-4-31B-it']
-    // Small RAM → small N ≤ window → both layer types count
-    const res = computeReverse({ config: cfg, gpuRamGB: 0.001, dtype: 'bf16' })
-    expect(res.maxTokens).toBeGreaterThan(0)
-    const regimeLine = res.details.find(([k]) => k === 'Regime')
-    expect(regimeLine[1]).toContain('all layers full')
-  })
-
-  it('uses capped regime when tokens > window', () => {
-    const cfg = MODELS['google/gemma-4-31B-it']
-    const res = computeReverse({ config: cfg, gpuRamGB: 100, dtype: 'bf16' })
-    expect(res.maxTokens).toBeGreaterThan(1024) // exceeds window
-    const regimeLine = res.details.find(([k]) => k === 'Regime')
-    expect(regimeLine[1]).toContain('capped')
-  })
-})
-
-describe('computeReverse — Standard Transformer (Llama-3.1-8B)', () => {
-  it('uses head_size = hidden_size / num_attention_heads', () => {
-    const cfg = MODELS['meta-llama/Llama-3.1-8B-Instruct']
-    // head_size = 4096/32 = 128; layers=32; kv_heads=8
-    // bytes_per_token = 2 × 32 × 8 × 128 × 2 = 65,536
-    // 5 GB → 5 × 1024^3 / 65536 = 81,920 tokens
-    const res = computeReverse({ config: cfg, gpuRamGB: 5, dtype: 'bf16' })
-    expect(res.maxTokens).toBe(Math.floor(5 * 1024 ** 3 / (2 * 32 * 8 * (4096 / 32) * 2)))
-    const headSizeLine = res.details.find(([k]) => k === 'Head Size')
-    expect(headSizeLine[1]).toContain('128')
-  })
-})
-
-describe('computeReverse — DSA (V4-Pro)', () => {
-  it('subtracts sliding-window floor before dividing', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    // bytes_per_token = 4955, window_bytes = 4,571,136
-    // RAM=10 GB → maxTokens = (10*1024^3 - 4,571,136) / 4955
-    const expected = Math.max(0, Math.floor((10 * 1024 ** 3 - 4571136) / 4955))
-    const res = computeReverse({ config: cfg, gpuRamGB: 10, dtype: 'bf16' })
-    expect(res.maxTokens).toBe(expected)
-  })
-
-  it('returns 0 tokens when RAM < sliding-window floor (no negative)', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    // windowBytes ≈ 4.57 MB ≈ 0.0043 GB; feed RAM below it
-    const res = computeReverse({ config: cfg, gpuRamGB: 0.001, dtype: 'bf16' })
-    expect(res.maxTokens).toBe(0)
-    expect(res.maxTokens).toBeGreaterThanOrEqual(0) // never negative
-  })
-
-  it('respects custom precision override', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Pro']
-    const def = computeReverse({ config: cfg, gpuRamGB: 5, dtype: 'bf16' })
-    const custom = computeReverse({
-      config: cfg, gpuRamGB: 5, dtype: 'bf16',
-      prec: { mode: 'custom', nope: 2, rope: 2, indexer: 0.5 },
+describe('calculate — every model matches independent expected-bytes computation', () => {
+  for (const model of MODELS) {
+    it(`${model.id} (${model.formula})`, () => {
+      const res = calculate(model, {
+        tokens: 1024,
+        sequences: 1,
+        includeDraftKvCache: false,
+        includeLinearAttentionState: false,
+        kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_PROMPT_END,
+      })
+      expect(res.error).toBeUndefined()
+      const expected = expectedBytesForModel(model, 1024)
+      expect(res.totalBytes).toBe(expected)
     })
-    // Custom NoPE=2 makes bytes-per-token larger → fewer tokens fit
-    expect(custom.maxTokens).toBeLessThan(def.maxTokens)
-  })
-})
-
-describe('computeReverse — Hybrid Linear (Qwen3.5-397B)', () => {
-  it('only counts full-attention layers for max tokens', () => {
-    const cfg = MODELS['Qwen/Qwen3.5-397B-A17B-FP8']
-    // perLayer = 2 × 2 × 256 = 1024; nFull = 15
-    // bytes_per_token = 1024 × 15 × 2 = 30,720
-    // 5 GB → 5*1024^3 / 30720 = 174,762 tokens
-    const res = computeReverse({ config: cfg, gpuRamGB: 5, dtype: 'bf16' })
-    expect(res.maxTokens).toBe(Math.floor(5 * 1024 ** 3 / (2 * 2 * 256 * 15 * 2)))
-    expect(res.note).toContain('Gated DeltaNet')
-  })
-})
-
-// ============================================================
-// Round-trip consistency
-// ============================================================
-
-describe('forward ↔ reverse round-trip', () => {
-  it('V4-Flash forward 1M tokens → reverse recovers ~1M tokens', () => {
-    const cfg = MODELS['deepseek-ai/DeepSeek-V4-Flash']
-    const fwd = computeForward({ config: cfg, tokens: 1000000, dtype: 'bf16' })
-    // Use exact bytes (not the rounded GB) for round-trip
-    const rev = computeReverse({ config: cfg, gpuRamGB: fwd.totalBytes / 1024 ** 3, dtype: 'bf16' })
-    // Floating rounding may introduce <0.01% error, but tokens should match within 1
-    expect(Math.abs(rev.maxTokens - 1000000)).toBeLessThanOrEqual(1)
-  })
-
-  it('Qwen3-8B forward 50K tokens → reverse recovers ~50K tokens', () => {
-    const cfg = MODELS['Qwen/Qwen3-8B']
-    const fwd = computeForward({ config: cfg, tokens: 50000, dtype: 'bf16' })
-    const rev = computeReverse({ config: cfg, gpuRamGB: fwd.totalBytes / 1024 ** 3, dtype: 'bf16' })
-    expect(Math.abs(rev.maxTokens - 50000)).toBeLessThanOrEqual(1)
-  })
+  }
 })

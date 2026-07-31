@@ -1,483 +1,776 @@
 /**
- * KV Cache size calculator — pure logic, no Vue dependency.
+ * KV Cache size calculator — port of kvcache.ai's calculator.js.
  *
- * Formulas are aligned with LMCache's kv_cache_calculator:
- * https://docs.lmcache.ai/_static/kv_cache_calculator.html
- *
- * Supports 5 attention architectures, auto-detected from model config:
- *   - DSA (DeepSeek V4 CSA + HCA, native mixed precision)
- *   - MLA (DeepSeek V3/R1, GLM-5.x; optional DSA lightning-indexer)
- *   - Hybrid SWA (Gemma-style interleaved sliding-window + full attention)
- *   - Hybrid Linear (Qwen3-Next / Nemotron-3 recurrent + full attention)
- *   - GQA / Standard Transformer (with or without explicit head_dim)
+ * Source: https://github.com/kvcache-ai/kvcache-blog
+ *   - data/kv_cache_calculator/models.yaml (verbatim copy in ./models.yaml)
+ *   - assets/js/kv-cache-calculator.js (algorithm ported below)
+ *   - packages/kvcache-simulator/src/kvcache_sim/calculator.py (cross-check)
  */
 
-// Bytes per element for each selectable KV dtype.
-// 4-bit formats (mxfp4 / nvfp4) use 0.5 byte per element.
-export const DTYPE_SIZES = {
-  fp32: 4,
-  fp16: 2,
-  bf16: 2,
-  fp8: 1,
-  int8: 1,
-  mxfp4: 0.5,
-  nvfp4: 0.5,
-}
+import modelsData from './models.json'
 
-// Model configs — verbatim copy from LMCache's modelconfig.json (dev branch).
-// Source: https://docs.lmcache.ai/_static/modelconfig.json
-export const MODELS = {
-  'meta-llama/Llama-3.1-8B-Instruct': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 32, num_key_value_heads: 8 },
-  'meta-llama/Llama-3.1-70B-Instruct': { hidden_size: 8192, num_attention_heads: 64, num_hidden_layers: 80, num_key_value_heads: 8 },
-  'mistralai/Mistral-7B-Instruct-v0.2': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 32, num_key_value_heads: 8 },
-  'mistralai/Mistral-Large-Instruct-2407': { hidden_size: 12288, num_attention_heads: 96, num_hidden_layers: 88, num_key_value_heads: 8 },
-  'lmsys/longchat-7b-16k': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 32, num_key_value_heads: 32 },
-  'Sao10K/L3-8B-Lunaris-v1': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 32, num_key_value_heads: 8 },
-  'meta-llama/Llama-3.2-3B-Instruct': { hidden_size: 3072, num_attention_heads: 24, num_hidden_layers: 28, num_key_value_heads: 8 },
-  'deepseek-ai/DeepSeek-V3': { hidden_size: 7168, num_attention_heads: 128, num_hidden_layers: 61, num_key_value_heads: 128, kv_lora_rank: 512, qk_rope_head_dim: 64 },
-  'deepseek-ai/DeepSeek-R1': { hidden_size: 7168, num_attention_heads: 128, num_hidden_layers: 61, num_key_value_heads: 128, kv_lora_rank: 512, qk_rope_head_dim: 64 },
-  'moonshotai/Kimi-K2.6': { hidden_size: 7168, num_attention_heads: 64, num_hidden_layers: 61, num_key_value_heads: 64, kv_lora_rank: 512, qk_rope_head_dim: 64 },
-  'deepseek-ai/DeepSeek-V4-Pro': {
-    num_hidden_layers: 61,
-    head_dim: 512,
-    qk_rope_head_dim: 64,
-    sliding_window: 128,
-    index_head_dim: 128,
-    nope_bytes: 1,
-    rope_bytes: 2,
-    indexer_bytes: 0.5,
-    compress_ratios: [128, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 0],
-  },
-  'deepseek-ai/DeepSeek-V4-Flash': {
-    num_hidden_layers: 43,
-    head_dim: 512,
-    qk_rope_head_dim: 64,
-    sliding_window: 128,
-    index_head_dim: 128,
-    nope_bytes: 1,
-    rope_bytes: 2,
-    indexer_bytes: 0.5,
-    compress_ratios: [0, 0, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 128, 4, 0],
-  },
-  'zai-org/GLM-5.1': { num_hidden_layers: 78, kv_lora_rank: 512, qk_rope_head_dim: 64, index_head_dim: 128 },
-  'MiniMaxAI/MiniMax-M2.5': { hidden_size: 3072, num_attention_heads: 48, num_hidden_layers: 62, num_key_value_heads: 8, head_dim: 128 },
-  'MiniMaxAI/MiniMax-M2.7': { hidden_size: 3072, num_attention_heads: 48, num_hidden_layers: 62, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen3-235B-A22B': { hidden_size: 4096, num_attention_heads: 64, num_hidden_layers: 94, num_key_value_heads: 4, head_dim: 128 },
-  'Qwen/Qwen3.5-397B-A17B-FP8': {
-    hidden_size: 4096,
-    num_attention_heads: 32,
-    num_hidden_layers: 60,
-    num_key_value_heads: 2,
-    head_dim: 256,
-    full_attention_layers: 15,
-    linear_attention_layers: 45,
-    linear_num_value_heads: 64,
-    linear_key_head_dim: 128,
-    linear_value_head_dim: 128,
-  },
-  'Qwen/Qwen3-30B-A3B': { hidden_size: 2048, num_attention_heads: 32, num_hidden_layers: 48, num_key_value_heads: 4, head_dim: 128 },
-  'Qwen/Qwen3-Coder-30B-A3B-Instruct': { hidden_size: 2048, num_attention_heads: 32, num_hidden_layers: 48, num_key_value_heads: 4, head_dim: 128 },
-  'Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8': { hidden_size: 6144, num_attention_heads: 96, num_hidden_layers: 62, num_key_value_heads: 8, head_dim: 128 },
-  'meta-llama/Llama-3.1-405B': { hidden_size: 16384, num_attention_heads: 128, num_hidden_layers: 126, num_key_value_heads: 8 },
-  'meta-llama/Llama-3.2-1B-Instruct': { hidden_size: 2048, num_attention_heads: 32, num_hidden_layers: 16, num_key_value_heads: 8 },
-  'Qwen/Qwen3-32B': { hidden_size: 5120, num_attention_heads: 64, num_hidden_layers: 64, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen3-14B': { hidden_size: 5120, num_attention_heads: 40, num_hidden_layers: 40, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen3-8B': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 36, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen3-4B': { hidden_size: 2560, num_attention_heads: 32, num_hidden_layers: 36, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen3-0.6B': { hidden_size: 1024, num_attention_heads: 16, num_hidden_layers: 28, num_key_value_heads: 8, head_dim: 128 },
-  'Qwen/Qwen2.5-7B-Instruct': { hidden_size: 3584, num_attention_heads: 28, num_hidden_layers: 28, num_key_value_heads: 4 },
-  'Qwen/Qwen2.5-3B-Instruct': { hidden_size: 2048, num_attention_heads: 16, num_hidden_layers: 36, num_key_value_heads: 2 },
-  'Qwen/Qwen2.5-0.5B': { hidden_size: 896, num_attention_heads: 14, num_hidden_layers: 24, num_key_value_heads: 2 },
-  'Qwen/Qwen-7B': { hidden_size: 4096, num_attention_heads: 32, num_hidden_layers: 32, num_key_value_heads: 32 },
-  'zai-org/GLM-4.5': { hidden_size: 5120, num_attention_heads: 96, num_hidden_layers: 92, num_key_value_heads: 8, head_dim: 128 },
-  'zai-org/GLM-4.6': { hidden_size: 5120, num_attention_heads: 96, num_hidden_layers: 92, num_key_value_heads: 8, head_dim: 128 },
-  'google/gemma-4-31B-it': { hidden_size: 5376, num_attention_heads: 32, num_hidden_layers: 60, num_key_value_heads: 16, head_dim: 256, sliding_window: 1024, full_attention_layers: 10, sliding_attention_layers: 50 },
-  'openai/gpt-oss-120b': { hidden_size: 2880, num_attention_heads: 64, num_hidden_layers: 36, num_key_value_heads: 8, head_dim: 64, sliding_window: 128, full_attention_layers: 18, sliding_attention_layers: 18 },
-  'openai/gpt-oss-20b': { hidden_size: 2880, num_attention_heads: 64, num_hidden_layers: 24, num_key_value_heads: 8, head_dim: 64, sliding_window: 128, full_attention_layers: 12, sliding_attention_layers: 12 },
-  'poolside/Laguna-XS.2': { hidden_size: 2048, num_attention_heads: 48, num_hidden_layers: 40, num_key_value_heads: 8, head_dim: 128, sliding_window: 512, full_attention_layers: 10, sliding_attention_layers: 30 },
-  'tencent/Hy3-preview': { hidden_size: 4096, num_attention_heads: 64, num_hidden_layers: 80, num_key_value_heads: 8, head_dim: 128 },
-  'nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8': {
-    hidden_size: 4096,
-    num_attention_heads: 32,
-    num_hidden_layers: 88,
-    num_key_value_heads: 2,
-    head_dim: 128,
-    full_attention_layers: 8,
-    linear_attention_layers: 40,
-    linear_attention_type: 'Mamba2 SSM',
-  },
-}
+export const BYTES_PER_GB = 1e9
+export const BYTES_PER_GIB = 1024 ** 3
+export const RESULT_DIGITS = 5
+
+export const QWEN_LINEAR_CONV_BYTES_PER_ELEMENT = 2
+export const QWEN_LINEAR_RECURRENT_BYTES_PER_ELEMENT = 4
+export const KIMI_KDA_CONV_BYTES_PER_ELEMENT = 2
+export const KIMI_KDA_RECURRENT_BYTES_PER_ELEMENT = 4
+
+export const KDA_CHECKPOINT_INFINITY = '∞'
+export const KDA_CHECKPOINT_POLICY_PROMPT_END = 'prompt_end'
+export const KDA_CHECKPOINT_POLICY_FIXED_INTERVAL = 'fixed_interval'
+export const KDA_CUSTOM_INTERVAL_DEFAULT = 10240
+
+export const PRECISION_OPTIONS = Object.fromEntries(
+  (modelsData.precision_options || []).map(opt => [
+    opt.id,
+    { label: opt.label, bytesPerElement: Number(opt.bytes_per_element) },
+  ]),
+)
+
+export const INDEXER_PRECISION_OPTIONS = Object.fromEntries(
+  (modelsData.indexer_precision_options || modelsData.precision_options || []).map(opt => [
+    opt.id,
+    { label: opt.label, bytesPerElement: Number(opt.bytes_per_element) },
+  ]),
+)
+
+export const MODELS = modelsData.models || []
+export const MODEL_BY_ID = Object.fromEntries(MODELS.map(m => [m.id, m]))
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
-export const MODEL_NAMES = Object.keys(MODELS).sort(collator.compare)
 
-/**
- * Detect which attention architecture a model config uses.
- * Returns one of: 'dsa' | 'mla' | 'hybrid-swa' | 'hybrid-linear' | 'gqa' | 'standard'
- */
-export function detectArch(cfg) {
-  if (Array.isArray(cfg.compress_ratios) && Number.isFinite(cfg.head_dim)) return 'dsa'
-  if (Number.isFinite(cfg.kv_lora_rank) && Number.isFinite(cfg.qk_rope_head_dim)) return 'mla'
-  if (Number.isFinite(cfg.full_attention_layers) &&
-      Number.isFinite(cfg.linear_attention_layers) &&
-      Number.isFinite(cfg.num_key_value_heads) &&
-      Number.isFinite(cfg.head_dim)) return 'hybrid-linear'
-  if (Number.isFinite(cfg.full_attention_layers) &&
-      Number.isFinite(cfg.sliding_attention_layers) &&
-      Number.isFinite(cfg.sliding_window) &&
-      Number.isFinite(cfg.num_key_value_heads) &&
-      Number.isFinite(cfg.head_dim)) return 'hybrid-swa'
-  if (Number.isFinite(cfg.head_dim) && Number.isFinite(cfg.num_key_value_heads)) return 'gqa'
-  return 'standard'
-}
-
-const ARCH_LABELS = {
-  'dsa': 'DeepSeek V4 DSA (CSA + HCA)',
-  'mla': 'Multi-head Latent Attention (MLA)',
-  'hybrid-linear': 'Linear / Full Hybrid',
-  'hybrid-swa': 'Sliding-Window / Full Hybrid',
-  'gqa': 'GQA / explicit head_dim',
-  'standard': 'Standard Transformer',
-}
-
-export function archLabel(cfg) {
-  return ARCH_LABELS[detectArch(cfg)]
-}
-
-/**
- * Resolve DSA per-dimension byte widths from config defaults, optionally
- * overridden by custom user input.
- *   prec.mode === 'default' → use config's nope_bytes / rope_bytes / indexer_bytes
- *   prec.mode === 'custom'  → use customnope / customrope / customindexer
- */
-function resolveDSAPrecision(cfg, prec) {
-  const def = {
-    nope: Number.isFinite(cfg.nope_bytes) ? cfg.nope_bytes : 1,
-    rope: Number.isFinite(cfg.rope_bytes) ? cfg.rope_bytes : 2,
-    indexer: Number.isFinite(cfg.indexer_bytes) ? cfg.indexer_bytes : 0.5,
-    mode: 'default',
+export function groupModelsByFamily(models = MODELS) {
+  const groups = {}
+  for (const model of models) {
+    const family = model.family || 'Other'
+    if (!groups[family]) groups[family] = []
+    groups[family].push(model)
   }
-  if (!prec || prec.mode !== 'custom') return def
+  const FAMILY_ORDER = ['DeepSeek', 'GLM', 'Kimi', 'Qwen3.6', 'Qwen3.5', 'Qwen3', 'Qwen2.5', 'Llama', 'Gemma', 'Cohere', 'MiMo', 'MiniMax', 'Other']
+  const ordered = {}
+  for (const f of FAMILY_ORDER) if (groups[f]) ordered[f] = groups[f]
+  for (const f of Object.keys(groups).sort(collator.compare)) if (!ordered[f]) ordered[f] = groups[f]
+  for (const f of Object.keys(ordered)) {
+    ordered[f] = ordered[f].slice().sort((a, b) => collator.compare(a.label, b.label))
+  }
+  return ordered
+}
+
+// ============================================================
+// Predicates
+// ============================================================
+
+export function isDeepSeekV4(model) {
+  return Boolean(model && model.formula === 'deepseek_v4_hybrid')
+}
+
+export function hasIndexerCache(model) {
+  return Boolean(model && model.fields && Number.isFinite(Number(model.fields.index_head_dim)))
+}
+
+export function safeNumber(value, fallback = 0) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+export function draftLayerCount(model) {
+  if (!model || !model.fields) return 0
+  if (model.fields.disable_draft_kv_cache === true) return 0
+  const nextnLayers = safeNumber(model.fields.num_nextn_predict_layers, 0)
+  if (nextnLayers > 0) return nextnLayers
+  if (model.fields.use_mtp === true) {
+    return safeNumber(model.fields.num_mtp_modules, 0) * safeNumber(model.fields.mtp_transformer_layers, 0)
+  }
+  return 0
+}
+
+export function hasDraftKvCache(model) {
+  if (!model || !model.fields) return false
+  if (isDeepSeekV4(model)) {
+    const layers = safeNumber(model.fields.num_hidden_layers, 0)
+    return Array.isArray(model.fields.compress_ratios) && model.fields.compress_ratios.length > layers
+  }
+  return draftLayerCount(model) > 0
+}
+
+export function hasLinearAttentionState(model) {
+  return Boolean(model && (model.formula === 'qwen_linear_full_hybrid' || model.formula === 'kimi_kda_mla_hybrid'))
+}
+
+export function hasKdaCheckpointInterval(model) {
+  return Boolean(model && model.formula === 'kimi_kda_mla_hybrid')
+}
+
+// ============================================================
+// Field accessors
+// ============================================================
+
+export function getField(model, name) {
+  if (!model || !model.fields || !Number.isFinite(Number(model.fields[name]))) {
+    throw new Error(`Model ${model ? model.id : ''} is missing numeric field ${name}`)
+  }
+  return Number(model.fields[name])
+}
+
+export function optionalField(model, name, fallback) {
+  if (model && model.fields && Number.isFinite(Number(model.fields[name]))) {
+    return Number(model.fields[name])
+  }
+  return fallback
+}
+
+export function fieldList(model, names) {
+  const fields = model && model.fields
+  if (!fields || typeof fields !== 'object') return ''
+  return names
+    .filter(name => Object.prototype.hasOwnProperty.call(fields, name))
+    .map(name => `${name}=${fields[name]}`)
+    .join(', ')
+}
+
+// ============================================================
+// Precision resolution
+// ============================================================
+
+function fixedIndexerPrecisionId(model) {
+  return model && model.fields && typeof model.fields.indexer_fixed_precision_id === 'string'
+    ? model.fields.indexer_fixed_precision_id
+    : undefined
+}
+
+export function defaultPrecisionId(model, options = PRECISION_OPTIONS) {
+  const modelDefault = model && model.fields && typeof model.fields.default_precision_id === 'string'
+    ? model.fields.default_precision_id
+    : undefined
+  if (modelDefault && options[modelDefault]) return modelDefault
+  if (isDeepSeekV4(model) && options.fp8_int8) return 'fp8_int8'
+  if (options.bf16_fp16) return 'bf16_fp16'
+  return Object.keys(options)[0]
+}
+
+export function defaultIndexerPrecisionId(model, options = INDEXER_PRECISION_OPTIONS, fallbackPrecisionId) {
+  const fixed = fixedIndexerPrecisionId(model)
+  if (fixed && options[fixed]) return fixed
+  if (isDeepSeekV4(model) && options.fp4_int4) return 'fp4_int4'
+  if (fallbackPrecisionId && options[fallbackPrecisionId]) return fallbackPrecisionId
+  if (options.bf16_fp16) return 'bf16_fp16'
+  if (options.fp4_int4) return 'fp4_int4'
+  return Object.keys(options)[0]
+}
+
+export function getPrecisionProfile(precisionId, options = PRECISION_OPTIONS, fallbackId) {
+  const selected = options[precisionId] || options[fallbackId] || PRECISION_OPTIONS.bf16_fp16
+  return { label: selected.label, bytesPerElement: selected.bytesPerElement }
+}
+
+export function getIndexerPrecisionProfile(precisionId, options = INDEXER_PRECISION_OPTIONS, model, fallbackPrecisionId) {
+  const fixed = fixedIndexerPrecisionId(model)
+  const selected =
+    (fixed && options[fixed]) ||
+    options[precisionId] ||
+    options[defaultIndexerPrecisionId(model, options, fallbackPrecisionId)] ||
+    PRECISION_OPTIONS.fp4_int4
+  return { label: selected.label, bytesPerElement: selected.bytesPerElement }
+}
+
+// ============================================================
+// KDA checkpoint interval
+// ============================================================
+
+export function parseKdaCheckpointInterval(value, fallback = Infinity) {
+  if (
+    value === Infinity ||
+    value === KDA_CHECKPOINT_INFINITY ||
+    (typeof value === 'string' && value.toLowerCase() === 'infinity')
+  ) {
+    return Infinity
+  }
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.max(1, Math.floor(parsed)) : fallback
+}
+
+export function defaultKdaCheckpointInterval(model) {
+  const value = model && model.fields ? model.fields.default_kda_checkpoint_interval : undefined
+  return parseKdaCheckpointInterval(value, Infinity)
+}
+
+export function formatKdaCheckpointInterval(value) {
+  return Number.isFinite(value) ? String(value) : KDA_CHECKPOINT_INFINITY
+}
+
+// ============================================================
+// Indexer layer plan (for dsa_mla)
+// ============================================================
+
+export function indexerLayerPlan(model, layers, draftLayers) {
+  const mainIndexerLayers = optionalField(model, 'indexer_full_layers', layers)
+  const sharedIndexerLayers = optionalField(model, 'indexer_shared_layers', Math.max(0, layers - mainIndexerLayers))
+  const draftIndexerLayers = draftLayers > 0 ? optionalField(model, 'draft_indexer_layers', draftLayers) : 0
   return {
-    nope: Number.isFinite(prec.nope) ? prec.nope : def.nope,
-    rope: Number.isFinite(prec.rope) ? prec.rope : def.rope,
-    indexer: Number.isFinite(prec.indexer) ? prec.indexer : def.indexer,
-    mode: 'custom',
+    mainIndexerLayers,
+    sharedIndexerLayers,
+    draftIndexerLayers,
+    activeIndexerLayers: mainIndexerLayers + draftIndexerLayers,
   }
 }
 
-/**
- * Forward calculation: tokens → KV Cache size.
- *
- * @param {object} opts
- * @param {object} opts.config   model config (a value from MODELS)
- * @param {number} opts.tokens   raw token count (must be a positive integer)
- * @param {string} opts.dtype    one of DTYPE_SIZES keys; ignored for DSA
- * @param {object} [opts.prec]   DSA precision override { mode: 'custom'|'default',
- *                               nope, rope, indexer }
- * @returns {{ headline: string, details: Array<[string,string]>, note: string,
- *            sizeGB: number, totalBytes: number, tokens: number }}
- *         or { error: string } when input is invalid.
- */
-export function computeForward({ config, tokens, dtype, prec }) {
-  const cfg = config || {}
-  if (!Number.isFinite(tokens) || tokens <= 0 || !Number.isInteger(tokens)) {
-    return { error: '请输入有效的 Token 数（正整数）' }
-  }
-  const dtypeSize = DTYPE_SIZES[dtype]
-  if (dtypeSize === undefined) {
-    return { error: `未知的数据类型：${dtype}` }
-  }
-  const arch = detectArch(cfg)
-  const details = []
-  let totalBytes
-  let note = ''
-  const n = tokens
+// ============================================================
+// Input coercion
+// ============================================================
 
-  if (arch === 'dsa') {
-    const activeRatios = cfg.compress_ratios.filter(r => r > 0)
-    const compressFactor = activeRatios.reduce((s, r) => s + 1 / r, 0)
-    const ropeDim = Number.isFinite(cfg.qk_rope_head_dim) ? cfg.qk_rope_head_dim : 0
-    const indexerDim = Number.isFinite(cfg.index_head_dim) ? cfg.index_head_dim : 0
-    const p = resolveDSAPrecision(cfg, prec)
-    const kvBytesPerEntry = (cfg.head_dim - ropeDim) * p.nope + ropeDim * p.rope
-    const indexerBytesPerEntry = indexerDim * p.indexer
-    const bytesPerToken = (kvBytesPerEntry + indexerBytesPerEntry) * compressFactor
-    const numLayers = cfg.compress_ratios.length
-    const windowBytes = numLayers * cfg.sliding_window * kvBytesPerEntry
-    totalBytes = bytesPerToken * n + windowBytes
-    const sizeGB = totalBytes / 1024 ** 3
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['Head Dimension', `${cfg.head_dim} (RoPE ${ropeDim} @ ${p.rope}B, NoPE ${cfg.head_dim - ropeDim} @ ${p.nope}B)`])
-    details.push(['Compressed Layers (r>0)', `${activeRatios.length} / ${numLayers}`])
-    details.push(['Sliding Window (per layer)', cfg.sliding_window])
-    details.push(['KV Bytes / Entry', `(${cfg.head_dim} − ${ropeDim}) × ${p.nope} + ${ropeDim} × ${p.rope} = ${kvBytesPerEntry} B`])
-    if (indexerDim) details.push(['Indexer Key (CSA, compressed)', `${indexerDim} × ${p.indexer} × Σ(1/r) = ${(indexerBytesPerEntry * compressFactor).toFixed(1)} B/token`])
-    const precLabel = p.mode === 'custom'
-      ? `custom (NoPE ${p.nope} / RoPE ${p.rope} / indexer ${p.indexer} B/dim)`
-      : `paper default (NoPE ${p.nope}=FP8 / RoPE ${p.rope}=BF16 / indexer ${p.indexer}=FP4)`
-    details.push(['Precision', precLabel])
-    details.push(['Bytes per Token', `(${kvBytesPerEntry} + ${indexerBytesPerEntry}) × Σ(1/r) = ${bytesPerToken.toFixed(1)} B`])
-    details.push(['Sliding-Window Floor', `${numLayers} × ${cfg.sliding_window} × ${kvBytesPerEntry} = ${windowBytes} B`])
-    details.push(['Total Bytes', `${bytesPerToken.toFixed(1)} × ${n} + ${windowBytes} = ${totalBytes.toFixed(0)} bytes`])
-    details.push(['KV Cache Size', `${totalBytes.toFixed(0)} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  } else if (arch === 'mla') {
-    const latentDim = cfg.kv_lora_rank + cfg.qk_rope_head_dim
-    const indexerDim = Number.isFinite(cfg.index_head_dim) ? cfg.index_head_dim : 0
-    const elementsPerToken = cfg.num_hidden_layers * (latentDim + indexerDim)
-    const totalElements = elementsPerToken * n
-    totalBytes = totalElements * dtypeSize
-    const sizeGB = totalBytes / 1024 ** 3
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV LoRA Rank', cfg.kv_lora_rank])
-    details.push(['QK RoPE Head Dim', cfg.qk_rope_head_dim])
-    if (indexerDim) details.push(['Indexer Head Dim (DSA)', indexerDim])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    const latentExpr = indexerDim
-      ? `(${cfg.kv_lora_rank} + ${cfg.qk_rope_head_dim} + ${indexerDim})`
-      : `(${cfg.kv_lora_rank} + ${cfg.qk_rope_head_dim})`
-    details.push(['Total Elements', `${cfg.num_hidden_layers} × ${n} × ${latentExpr} = ${totalElements}`])
-    details.push(['Total Bytes', `${totalElements} × ${dtypeSize} = ${totalBytes} bytes`])
-    details.push(['KV Cache Size', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  } else if (arch === 'hybrid-linear') {
-    const perLayer = 2 * cfg.num_key_value_heads * cfg.head_dim
-    const nFull = cfg.full_attention_layers
-    const nLin = cfg.linear_attention_layers
-    const totalElements = perLayer * nFull * n
-    totalBytes = totalElements * dtypeSize
-    const sizeGB = totalBytes / 1024 ** 3
-    const linType = typeof cfg.linear_attention_type === 'string' ? cfg.linear_attention_type : 'Gated DeltaNet'
-    note = `仅计算 full-attention 层；${linType} 循环状态尚未计入（待 LMCache 决定存储方式）`
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Full-Attention Layers', `${nFull} (growing KV)`])
-    details.push([`Linear (${linType}) Layers`, `${nLin} (循环状态 — 未计入)`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements / Token / Layer', `2 × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${perLayer}`])
-    details.push(['Total Elements', `${perLayer} × ${nFull} × ${n} = ${totalElements}`])
-    details.push(['Total Bytes', `${totalElements} × ${dtypeSize} = ${totalBytes} bytes`])
-    details.push(['KV Cache Size (full only)', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  } else if (arch === 'hybrid-swa') {
-    const perLayer = 2 * cfg.num_key_value_heads * cfg.head_dim
-    const nFull = cfg.full_attention_layers
-    const nSwa = cfg.sliding_attention_layers
-    const win = cfg.sliding_window
-    const swaTokens = Math.min(n, win)
-    const totalElements = perLayer * (nFull * n + nSwa * swaTokens)
-    totalBytes = totalElements * dtypeSize
-    const sizeGB = totalBytes / 1024 ** 3
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Full-Attention Layers', `${nFull} (cache full sequence)`])
-    details.push(['Sliding-Attention Layers', `${nSwa} (window ${win}; using ${swaTokens} tokens)`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements / Token / Layer', `2 × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${perLayer}`])
-    details.push(['Total Elements', `${perLayer} × (${nFull} × ${n} + ${nSwa} × ${swaTokens}) = ${totalElements}`])
-    details.push(['Total Bytes', `${totalElements} × ${dtypeSize} = ${totalBytes} bytes`])
-    details.push(['KV Cache Size', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  } else if (arch === 'gqa') {
-    const totalElements = 2 * cfg.num_hidden_layers * n * cfg.num_key_value_heads * cfg.head_dim
-    totalBytes = totalElements * dtypeSize
-    const sizeGB = totalBytes / 1024 ** 3
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Size', cfg.hidden_size])
-    details.push(['Attention Heads', cfg.num_attention_heads])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Total Elements', `2 × ${cfg.num_hidden_layers} × ${n} × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${totalElements}`])
-    details.push(['Total Bytes', `${totalElements} × ${dtypeSize} = ${totalBytes} bytes`])
-    details.push(['KV Cache Size', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  } else {
-    // standard transformer
-    const headSize = cfg.hidden_size / cfg.num_attention_heads
-    const totalElements = 2 * cfg.num_hidden_layers * n * cfg.num_key_value_heads * headSize
-    totalBytes = totalElements * dtypeSize
-    const sizeGB = totalBytes / 1024 ** 3
-    details.push(['架构', archLabel(cfg)])
-    details.push(['Hidden Size', cfg.hidden_size])
-    details.push(['Attention Heads', cfg.num_attention_heads])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Size', `${headSize} (Hidden / Attention)`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Total Elements', `2 × ${cfg.num_hidden_layers} × ${n} × ${cfg.num_key_value_heads} × ${headSize} = ${totalElements}`])
-    details.push(['Total Bytes', `${totalElements} × ${dtypeSize} = ${totalBytes} bytes`])
-    details.push(['KV Cache Size', `${totalBytes} / 1024³ ≈ ${sizeGB.toFixed(4)} GB`])
-  }
-
-  const sizeGB = totalBytes / 1024 ** 3
-  return {
-    headline: `KV Cache Size: ${sizeGB.toFixed(4)} GB`,
-    details,
-    note,
-    sizeGB,
-    totalBytes,
-    tokens: n,
-  }
+export function toPositiveNumber(value, fallback) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
-/**
- * Reverse calculation: GPU RAM → maximum tokens.
- *
- * @param {object} opts
- * @param {object} opts.config   model config
- * @param {number} opts.gpuRamGB GPU RAM in GB (positive finite number)
- * @param {string} opts.dtype    one of DTYPE_SIZES keys; ignored for DSA
- * @param {object} [opts.prec]   DSA precision override (see computeForward)
- * @returns {{ headline: string, details: Array<[string,string]>, note: string,
- *            maxTokens: number }}
- *         or { error: string } when input is invalid.
- */
-export function computeReverse({ config, gpuRamGB, dtype, prec }) {
-  const cfg = config || {}
-  if (!Number.isFinite(gpuRamGB) || gpuRamGB <= 0) {
-    return { error: '请输入有效的 GPU 显存（大于 0）' }
-  }
-  const dtypeSize = DTYPE_SIZES[dtype]
-  if (dtypeSize === undefined) {
-    return { error: `未知的数据类型：${dtype}` }
-  }
-  const totalBytes = gpuRamGB * 1024 ** 3
-  const arch = detectArch(cfg)
-  const details = []
-  let maxTokens
+export function toPositiveInteger(value, fallback) {
+  return Math.max(1, Math.floor(toPositiveNumber(value, fallback)))
+}
 
-  if (arch === 'dsa') {
-    const activeRatios = cfg.compress_ratios.filter(r => r > 0)
-    const compressFactor = activeRatios.reduce((s, r) => s + 1 / r, 0)
-    const ropeDim = Number.isFinite(cfg.qk_rope_head_dim) ? cfg.qk_rope_head_dim : 0
-    const indexerDim = Number.isFinite(cfg.index_head_dim) ? cfg.index_head_dim : 0
-    const p = resolveDSAPrecision(cfg, prec)
-    const kvBytesPerEntry = (cfg.head_dim - ropeDim) * p.nope + ropeDim * p.rope
-    const indexerBytesPerEntry = indexerDim * p.indexer
-    const bytesPerToken = (kvBytesPerEntry + indexerBytesPerEntry) * compressFactor
-    const numLayers = cfg.compress_ratios.length
-    const windowBytes = numLayers * cfg.sliding_window * kvBytesPerEntry
-    maxTokens = Math.max(0, Math.floor((totalBytes - windowBytes) / bytesPerToken))
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['Head Dimension', `${cfg.head_dim} (RoPE ${ropeDim} @ ${p.rope}B, NoPE ${cfg.head_dim - ropeDim} @ ${p.nope}B)`])
-    details.push(['Compressed Layers (r>0)', `${activeRatios.length} / ${numLayers}`])
-    details.push(['Sliding Window (per layer)', cfg.sliding_window])
-    details.push(['KV Bytes / Entry', `(${cfg.head_dim} − ${ropeDim}) × ${p.nope} + ${ropeDim} × ${p.rope} = ${kvBytesPerEntry} B`])
-    if (indexerDim) details.push(['Indexer Key (CSA, compressed)', `${indexerDim} × ${p.indexer} × Σ(1/r) = ${(indexerBytesPerEntry * compressFactor).toFixed(1)} B/token`])
-    const precLabel = p.mode === 'custom'
-      ? `custom (NoPE ${p.nope} / RoPE ${p.rope} / indexer ${p.indexer} B/dim)`
-      : `paper default (NoPE ${p.nope}=FP8 / RoPE ${p.rope}=BF16 / indexer ${p.indexer}=FP4)`
-    details.push(['Precision', precLabel])
-    details.push(['Bytes per Token', `(${kvBytesPerEntry} + ${indexerBytesPerEntry}) × Σ(1/r) = ${bytesPerToken.toFixed(1)} B`])
-    details.push(['Sliding-Window Floor', `${numLayers} × ${cfg.sliding_window} × ${kvBytesPerEntry} = ${windowBytes} B`])
-    details.push(['Maximum Tokens', `(${totalBytes} − ${windowBytes}) / ${bytesPerToken.toFixed(1)} = ${maxTokens} tokens`])
-  } else if (arch === 'mla') {
-    const latentDim = cfg.kv_lora_rank + cfg.qk_rope_head_dim
-    const indexerDim = Number.isFinite(cfg.index_head_dim) ? cfg.index_head_dim : 0
-    const elementsPerToken = cfg.num_hidden_layers * (latentDim + indexerDim)
-    const bytesPerToken = elementsPerToken * dtypeSize
-    maxTokens = Math.floor(totalBytes / bytesPerToken)
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV LoRA Rank', cfg.kv_lora_rank])
-    details.push(['QK RoPE Head Dim', cfg.qk_rope_head_dim])
-    if (indexerDim) details.push(['Indexer Head Dim (DSA)', indexerDim])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    const latentExpr = indexerDim
-      ? `(${cfg.kv_lora_rank} + ${cfg.qk_rope_head_dim} + ${indexerDim})`
-      : `(${cfg.kv_lora_rank} + ${cfg.qk_rope_head_dim})`
-    details.push(['Elements per Token', `${cfg.num_hidden_layers} × ${latentExpr} = ${elementsPerToken}`])
-    details.push(['Bytes per Token', `${elementsPerToken} × ${dtypeSize} = ${bytesPerToken} bytes`])
-    details.push(['Maximum Tokens', `${totalBytes} / ${bytesPerToken} = ${maxTokens} tokens`])
-  } else if (arch === 'hybrid-linear') {
-    const perLayer = 2 * cfg.num_key_value_heads * cfg.head_dim
-    const nFull = cfg.full_attention_layers
-    const nLin = cfg.linear_attention_layers
-    const availElements = totalBytes / dtypeSize
-    maxTokens = Math.max(0, Math.floor(availElements / (perLayer * nFull)))
-    const linType = typeof cfg.linear_attention_type === 'string' ? cfg.linear_attention_type : 'Gated DeltaNet'
-    const note = `仅按 full-attention 层计算；${linType} 循环状态尚未计入`
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Full-Attention Layers', `${nFull} (growing KV)`])
-    details.push([`Linear (${linType}) Layers`, `${nLin} (循环状态 — 未计入)`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements / Token / Layer', `2 × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${perLayer}`])
-    details.push(['Maximum Tokens (full only)', `${availElements} / (${perLayer} × ${nFull}) = ${maxTokens} tokens`])
-    return withHeadline({ details, note, maxTokens })
-  } else if (arch === 'hybrid-swa') {
-    const perLayer = 2 * cfg.num_key_value_heads * cfg.head_dim
-    const nFull = cfg.full_attention_layers
-    const nSwa = cfg.sliding_attention_layers
-    const win = cfg.sliding_window
-    const availElements = totalBytes / dtypeSize
-    let n = Math.floor(availElements / (perLayer * (nFull + nSwa)))
-    let regime = 'tokens ≤ window (all layers full)'
-    if (n > win) {
-      n = Math.floor((availElements / perLayer - nSwa * win) / nFull)
-      regime = 'tokens > window (sliding layers capped)'
+export function toBoolean(value) {
+  return value === true || value === 'true' || value === 'on' || value === '1'
+}
+
+// ============================================================
+// calculateElementsPerSequence — 8 formula branches
+// ============================================================
+
+export const FORMULA_LABELS = {
+  standard_gqa: 'Standard MHA/GQA',
+  mla: 'MLA latent KV',
+  dsa_mla: 'DSA/MLA with indexer',
+  kimi_kda_mla_hybrid: 'Kimi KDA/MLA hybrid',
+  qwen_linear_full_hybrid: 'Qwen linear/full hybrid',
+  mixed_full_sliding_gqa: 'Mixed full/sliding GQA',
+  minimax_msa: 'MiniMax MSA sparse attention',
+  deepseek_v4_hybrid: 'DeepSeek V4 hybrid sparse attention',
+}
+
+function countByValue(values, target) {
+  return values.filter(v => Number(v) === target).length
+}
+
+export function calculateElementsPerSequence(model, tokens, settings = {}) {
+  const formula = model.formula
+  const includeDraftKvCache = toBoolean(settings.includeDraftKvCache)
+  const includeLinearAttentionState = toBoolean(settings.includeLinearAttentionState)
+  const draftLayers = includeDraftKvCache ? draftLayerCount(model) : 0
+
+  if (formula === 'standard_gqa') {
+    const layers = getField(model, 'num_hidden_layers')
+    const activeLayers = layers + draftLayers
+    const kvHeads = getField(model, 'num_key_value_heads')
+    const headDim = getField(model, 'head_dim')
+    const elementsPerToken = activeLayers * 2 * kvHeads * headDim
+    return {
+      elementsPerSequence: elementsPerToken * tokens,
+      elementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'active_layers = main_layers + draft_layers_if_enabled\ntotal_bytes = tokens * sequences * active_layers * 2 * num_key_value_heads * head_dim * precision_bytes',
+      formulaRows: [
+        { name: 'active_layers', expression: 'main_layers + draft_layers_if_enabled' },
+        { name: 'total_bytes', expression: 'tokens x sequences x active_layers x 2 x num_key_value_heads x head_dim x precision_bytes' },
+      ],
+      note: '基础 KV 负载的生产估算值，未包含分配器和内存池开销。仅在勾选时才计入 draft KV。',
+      byteGroups: [{ role: 'kv', label: 'KV cache', elements: elementsPerToken * tokens }],
+      components: [
+        ['Main layers', layers],
+        ['Draft layers included', draftLayers],
+        ['Per-token elements', elementsPerToken],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'num_key_value_heads', 'head_dim'])],
+      ],
     }
-    maxTokens = Math.max(0, n)
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Full-Attention Layers', nFull])
-    details.push(['Sliding-Attention Layers', `${nSwa} (window ${win})`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements / Token / Layer', `2 × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${perLayer}`])
-    details.push(['Regime', regime])
-    details.push(['Maximum Tokens', `${maxTokens} tokens`])
-  } else if (arch === 'gqa') {
-    const elementsPerToken = 2 * cfg.num_hidden_layers * cfg.num_key_value_heads * cfg.head_dim
-    const bytesPerToken = elementsPerToken * dtypeSize
-    maxTokens = Math.floor(totalBytes / bytesPerToken)
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Size', cfg.hidden_size])
-    details.push(['Attention Heads', cfg.num_attention_heads])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Dimension', cfg.head_dim])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements per Token', `2 × ${cfg.num_hidden_layers} × ${cfg.num_key_value_heads} × ${cfg.head_dim} = ${elementsPerToken}`])
-    details.push(['Bytes per Token', `${elementsPerToken} × ${dtypeSize} = ${bytesPerToken} bytes`])
-    details.push(['Maximum Tokens', `${totalBytes} / ${bytesPerToken} = ${maxTokens} tokens`])
-  } else {
-    // standard transformer
-    const headSize = cfg.hidden_size / cfg.num_attention_heads
-    const elementsPerToken = 2 * cfg.num_hidden_layers * cfg.num_key_value_heads * headSize
-    const bytesPerToken = elementsPerToken * dtypeSize
-    maxTokens = Math.floor(totalBytes / bytesPerToken)
-    details.push(['架构', archLabel(cfg)])
-    details.push(['GPU RAM Size', `${gpuRamGB} GB`])
-    details.push(['Hidden Size', cfg.hidden_size])
-    details.push(['Attention Heads', cfg.num_attention_heads])
-    details.push(['Hidden Layers', cfg.num_hidden_layers])
-    details.push(['KV Heads', cfg.num_key_value_heads])
-    details.push(['Head Size', `${headSize} (Hidden / Attention)`])
-    details.push(['Data Type Size', `${dtypeSize} bytes`])
-    details.push(['Elements per Token', `2 × ${cfg.num_hidden_layers} × ${cfg.num_key_value_heads} × ${headSize} = ${elementsPerToken}`])
-    details.push(['Bytes per Token', `${elementsPerToken} × ${dtypeSize} = ${bytesPerToken} bytes`])
-    details.push(['Maximum Tokens', `${totalBytes} / ${bytesPerToken} = ${maxTokens} tokens`])
   }
 
-  return withHeadline({ details, note: '', maxTokens })
+  if (formula === 'mla') {
+    const layers = getField(model, 'num_hidden_layers')
+    const activeLayers = layers + draftLayers
+    const kvRank = getField(model, 'kv_lora_rank')
+    const ropeDim = getField(model, 'qk_rope_head_dim')
+    const elementsPerToken = activeLayers * (kvRank + ropeDim)
+    return {
+      elementsPerSequence: elementsPerToken * tokens,
+      elementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'active_layers = main_layers + draft_layers_if_enabled\ntotal_bytes = tokens * sequences * active_layers * (kv_lora_rank + qk_rope_head_dim) * precision_bytes',
+      formulaRows: [
+        { name: 'active_layers', expression: 'main_layers + draft_layers_if_enabled' },
+        { name: 'total_bytes', expression: 'tokens x sequences x active_layers x (kv_lora_rank + qk_rope_head_dim) x precision_bytes' },
+      ],
+      note: 'MLA latent KV 负载的生产估算值，未包含分配器和内存池开销。仅在勾选时才计入 draft KV。',
+      byteGroups: [{ role: 'kv', label: 'KV cache', elements: elementsPerToken * tokens }],
+      components: [
+        ['Main layers', layers],
+        ['Draft layers included', draftLayers],
+        ['Per-token elements', elementsPerToken],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'kv_lora_rank', 'qk_rope_head_dim'])],
+      ],
+    }
+  }
+
+  if (formula === 'dsa_mla') {
+    const layers = getField(model, 'num_hidden_layers')
+    const plan = indexerLayerPlan(model, layers, draftLayers)
+    const indexDim = getField(model, 'index_head_dim')
+    const kvRank = getField(model, 'kv_lora_rank')
+    const ropeDim = getField(model, 'qk_rope_head_dim')
+    const activeLayers = layers + draftLayers
+    const activeIndexerLayers = plan.mainIndexerLayers + (includeDraftKvCache ? plan.draftIndexerLayers : 0)
+    const kvElementsPerToken = activeLayers * (kvRank + ropeDim)
+    const indexerElementsPerToken = activeIndexerLayers * indexDim
+    const elementsPerToken = kvElementsPerToken + indexerElementsPerToken
+    return {
+      elementsPerSequence: elementsPerToken * tokens,
+      elementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'kv_bytes = tokens * sequences * active_layers * (kv_lora_rank + qk_rope_head_dim) * kv_precision_bytes\nindexer_bytes = tokens * sequences * active_indexer_layers * index_head_dim * indexer_precision_bytes\ntotal_bytes = kv_bytes + indexer_bytes',
+      formulaRows: [
+        { name: 'active_layers', expression: 'main_layers + draft_layers_if_enabled' },
+        { name: 'active_indexer_layers', expression: 'main_indexer_layers + draft_indexer_layers_if_enabled' },
+        { name: 'kv_bytes', expression: 'tokens x sequences x active_layers x (kv_lora_rank + qk_rope_head_dim) x kv_precision_bytes' },
+        { name: 'indexer_bytes', expression: 'tokens x sequences x active_indexer_layers x index_head_dim x indexer_precision_bytes' },
+        { name: 'total_bytes', expression: 'kv_bytes + indexer_bytes' },
+      ],
+      note: plan.sharedIndexerLayers > 0
+        ? '生产估算使用 latent KV 加独立存储的 indexer 状态；shared indexer 层复用 full indexer 层的 top-k 选择。未包含 HF 兼容的展开缓存。'
+        : '生产估算使用 latent KV 加 indexer 状态；未包含 HF 兼容的展开缓存。',
+      byteGroups: [
+        { role: 'kv', label: 'KV cache', elements: kvElementsPerToken * tokens },
+        { role: 'indexer', label: 'Indexer cache', elements: indexerElementsPerToken * tokens },
+      ],
+      components: [
+        ['Main layers', layers],
+        ['Draft layers included', draftLayers],
+        ['Main indexer layers', plan.mainIndexerLayers],
+        ['Shared indexer layers', plan.sharedIndexerLayers],
+        ['Draft indexer layers included', includeDraftKvCache ? plan.draftIndexerLayers : 0],
+        ['KV elements per token', kvElementsPerToken],
+        ['Indexer elements per token', indexerElementsPerToken],
+        ['Per-token elements', elementsPerToken],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'kv_lora_rank', 'qk_rope_head_dim', 'index_head_dim', 'indexer_full_layers', 'indexer_shared_layers', 'draft_indexer_layers'])],
+      ],
+    }
+  }
+
+  if (formula === 'kimi_kda_mla_hybrid') {
+    const layers = getField(model, 'num_hidden_layers')
+    const fullLayers = getField(model, 'full_attention_layers')
+    const kdaLayers = getField(model, 'kda_layers')
+    const kdaCheckpointInterval = parseKdaCheckpointInterval(
+      settings.kdaCheckpointInterval,
+      defaultKdaCheckpointInterval(model),
+    )
+    const kdaCheckpointCount = includeLinearAttentionState
+      ? Number.isFinite(kdaCheckpointInterval)
+        ? Math.ceil(tokens / kdaCheckpointInterval)
+        : 1
+      : 0
+    const kvRank = getField(model, 'kv_lora_rank')
+    const ropeDim = getField(model, 'qk_rope_head_dim')
+    const kdaHeads = getField(model, 'kda_num_heads')
+    const kdaHeadDim = getField(model, 'kda_head_dim')
+    const kdaKeyHeads = optionalField(model, 'kda_num_key_heads', kdaHeads)
+    const kdaKeyDim = optionalField(model, 'kda_key_head_dim', kdaHeadDim)
+    const kdaValueHeads = optionalField(model, 'kda_num_value_heads', kdaHeads)
+    const kdaValueDim = optionalField(model, 'kda_value_head_dim', kdaHeadDim)
+    const kdaConvKernel = getField(model, 'kda_conv_kernel_size')
+    const convBytesPerElement = optionalField(model, 'kda_conv_state_bytes_per_element', KIMI_KDA_CONV_BYTES_PER_ELEMENT)
+    const recurrentBytesPerElement = optionalField(model, 'kda_recurrent_state_bytes_per_element', KIMI_KDA_RECURRENT_BYTES_PER_ELEMENT)
+
+    const mlaElementsPerToken = fullLayers * (kvRank + ropeDim)
+    const mlaElements = mlaElementsPerToken * tokens
+    const kdaConvElements = kdaLayers * (kdaConvKernel - 1) * (kdaHeads * kdaHeadDim + kdaKeyHeads * kdaKeyDim + kdaValueHeads * kdaValueDim)
+    const kdaRecurrentElements = kdaLayers * kdaValueHeads * kdaValueDim * kdaKeyDim
+    const kdaStateBytes = kdaConvElements * convBytesPerElement + kdaRecurrentElements * recurrentBytesPerElement
+    const kdaCheckpointBytesPerSequence = kdaCheckpointCount * kdaStateBytes
+
+    const byteGroups = [{ role: 'kv', label: 'MLA latent KV cache', elements: mlaElements }]
+    if (includeLinearAttentionState) {
+      byteGroups.push({ role: 'linear_state', label: 'KDA checkpoint state', bytesPerSequence: kdaCheckpointBytesPerSequence })
+    }
+    return {
+      elementsPerSequence: mlaElements + (includeLinearAttentionState ? kdaCheckpointCount * (kdaConvElements + kdaRecurrentElements) : 0),
+      elementsPerToken: mlaElementsPerToken,
+      hitRateElementsPerToken: mlaElementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'mla_kv_bytes = tokens * sequences * full_attention_layers * (kv_lora_rank + qk_rope_head_dim) * precision_bytes\nkda_checkpoint_count = interval_is_infinity ? 1 : ceil(tokens / kda_checkpoint_interval)\ntotal_bytes = mla_kv_bytes + optional_kda_checkpoint_bytes',
+      formulaRows: [
+        { name: 'mla_kv_bytes', expression: 'tokens x sequences x full_attention_layers x (kv_lora_rank + qk_rope_head_dim) x precision_bytes' },
+        { name: 'kda_checkpoint_count', expression: 'interval is infinity ? 1 : ceil(tokens / kda_checkpoint_interval)' },
+        { name: 'total_bytes', expression: 'mla_kv_bytes + optional_kda_checkpoint_bytes' },
+      ],
+      note: includeLinearAttentionState
+        ? '包含 24 层 token 可寻址的 MLA latent cache 以及保留的 BF16 卷积/FP32 循环 KDA 检查点。未包含 active、ping-pong 和投机解码运行时缓冲。'
+        : '包含 24 层 token 可寻址的 MLA latent cache。69 层 KDA 的序列级状态未计入。',
+      byteGroups,
+      components: [
+        ['Main layers', layers],
+        ['MLA full-attention layers', fullLayers],
+        ['KDA linear-attention layers', kdaLayers],
+        ['KDA state included', includeLinearAttentionState ? 'Yes' : 'No'],
+        ['KDA checkpoint interval', formatKdaCheckpointInterval(kdaCheckpointInterval)],
+        ['KDA checkpoints per sequence', kdaCheckpointCount],
+        ['MLA elements per token', mlaElementsPerToken],
+        ['KDA conv elements per checkpoint', kdaConvElements],
+        ['KDA recurrent elements per checkpoint', kdaRecurrentElements],
+        ['KDA bytes per checkpoint', kdaStateBytes],
+        ['KDA checkpoint bytes per sequence', kdaCheckpointBytesPerSequence],
+        ['KDA conv-state bytes', convBytesPerElement],
+        ['KDA recurrent-state bytes', recurrentBytesPerElement],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'full_attention_layers', 'kda_layers', 'kv_lora_rank', 'qk_rope_head_dim', 'kda_num_heads', 'kda_head_dim', 'kda_conv_kernel_size', 'default_kda_checkpoint_interval'])],
+      ],
+    }
+  }
+
+  if (formula === 'qwen_linear_full_hybrid') {
+    const layers = getField(model, 'num_hidden_layers')
+    const fullLayers = getField(model, 'full_attention_layers')
+    const linearLayers = getField(model, 'linear_attention_layers')
+    const kvHeads = getField(model, 'num_key_value_heads')
+    const headDim = getField(model, 'head_dim')
+    const linearKeyHeads = getField(model, 'linear_num_key_heads')
+    const linearKeyDim = getField(model, 'linear_key_head_dim')
+    const linearValueHeads = getField(model, 'linear_num_value_heads')
+    const linearValueDim = getField(model, 'linear_value_head_dim')
+    const linearConvKernel = getField(model, 'linear_conv_kernel_dim')
+    const mtpLayers = optionalField(model, 'mtp_num_hidden_layers', 0)
+    const elementsPerToken = fullLayers * 2 * kvHeads * headDim
+    const fullElements = elementsPerToken * tokens
+    const linearConvElements = linearLayers * linearConvKernel * (2 * linearKeyHeads * linearKeyDim + linearValueHeads * linearValueDim)
+    const linearRecurrentElements = linearLayers * linearValueHeads * linearKeyDim * linearValueDim
+    const linearStateBytesPerSequence = includeLinearAttentionState
+      ? linearConvElements * QWEN_LINEAR_CONV_BYTES_PER_ELEMENT + linearRecurrentElements * QWEN_LINEAR_RECURRENT_BYTES_PER_ELEMENT
+      : 0
+    const byteGroups = [{ role: 'kv', label: 'Full-attention KV cache', elements: fullElements }]
+    if (includeLinearAttentionState) {
+      byteGroups.push({ role: 'linear_state', label: 'Linear-attention state', bytesPerSequence: linearStateBytesPerSequence })
+    }
+    return {
+      elementsPerSequence: fullElements + (includeLinearAttentionState ? linearConvElements + linearRecurrentElements : 0),
+      elementsPerToken: elementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'full_kv_bytes = tokens * sequences * full_attention_layers * 2 * num_key_value_heads * head_dim * precision_bytes\ntotal_bytes = full_kv_bytes + optional_linear_attention_state_bytes',
+      formulaRows: [
+        { name: 'full_kv_bytes', expression: 'tokens x sequences x full_attention_layers x 2 x num_key_value_heads x head_dim x precision_bytes' },
+        { name: 'linear_conv_state_bytes', expression: 'sequences x linear_attention_layers x linear_conv_kernel_dim x (2 x linear_num_key_heads x linear_key_head_dim + linear_num_value_heads x linear_value_head_dim) x 2' },
+        { name: 'linear_recurrent_state_bytes', expression: 'sequences x linear_attention_layers x linear_num_value_heads x linear_key_head_dim x linear_value_head_dim x 4' },
+        { name: 'total_bytes', expression: 'full_kv_bytes + optional_linear_attention_state_bytes' },
+      ],
+      note: includeLinearAttentionState
+        ? 'Qwen3.5/3.6 linear-attention 状态是序列级运行时状态，并非按 token 计的 KV。它不随 token 数线性增长，因此在短 prompt 上影响更显著，长上下文时被 full-attention KV 稀释。'
+        : 'Qwen3.5/3.6 linear-attention 的循环/卷积状态并非标准按 token 计的 KV，默认不计入。勾选 linear-attention 状态选项可加入固定的运行时状态估算。',
+      byteGroups,
+      components: [
+        ['Main layers', layers],
+        ['Full-attention layers', fullLayers],
+        ['Linear-attention layers', linearLayers],
+        ['Linear state included', includeLinearAttentionState ? 'Yes' : 'No'],
+        ['Linear conv elements', linearConvElements],
+        ['Linear recurrent elements', linearRecurrentElements],
+        ['MTP layers not included', mtpLayers],
+        ['Per-token elements', elementsPerToken],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'full_attention_layers', 'linear_attention_layers', 'num_key_value_heads', 'head_dim', 'linear_num_key_heads', 'linear_key_head_dim', 'linear_num_value_heads', 'linear_value_head_dim', 'linear_conv_kernel_dim'])],
+      ],
+    }
+  }
+
+  if (formula === 'mixed_full_sliding_gqa') {
+    const layers = getField(model, 'num_hidden_layers')
+    const fullLayers = getField(model, 'full_attention_layers')
+    const slidingLayers = getField(model, 'sliding_attention_layers')
+    const kvHeads = getField(model, 'num_key_value_heads')
+    const headDim = getField(model, 'head_dim')
+    const fullKvHeads = optionalField(model, 'num_global_key_value_heads', kvHeads)
+    const fullHeadDim = optionalField(model, 'global_head_dim', headDim)
+    const fullVHeadDim = optionalField(model, 'global_v_head_dim', optionalField(model, 'v_head_dim', fullHeadDim))
+    const slidingKvHeads = optionalField(model, 'swa_num_key_value_heads', optionalField(model, 'sliding_num_key_value_heads', kvHeads))
+    const slidingHeadDim = optionalField(model, 'swa_head_dim', optionalField(model, 'sliding_head_dim', headDim))
+    const slidingVHeadDim = optionalField(model, 'swa_v_head_dim', optionalField(model, 'sliding_v_head_dim', optionalField(model, 'v_head_dim', slidingHeadDim)))
+    const slidingWindow = getField(model, 'sliding_window')
+    const retainedSlidingTokens = Math.min(tokens, slidingWindow)
+    const fullElements = tokens * fullLayers * fullKvHeads * (fullHeadDim + fullVHeadDim)
+    const slidingElements = retainedSlidingTokens * slidingLayers * slidingKvHeads * (slidingHeadDim + slidingVHeadDim)
+    const elementsPerSequence = fullElements + slidingElements
+    return {
+      elementsPerSequence,
+      elementsPerToken: elementsPerSequence / tokens,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'full_kv_bytes = tokens * sequences * full_layers * full_kv_heads * (full_head_dim + full_v_head_dim) * precision_bytes\nsliding_kv_bytes = min(tokens, sliding_window) * sequences * sliding_layers * sliding_kv_heads * (sliding_head_dim + sliding_v_head_dim) * precision_bytes\ntotal_bytes = full_kv_bytes + sliding_kv_bytes',
+      formulaRows: [
+        { name: 'full_kv_bytes', expression: 'tokens x sequences x full_layers x full_kv_heads x (full_head_dim + full_v_head_dim) x precision_bytes' },
+        { name: 'sliding_kv_bytes', expression: 'min(tokens, sliding_window) x sequences x sliding_layers x sliding_kv_heads x (sliding_head_dim + sliding_v_head_dim) x precision_bytes' },
+        { name: 'total_bytes', expression: 'full_kv_bytes + sliding_kv_bytes' },
+      ],
+      note: '生产估算仅计入文本生成的 KV 负载，未包含视觉/音频编码器激活和分配器内存。',
+      byteGroups: [
+        { role: 'kv', label: 'Full-attention KV cache', elements: fullElements },
+        { role: 'kv', label: 'Sliding-window KV cache', elements: slidingElements },
+      ],
+      components: [
+        ['Main layers', layers],
+        ['Stored layers', optionalField(model, 'stored_layers', fullLayers + slidingLayers)],
+        ['Full-attention layers', fullLayers],
+        ['Sliding-attention layers', slidingLayers],
+        ['Retained sliding tokens', retainedSlidingTokens],
+        ['Full K+V dims', fullHeadDim + fullVHeadDim],
+        ['Sliding K+V dims', slidingHeadDim + slidingVHeadDim],
+        ['Full-attention elements', fullElements],
+        ['Sliding-window elements', slidingElements],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'full_attention_layers', 'sliding_attention_layers', 'num_key_value_heads', 'num_global_key_value_heads', 'head_dim', 'global_head_dim', 'v_head_dim', 'global_v_head_dim', 'swa_num_key_value_heads', 'swa_head_dim', 'swa_v_head_dim', 'sliding_window'])],
+      ],
+    }
+  }
+
+  if (formula === 'minimax_msa') {
+    const layers = getField(model, 'num_hidden_layers')
+    const fullLayers = getField(model, 'full_attention_layers')
+    const sparseLayers = getField(model, 'sparse_attention_layers')
+    const kvHeads = getField(model, 'num_key_value_heads')
+    const headDim = getField(model, 'head_dim')
+    const indexDim = getField(model, 'index_head_dim')
+    const indexHeads = optionalField(model, 'index_n_heads', kvHeads)
+    const blockSize = getField(model, 'index_block_size')
+    const topkBlocks = getField(model, 'index_topk_blocks')
+    const localBlocks = optionalField(model, 'index_local_blocks', 0)
+    const mtpModules = optionalField(model, 'num_mtp_modules', 0)
+    const nextnLayers = optionalField(model, 'num_nextn_predict_layers', 0)
+    const kvElementsPerToken = layers * 2 * kvHeads * headDim
+    const indexerElementsPerToken = sparseLayers * indexDim
+    const elementsPerToken = kvElementsPerToken + indexerElementsPerToken
+    const kvElements = kvElementsPerToken * tokens
+    const indexerElements = indexerElementsPerToken * tokens
+    return {
+      elementsPerSequence: elementsPerToken * tokens,
+      elementsPerToken,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'kv_bytes = tokens * sequences * layers * 2 * num_key_value_heads * head_dim * kv_precision_bytes\nindexer_bytes = tokens * sequences * sparse_attention_layers * index_head_dim * indexer_precision_bytes\ntotal_bytes = kv_bytes + indexer_bytes',
+      formulaRows: [
+        { name: 'kv_bytes', expression: 'tokens x sequences x layers x 2 x num_key_value_heads x head_dim x kv_precision_bytes' },
+        { name: 'indexer_bytes', expression: 'tokens x sequences x sparse_attention_layers x index_head_dim x indexer_precision_bytes' },
+        { name: 'total_bytes', expression: 'kv_bytes + indexer_bytes' },
+      ],
+      note: 'MiniMax Sparse Attention (MSA) 使用轻量级 indexer 为每个 query 挑选最相关的 KV block，因此长上下文 attention 可读取缓存 token 的稀疏子集，同时保留独立的 indexer 缓存用于 block 选择。',
+      byteGroups: [
+        { role: 'kv', label: 'KV cache', elements: kvElements },
+        { role: 'indexer', label: 'Indexer cache', elements: indexerElements },
+      ],
+      components: [
+        ['Main layers', layers],
+        ['Full-attention layers', fullLayers],
+        ['Sparse-attention layers', sparseLayers],
+        ['KV elements per token', kvElementsPerToken],
+        ['Indexer elements per token', indexerElementsPerToken],
+        ['Index heads', indexHeads],
+        ['Index block size', blockSize],
+        ['Top-k blocks', topkBlocks],
+        ['Local blocks', localBlocks],
+        ['MTP modules not included', mtpModules],
+        ['Next-N layers not included', nextnLayers],
+        ['Model fields', fieldList(model, ['num_hidden_layers', 'full_attention_layers', 'sparse_attention_layers', 'num_key_value_heads', 'head_dim', 'index_head_dim', 'index_n_heads', 'index_block_size', 'index_topk_blocks', 'index_local_blocks', 'indexer_fixed_precision_id'])],
+      ],
+    }
+  }
+
+  if (formula === 'deepseek_v4_hybrid') {
+    const headDim = getField(model, 'head_dim')
+    const indexDim = getField(model, 'index_head_dim')
+    const slidingWindow = getField(model, 'sliding_window')
+    const layers = getField(model, 'num_hidden_layers')
+    const allRatios = Array.isArray(model.fields.compress_ratios)
+      ? model.fields.compress_ratios.map(r => Number(r))
+      : []
+    const mainRatios = allRatios.slice(0, layers)
+    const draftRatios = allRatios.slice(layers)
+    const activeRatios = includeDraftKvCache ? mainRatios.concat(draftRatios) : mainRatios
+    if (!activeRatios.length) {
+      throw new Error(`Model ${model.id} is missing compress_ratios`)
+    }
+    let windowElements = 0
+    let compressedElements = 0
+    let indexerElements = 0
+    const ratioZeroLayers = countByValue(activeRatios, 0)
+    const ratioFourLayers = countByValue(activeRatios, 4)
+    const ratio128Layers = countByValue(activeRatios, 128)
+    const ratioZeroElements = ratioZeroLayers * slidingWindow * headDim
+    for (const ratio of activeRatios) {
+      windowElements += slidingWindow * headDim
+      if (ratio > 0) {
+        compressedElements += Math.floor(tokens / ratio) * headDim
+      }
+      if (ratio === 4) {
+        indexerElements += Math.floor(tokens / 4) * indexDim
+      }
+    }
+    const attentionElements = windowElements + compressedElements
+    const elementsPerSequence = attentionElements + indexerElements
+    return {
+      elementsPerSequence,
+      elementsPerToken: elementsPerSequence / tokens,
+      formulaLabel: FORMULA_LABELS[formula],
+      formulaText: 'sliding_kv_bytes = active_layers * sliding_window * head_dim * kv_precision_bytes\ncompressed_kv_bytes = sum_ratio>0(floor(tokens / compress_ratio) * head_dim) * kv_precision_bytes\nkv_bytes = sliding_kv_bytes + compressed_kv_bytes\nindexer_bytes = ratio4_layers * floor(tokens / 4) * index_head_dim * indexer_precision_bytes\ntotal_bytes = sequences * (kv_bytes + indexer_bytes)',
+      formulaRows: [
+        { name: 'sliding_kv_bytes', expression: 'active_layers x sliding_window x head_dim x kv_precision_bytes' },
+        { name: 'compressed_kv_bytes', expression: 'sum over ratio>0 layers: floor(tokens / compress_ratio) x head_dim x kv_precision_bytes' },
+        { name: 'kv_bytes', expression: 'sliding_kv_bytes + compressed_kv_bytes' },
+        { name: 'indexer_bytes', expression: 'ratio4_layers x floor(tokens / 4) x index_head_dim x indexer_precision_bytes' },
+        { name: 'total_bytes', expression: 'sequences x (kv_bytes + indexer_bytes)' },
+      ],
+      note: '生产估算使用官方的 sliding-window/compressed-cache 布局。DeepSeek V4 默认使用 FP8 attention cache 和 FP4 indexer cache。',
+      byteGroups: [
+        { role: 'kv', label: 'KV cache', elements: attentionElements },
+        { role: 'indexer', label: 'Indexer cache', elements: indexerElements },
+      ],
+      components: [
+        ['Main layers', mainRatios.length],
+        ['Draft layers included', includeDraftKvCache ? draftRatios.length : 0],
+        ['Ratio=4 layers', ratioFourLayers],
+        ['Ratio=128 layers', ratio128Layers],
+        ['Ratio=0 layers', ratioZeroLayers],
+        ['Ratio=0 KV elements', ratioZeroElements],
+        ['Sliding-window elements', windowElements],
+        ['Compressed elements', compressedElements],
+        ['KV elements', attentionElements],
+        ['Indexer elements', indexerElements],
+      ],
+    }
+  }
+
+  throw new Error(`Unsupported formula: ${formula}`)
 }
 
-function withHeadline({ details, note, maxTokens }) {
-  const maxTokensK = (maxTokens / 1024).toFixed(maxTokens % 1024 === 0 ? 0 : 2)
-  const headline = `Maximum Tokens: ${maxTokensK}K (${maxTokens.toLocaleString()})`
-  return { headline, details, note, maxTokens }
+// ============================================================
+// Top-level calculate
+// ============================================================
+
+function bytesPerElementForGroup(precision, role) {
+  if ((role === 'kv' || role === 'attention') && Number.isFinite(precision.kvBytesPerElement)) {
+    return precision.kvBytesPerElement
+  }
+  if (role === 'indexer' && Number.isFinite(precision.indexerBytesPerElement)) {
+    return precision.indexerBytesPerElement
+  }
+  if (Number.isFinite(precision.bytesPerElement)) return precision.bytesPerElement
+  throw new Error(`Precision ${precision.label} does not define bytes for ${role} cache`)
+}
+
+function calculateCacheGroups(elementPlan, precision) {
+  const groups = elementPlan.byteGroups || [{ role: 'cache', elements: elementPlan.elementsPerSequence }]
+  return groups.map(group => ({
+    role: group.role,
+    label: group.label || 'KV cache',
+    elements: group.elements,
+    bytesPerSequence: Number.isFinite(group.bytesPerSequence)
+      ? group.bytesPerSequence
+      : group.elements * bytesPerElementForGroup(precision, group.role),
+  }))
+}
+
+function precisionComponents(precision) {
+  if (Number.isFinite(precision.kvBytesPerElement) || Number.isFinite(precision.indexerBytesPerElement)) {
+    return [
+      ['KV precision bytes', precision.kvBytesPerElement],
+      ['Indexer precision bytes', precision.indexerBytesPerElement],
+    ]
+  }
+  return [['Precision bytes', precision.bytesPerElement]]
+}
+
+export function calculate(model, input = {}, options = {}) {
+  if (!model) return { error: '未选择模型' }
+  const tokens = toPositiveInteger(input.tokens, model.default_tokens || 4096)
+  const sequences = toPositiveInteger(input.sequences, 1)
+  const tensorParallel = toPositiveInteger(input.tensorParallel, 1)
+
+  const precisionOpts = options.precisionOptions || PRECISION_OPTIONS
+  const indexerPrecisionOpts = options.indexerPrecisionOptions || INDEXER_PRECISION_OPTIONS
+
+  const precisionId = input.precision || defaultPrecisionId(model, precisionOpts)
+  if (!precisionOpts[precisionId]) {
+    return { error: `未知精度：${precisionId}` }
+  }
+  const precision = getPrecisionProfile(precisionId, precisionOpts, defaultPrecisionId(model, precisionOpts))
+
+  let indexerPrecision = null
+  if (hasIndexerCache(model)) {
+    const idxId = input.indexerPrecision || defaultIndexerPrecisionId(model, indexerPrecisionOpts, precisionId)
+    if (!indexerPrecisionOpts[idxId]) {
+      return { error: `未知 indexer 精度：${idxId}` }
+    }
+    indexerPrecision = getIndexerPrecisionProfile(idxId, indexerPrecisionOpts, model, precisionId)
+  }
+
+  const cachePrecision = indexerPrecision
+    ? {
+        label: precision.label,
+        bytesPerElement: precision.bytesPerElement,
+        kvBytesPerElement: precision.bytesPerElement,
+        indexerBytesPerElement: indexerPrecision.bytesPerElement,
+      }
+    : precision
+
+  let elementPlan
+  try {
+    elementPlan = calculateElementsPerSequence(model, tokens, {
+      includeDraftKvCache: hasDraftKvCache(model) && toBoolean(input.includeDraftKvCache),
+      includeLinearAttentionState: hasLinearAttentionState(model) && toBoolean(input.includeLinearAttentionState),
+      kdaCheckpointInterval: hasKdaCheckpointInterval(model)
+        ? input.kdaCheckpointPolicy === KDA_CHECKPOINT_POLICY_FIXED_INTERVAL
+          ? parseKdaCheckpointInterval(input.kdaCheckpointInterval, defaultKdaCheckpointInterval(model))
+          : Infinity
+        : undefined,
+    })
+  } catch (err) {
+    return { error: err.message }
+  }
+
+  const cacheGroupsPerSeq = calculateCacheGroups(elementPlan, cachePrecision)
+  const bytesPerSequence = cacheGroupsPerSeq.reduce((sum, g) => sum + g.bytesPerSequence, 0)
+  const totalBytes = bytesPerSequence * sequences
+
+  const kvBytesPerSeq = cacheGroupsPerSeq
+    .filter(g => g.role === 'kv' || g.role === 'attention' || g.role === 'cache')
+    .reduce((sum, g) => sum + g.bytesPerSequence, 0)
+  const indexerBytesPerSeq = cacheGroupsPerSeq
+    .filter(g => g.role === 'indexer')
+    .reduce((sum, g) => sum + g.bytesPerSequence, 0)
+
+  const hitRateBytesPerToken = Number.isFinite(elementPlan.hitRateElementsPerToken)
+    ? elementPlan.hitRateElementsPerToken * bytesPerElementForGroup(cachePrecision, 'kv')
+    : undefined
+
+  return {
+    modelId: model.id,
+    modelLabel: model.label,
+    formulaLabel: elementPlan.formulaLabel,
+    precisionLabel: precision.label,
+    indexerPrecisionLabel: indexerPrecision ? indexerPrecision.label : undefined,
+    bytesPerElement: precision.bytesPerElement,
+    tokens,
+    sequences,
+    totalCachedTokens: tokens * sequences,
+    tensorParallel,
+    totalBytes,
+    totalGB: totalBytes / BYTES_PER_GB,
+    totalGiB: totalBytes / BYTES_PER_GIB,
+    kvBytes: kvBytesPerSeq * sequences,
+    kvGiB: kvBytesPerSeq * sequences / BYTES_PER_GIB,
+    indexerBytes: indexerBytesPerSeq * sequences,
+    indexerGiB: indexerBytesPerSeq * sequences / BYTES_PER_GIB,
+    bytesPerSequence,
+    bytesPerToken: bytesPerSequence / tokens,
+    perDeviceBytes: totalBytes / tensorParallel,
+    perDeviceGiB: totalBytes / tensorParallel / BYTES_PER_GIB,
+    hitRateBytesPerToken,
+    cacheGroups: cacheGroupsPerSeq.map(g => ({
+      role: g.role,
+      label: g.label,
+      elements: Number.isFinite(g.elements) ? g.elements * sequences : undefined,
+      bytes: g.bytesPerSequence * sequences,
+    })),
+    elementPlan,
+    components: elementPlan.components.concat(precisionComponents(cachePrecision)),
+  }
 }

@@ -6,6 +6,7 @@ import iconifyOffline from 'vite-plugin-iconify-offline'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import routeDefs from './src/routes.js'
+import { buildModelsJson } from './scripts/build-models-json.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,4 +36,7 @@ export default defineConfig({
       },
     }),
   ],
+  buildStart() {
+    buildModelsJson()
+  },
 })

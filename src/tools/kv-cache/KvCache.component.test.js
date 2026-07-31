@@ -9,120 +9,176 @@ async function mountComponent() {
   return wrapper
 }
 
-// Component tests focus on UI interaction only — deep numeric correctness
-// lives in ./kv-cache.test.js. Here we just verify the main flow:
-// mount → auto-compute → input change → recompute → mode tab → reverse.
-describe('KvCache view — main interaction flow', () => {
-  it('renders title', async () => {
+describe('KvCache view — new kvcache.ai UI', () => {
+  it('renders Chinese title without source link', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain('KV Cache 尺寸计算器')
+    expect(wrapper.text()).toContain('KVCache 尺寸计算器')
+    // Source link should NOT appear
+    expect(wrapper.html()).not.toContain('kvcache.ai/tools/kv-cache-size-calculator')
+    expect(wrapper.html()).not.toContain('github.com/kvcache-ai/kvcache-blog')
   })
 
-  it('has no compute buttons — auto-trigger only', async () => {
+  it('renders model select with 12 family optgroups', async () => {
     const wrapper = await mountComponent()
-    // Mode switch exists (forward / reverse), but no explicit "compute" button
+    const groups = wrapper.findAll('optgroup')
+    expect(groups.length).toBe(12)
+    const labels = groups.map(g => g.attributes('label'))
+    expect(labels).toEqual([
+      'DeepSeek', 'GLM', 'Kimi', 'Qwen3.6', 'Qwen3.5',
+      'Qwen3', 'Qwen2.5', 'Llama', 'Gemma', 'Cohere', 'MiMo', 'MiniMax',
+    ])
+  })
+
+  it('default model is the first in the dropdown (deepseek-r1)', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    expect(modelSelect.element.value).toBe('deepseek-r1')
+    expect(wrapper.text()).toContain('GiB')
+  })
+
+  it('renders only one number input (tokens) — no sequences input', async () => {
+    const wrapper = await mountComponent()
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    expect(numberInputs.length).toBe(1)
+    expect(wrapper.text()).not.toContain('Sequences')
+    expect(wrapper.text()).toContain('输入长度')
+  })
+
+  it('recomputes when tokens input changes', async () => {
+    const wrapper = await mountComponent()
+    const tokensInput = wrapper.find('input[type="number"]')
+    await tokensInput.setValue('10240')
+    await nextTick()
+    expect(wrapper.text()).toContain('GiB')
+  })
+
+  it('shows indexer precision selector and draft toggle for deepseek-v4-pro', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('deepseek-v4-pro')
+    await nextTick()
+    expect(wrapper.text()).toContain('Indexer 精度')
+    expect(wrapper.text()).toContain('包含 draft KV cache')
+    const selects = wrapper.findAll('select')
+    const idxSelect = selects[selects.length - 1]
+    expect(idxSelect.element.value).toBe('fp4_int4')
+  })
+
+  it('shows KDA checkpoint policy radios for kimi-k3', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('kimi-k3')
+    await nextTick()
+    expect(wrapper.text()).toContain('KDA 检查点策略')
+    expect(wrapper.text()).toContain('Prompt 末尾状态')
+    expect(wrapper.text()).toContain('固定间隔检查点')
+    expect(wrapper.text()).toContain('linear-attention 状态')
+  })
+
+  it('reveals interval input when Fixed Interval is selected for kimi-k3', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('kimi-k3')
+    await nextTick()
+    const fixedRadio = wrapper.findAll('input[type="radio"]').find(r =>
+      r.attributes('value') === 'fixed_interval',
+    )
+    await fixedRadio.setValue(true)
+    await nextTick()
+    expect(wrapper.text()).toContain('检查点间隔')
+  })
+
+  it('shows linear-attention-state toggle but no KDA policy for qwen3.5-397b-a17b', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('qwen3.5-397b-a17b')
+    await nextTick()
+    expect(wrapper.text()).toContain('linear-attention 状态')
+    expect(wrapper.text()).not.toContain('KDA 检查点策略')
+  })
+
+  it('shows indexer precision but no draft toggle for minimax-m3', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('minimax-m3')
+    await nextTick()
+    expect(wrapper.text()).toContain('Indexer 精度')
+    expect(wrapper.text()).not.toContain('包含 draft KV cache')
+  })
+
+  it('hides indexer precision, draft toggle, linear-state toggle, and KDA policy for qwen3-8b', async () => {
+    const wrapper = await mountComponent()
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('qwen3-8b')
+    await nextTick()
+    expect(wrapper.text()).not.toContain('Indexer 精度')
+    expect(wrapper.text()).not.toContain('包含 draft KV cache')
+    expect(wrapper.text()).not.toContain('linear-attention 状态')
+    expect(wrapper.text()).not.toContain('KDA 检查点策略')
+  })
+
+  it('has no compute button — auto-recompute only', async () => {
+    const wrapper = await mountComponent()
     const buttons = wrapper.findAll('button')
-    expect(buttons.length).toBe(2) // only the two mode-switch buttons
-    expect(buttons.some(b => b.text().includes('计算'))).toBe(false)
+    expect(buttons.some(b => b.text().includes('计算') || b.text().includes('Compute'))).toBe(false)
   })
 
-  it('auto-computes on mount with default values', async () => {
+  it('no longer has forward/reverse mode tabs', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain('KV Cache Size')
+    expect(wrapper.text()).not.toContain('反算')
+    expect(wrapper.text()).not.toContain('正向')
   })
 
-  it('shows Token 输入 in K units with helper text', async () => {
+  it('shows formula breakdown in a collapsed details element', async () => {
     const wrapper = await mountComponent()
-    expect(wrapper.text()).toContain('Token 数 (K)')
-    expect(wrapper.text()).toContain('1K = 1024 tokens')
+    expect(wrapper.html()).toMatch(/<details[^>]*>/)
+    expect(wrapper.text()).toContain('公式详情')
   })
 
-  it('recomputes when tokensK input changes', async () => {
+  it('Model line in results does not include the id in parentheses', async () => {
     const wrapper = await mountComponent()
-    const input = wrapper.find('input[type="number"]')
-    // Change from default 1K to 10K — should still produce a KV Cache Size headline
-    await input.setValue('10')
-    await nextTick()
-    expect(wrapper.text()).toContain('KV Cache Size')
-    const before10 = wrapper.text()
-
-    // Changing again should produce a different (larger) value
-    await input.setValue('100')
-    await nextTick()
-    expect(wrapper.text()).not.toBe(before10)
+    // Default model is deepseek-r1 → label "DeepSeek R1"
+    expect(wrapper.text()).toContain('DeepSeek R1')
+    expect(wrapper.text()).not.toContain('(deepseek-r1)')
   })
 
-  it('rejects 0 / negative / non-numeric tokensK with error message', async () => {
+  it('preserves KV precision when switching models', async () => {
     const wrapper = await mountComponent()
-    const input = wrapper.find('input[type="number"]')
-    for (const v of ['0', '-1', 'abc']) {
-      await input.setValue(v)
-      await nextTick()
-      expect(wrapper.text()).toContain('请输入有效的 Token 数')
-    }
-  })
-
-  it('switches to reverse mode via tab and shows Maximum Tokens', async () => {
-    const wrapper = await mountComponent()
-    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
-    await reverseTab.trigger('click')
-    await nextTick()
-    expect(wrapper.text()).toContain('Maximum Tokens')
-    expect(wrapper.text()).toMatch(/K\s*\(/) // K + raw-tokens-in-parens format
-  })
-
-  it('rejects 0 / negative GPU RAM in reverse mode', async () => {
-    const wrapper = await mountComponent()
-    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
-    await reverseTab.trigger('click')
-    await nextTick()
-    const input = wrapper.find('input[type="number"]')
-    for (const v of ['0', '-1']) {
-      await input.setValue(v)
-      await nextTick()
-      expect(wrapper.text()).toContain('请输入有效的 GPU 显存')
-    }
-  })
-
-  it('switches model and recomputes (architecture label visible)', async () => {
-    const wrapper = await mountComponent()
-    // Default Qwen3-8B (GQA). Switch to DeepSeek-V3 (MLA) — details should
-    // now contain the MLA architecture label.
-    const modelSelect = wrapper.findAll('select').find(s =>
-      s.findAll('option').some(o => o.text().includes('DeepSeek-V3')),
+    // Default deepseek-r1 has default precision bf16_fp16
+    const precisionSelect = wrapper.findAll('select').find(s =>
+      s.findAll('option').some(o => o.attributes('value') === 'fp8_int8'),
     )
-    await modelSelect.setValue('deepseek-ai/DeepSeek-V3')
+    await precisionSelect.setValue('fp8_int8')
     await nextTick()
-    expect(wrapper.text()).toContain('Multi-head Latent Attention')
+    expect(precisionSelect.element.value).toBe('fp8_int8')
+
+    // Switch to qwen3-8b — precision should stay fp8_int8, not reset to bf16_fp16
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('qwen3-8b')
+    await nextTick()
+    expect(precisionSelect.element.value).toBe('fp8_int8')
   })
 
-  it('disables dtype selector for DSA models (DeepSeek-V4-Pro)', async () => {
+  it('preserves indexer precision when switching between indexer models', async () => {
     const wrapper = await mountComponent()
-    const modelSelect = wrapper.findAll('select').find(s =>
-      s.findAll('option').some(o => o.text().includes('DeepSeek-V4-Pro')),
-    )
-    await modelSelect.setValue('deepseek-ai/DeepSeek-V4-Pro')
+    // Switch to deepseek-v4-pro (has indexer, defaults to fp4_int4)
+    const modelSelect = wrapper.find('select')
+    await modelSelect.setValue('deepseek-v4-pro')
     await nextTick()
-    expect(wrapper.text()).toContain('DeepSeek V4 使用原生混合精度')
-    const dtypeSelect = wrapper.findAll('select').find(s =>
-      s.findAll('option').some(o => o.attributes('value') === 'fp8'),
-    )
-    expect(dtypeSelect.attributes('disabled')).toBeDefined()
-  })
+    const selects = wrapper.findAll('select')
+    const idxSelect = selects[selects.length - 1]
+    expect(idxSelect.element.value).toBe('fp4_int4')
 
-  it('round-trips forward ↔ reverse without stale state', async () => {
-    const wrapper = await mountComponent()
-    const input = wrapper.find('input[type="number"]')
-    await input.setValue('100')
+    // Change indexer precision to fp8_int8
+    await idxSelect.setValue('fp8_int8')
     await nextTick()
+    expect(idxSelect.element.value).toBe('fp8_int8')
 
-    const reverseTab = wrapper.findAll('button').find(t => t.text().includes('反算'))
-    await reverseTab.trigger('click')
+    // Switch to deepseek-v3.2 (also has indexer) — indexer precision should stay
+    await modelSelect.setValue('deepseek-v3.2')
     await nextTick()
-
-    const fwdTab = wrapper.findAll('button').find(t => t.text().includes('正向'))
-    await fwdTab.trigger('click')
-    await nextTick()
-    expect(wrapper.text()).toContain('KV Cache Size')
+    const selects2 = wrapper.findAll('select')
+    const idxSelect2 = selects2[selects2.length - 1]
+    expect(idxSelect2.element.value).toBe('fp8_int8')
   })
 })

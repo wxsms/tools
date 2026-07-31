@@ -18,7 +18,7 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.cjs'],
+    files: ['scripts/**/*.{cjs,mjs}'],
     languageOptions: {
       globals: {
         ...globals.node,
