@@ -274,7 +274,7 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'active_layers', expression: 'main_layers + draft_layers_if_enabled' },
         { name: 'total_bytes', expression: 'tokens x sequences x active_layers x 2 x num_key_value_heads x head_dim x precision_bytes' },
       ],
-      note: 'Production estimate of base KV payload; allocator and memory-pool bytes are excluded. Draft KV is included only when the checkbox is enabled.',
+      note: '基础 KV 负载的生产估算值，未包含分配器和内存池开销。仅在勾选时才计入 draft KV。',
       byteGroups: [{ role: 'kv', label: 'KV cache', elements: elementsPerToken * tokens }],
       components: [
         ['Main layers', layers],
@@ -300,7 +300,7 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'active_layers', expression: 'main_layers + draft_layers_if_enabled' },
         { name: 'total_bytes', expression: 'tokens x sequences x active_layers x (kv_lora_rank + qk_rope_head_dim) x precision_bytes' },
       ],
-      note: 'Production estimate of MLA latent KV payload; allocator and memory-pool bytes are excluded. Draft KV is included only when the checkbox is enabled.',
+      note: 'MLA latent KV 负载的生产估算值，未包含分配器和内存池开销。仅在勾选时才计入 draft KV。',
       byteGroups: [{ role: 'kv', label: 'KV cache', elements: elementsPerToken * tokens }],
       components: [
         ['Main layers', layers],
@@ -335,8 +335,8 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'total_bytes', expression: 'kv_bytes + indexer_bytes' },
       ],
       note: plan.sharedIndexerLayers > 0
-        ? 'Production estimate uses latent KV plus independently stored indexer state; shared indexer layers reuse the full indexer layers\' selection. Expanded HF-compatible cache is not included.'
-        : 'Production estimate uses latent KV plus indexer state; expanded HF-compatible cache is not included.',
+        ? '生产估算使用 latent KV 加独立存储的 indexer 状态；shared indexer 层复用 full indexer 层的 top-k 选择。未包含 HF 兼容的展开缓存。'
+        : '生产估算使用 latent KV 加 indexer 状态；未包含 HF 兼容的展开缓存。',
       byteGroups: [
         { role: 'kv', label: 'KV cache', elements: kvElementsPerToken * tokens },
         { role: 'indexer', label: 'Indexer cache', elements: indexerElementsPerToken * tokens },
@@ -403,8 +403,8 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'total_bytes', expression: 'mla_kv_bytes + optional_kda_checkpoint_bytes' },
       ],
       note: includeLinearAttentionState
-        ? 'Includes the 24-layer token-addressable MLA latent cache and retained BF16-convolution/FP32-recurrent KDA checkpoints. Active, ping-pong, and speculative runtime buffers are excluded.'
-        : 'Includes the 24-layer token-addressable MLA latent cache. The 69 KDA layers\' sequence-level state is excluded.',
+        ? '包含 24 层 token 可寻址的 MLA latent cache 以及保留的 BF16 卷积/FP32 循环 KDA 检查点。未包含 active、ping-pong 和投机解码运行时缓冲。'
+        : '包含 24 层 token 可寻址的 MLA latent cache。69 层 KDA 的序列级状态未计入。',
       byteGroups,
       components: [
         ['Main layers', layers],
@@ -460,8 +460,8 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'total_bytes', expression: 'full_kv_bytes + optional_linear_attention_state_bytes' },
       ],
       note: includeLinearAttentionState
-        ? 'Qwen3.5/3.6 linear-attention state is sequence-level runtime state, not per-token KV. It does not grow linearly with tokens, so it matters more for short prompts and is diluted by full-attention KV at long context.'
-        : 'Qwen3.5/3.6 linear-attention recurrent/conv state is not ordinary per-token KV and is excluded by default. Enable the linear-attention state option to add a fixed runtime-state estimate.',
+        ? 'Qwen3.5/3.6 linear-attention 状态是序列级运行时状态，并非按 token 计的 KV。它不随 token 数线性增长，因此在短 prompt 上影响更显著，长上下文时被 full-attention KV 稀释。'
+        : 'Qwen3.5/3.6 linear-attention 的循环/卷积状态并非标准按 token 计的 KV，默认不计入。勾选 linear-attention 状态选项可加入固定的运行时状态估算。',
       byteGroups,
       components: [
         ['Main layers', layers],
@@ -504,7 +504,7 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'sliding_kv_bytes', expression: 'min(tokens, sliding_window) x sequences x sliding_layers x sliding_kv_heads x (sliding_head_dim + sliding_v_head_dim) x precision_bytes' },
         { name: 'total_bytes', expression: 'full_kv_bytes + sliding_kv_bytes' },
       ],
-      note: 'Production estimate counts text-generation KV payload only. Vision/audio encoder activations and allocator memory are excluded.',
+      note: '生产估算仅计入文本生成的 KV 负载，未包含视觉/音频编码器激活和分配器内存。',
       byteGroups: [
         { role: 'kv', label: 'Full-attention KV cache', elements: fullElements },
         { role: 'kv', label: 'Sliding-window KV cache', elements: slidingElements },
@@ -552,7 +552,7 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'indexer_bytes', expression: 'tokens x sequences x sparse_attention_layers x index_head_dim x indexer_precision_bytes' },
         { name: 'total_bytes', expression: 'kv_bytes + indexer_bytes' },
       ],
-      note: 'MiniMax Sparse Attention (MSA) uses a lightweight indexer to pick the most relevant KV blocks for each query, so long-context attention can read a sparse subset of the cached tokens while keeping a separate indexer cache for block selection.',
+      note: 'MiniMax Sparse Attention (MSA) 使用轻量级 indexer 为每个 query 挑选最相关的 KV block，因此长上下文 attention 可读取缓存 token 的稀疏子集，同时保留独立的 indexer 缓存用于 block 选择。',
       byteGroups: [
         { role: 'kv', label: 'KV cache', elements: kvElements },
         { role: 'indexer', label: 'Indexer cache', elements: indexerElements },
@@ -618,7 +618,7 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
         { name: 'indexer_bytes', expression: 'ratio4_layers x floor(tokens / 4) x index_head_dim x indexer_precision_bytes' },
         { name: 'total_bytes', expression: 'sequences x (kv_bytes + indexer_bytes)' },
       ],
-      note: 'Production estimate uses the official sliding-window/compressed-cache layout. The default DeepSeek V4 setting uses FP8 attention cache and FP4 indexer cache.',
+      note: '生产估算使用官方的 sliding-window/compressed-cache 布局。DeepSeek V4 默认使用 FP8 attention cache 和 FP4 indexer cache。',
       byteGroups: [
         { role: 'kv', label: 'KV cache', elements: attentionElements },
         { role: 'indexer', label: 'Indexer cache', elements: indexerElements },
