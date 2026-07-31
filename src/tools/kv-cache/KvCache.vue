@@ -1,20 +1,10 @@
 <template>
   <div>
     <h1 class="text-3xl font-bold mb-2">
-      KV Cache Calculator
+      KVCache 尺寸计算器
     </h1>
     <p class="opacity-60 mb-6 text-sm">
-      估算给定 token 数下 KV Cache 占用的显存。算法与模型表来自
-      <a
-        href="https://kvcache.ai/tools/kv-cache-size-calculator/"
-        target="_blank"
-        class="link"
-      >kvcache.ai</a>，源码
-      <a
-        href="https://github.com/kvcache-ai/kvcache-blog"
-        target="_blank"
-        class="link"
-      >kvcache-ai/kvcache-blog</a>。
+      估算给定 token 数下 KV Cache 占用的显存。
     </p>
 
     <div class="grid md:grid-cols-2 gap-6 max-w-5xl">
@@ -42,27 +32,15 @@
           </select>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Tokens / 序列</span></label>
-            <input
-              v-model.number="tokens"
-              type="number"
-              min="1"
-              step="1"
-              class="input input-bordered w-full font-mono"
-            >
-          </div>
-          <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Sequences (batch)</span></label>
-            <input
-              v-model.number="sequences"
-              type="number"
-              min="1"
-              step="1"
-              class="input input-bordered w-full font-mono"
-            >
-          </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">输入长度（tokens）</span></label>
+          <input
+            v-model.number="tokens"
+            type="number"
+            min="1"
+            step="1"
+            class="input input-bordered w-full font-mono"
+          >
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -111,7 +89,7 @@
               type="checkbox"
               class="checkbox checkbox-sm"
             >
-            <span class="label-text">Include draft KV cache (MTP / Next-N)</span>
+            <span class="label-text">包含 draft KV cache (MTP / Next-N)</span>
           </label>
         </div>
 
@@ -125,7 +103,7 @@
               type="checkbox"
               class="checkbox checkbox-sm"
             >
-            <span class="label-text">Include linear-attention state</span>
+            <span class="label-text">包含 linear-attention 状态</span>
           </label>
         </div>
 
@@ -134,7 +112,7 @@
           class="form-control bg-base-200 p-3 rounded"
         >
           <div class="text-sm font-semibold mb-2">
-            KDA Checkpoint Policy
+            KDA 检查点策略
           </div>
           <label class="label cursor-pointer justify-start gap-3">
             <input
@@ -143,7 +121,7 @@
               :value="KDA_CHECKPOINT_POLICY_PROMPT_END"
               class="radio radio-sm"
             >
-            <span class="label-text">Prompt-End State (single checkpoint)</span>
+            <span class="label-text">Prompt 末尾状态（单个检查点）</span>
           </label>
           <label class="label cursor-pointer justify-start gap-3">
             <input
@@ -152,18 +130,18 @@
               :value="KDA_CHECKPOINT_POLICY_FIXED_INTERVAL"
               class="radio radio-sm"
             >
-            <span class="label-text">Fixed Interval Checkpoints</span>
+            <span class="label-text">固定间隔检查点</span>
           </label>
           <div
             v-if="kdaCheckpointPolicy === KDA_CHECKPOINT_POLICY_FIXED_INTERVAL"
             class="form-control mt-2"
           >
-            <label class="label"><span class="label-text text-xs">Checkpoint interval (tokens)</span></label>
+            <label class="label"><span class="label-text text-xs">检查点间隔（tokens）</span></label>
             <input
               v-model="kdaCheckpointIntervalInput"
               type="text"
               class="input input-bordered input-sm w-full font-mono"
-              placeholder="e.g. 10240 or ∞"
+              placeholder="如 10240 或 ∞"
             >
           </div>
         </div>
@@ -207,7 +185,7 @@
             </div>
             <details class="mt-3">
               <summary class="text-sm cursor-pointer opacity-70">
-                Formula breakdown
+                公式详情
               </summary>
               <pre class="text-xs mt-2 p-3 bg-base-100 rounded overflow-x-auto whitespace-pre-wrap">{{ result.elementPlan.formulaText }}</pre>
             </details>
@@ -238,12 +216,13 @@ import {
 } from './kv-cache'
 
 const groupedModels = groupModelsByFamily()
+const firstModelId = Object.values(groupedModels)[0][0].id
 
-const modelId = ref('qwen3-8b')
+const modelId = ref(firstModelId)
 const tokens = ref(1024)
 const sequences = ref(1)
-const precision = ref(defaultPrecisionId(MODEL_BY_ID['qwen3-8b']))
-const indexerPrecision = ref(defaultIndexerPrecisionId(MODEL_BY_ID['qwen3-8b']))
+const precision = ref(defaultPrecisionId(MODEL_BY_ID[firstModelId]))
+const indexerPrecision = ref(defaultIndexerPrecisionId(MODEL_BY_ID[firstModelId]))
 const includeDraftKvCache = ref(false)
 const includeLinearAttentionState = ref(false)
 const kdaCheckpointPolicy = ref(KDA_CHECKPOINT_POLICY_PROMPT_END)
@@ -272,22 +251,22 @@ const resultDetails = computed(() => {
   if (!result.value || result.value.error) return []
   const r = result.value
   const lines = []
-  lines.push({ k: 'Model', v: `${r.modelLabel} (${r.modelId})` })
-  lines.push({ k: 'Formula', v: r.formulaLabel })
-  lines.push({ k: 'KV precision', v: r.precisionLabel })
-  if (r.indexerPrecisionLabel) lines.push({ k: 'Indexer precision', v: r.indexerPrecisionLabel })
-  lines.push({ k: 'Tokens × Sequences', v: `${r.tokens.toLocaleString()} × ${r.sequences} = ${r.totalCachedTokens.toLocaleString()}` })
+  lines.push({ k: '模型', v: r.modelLabel })
+  lines.push({ k: '公式', v: r.formulaLabel })
+  lines.push({ k: 'KV 精度', v: r.precisionLabel })
+  if (r.indexerPrecisionLabel) lines.push({ k: 'Indexer 精度', v: r.indexerPrecisionLabel })
+  lines.push({ k: 'Tokens × 序列数', v: `${r.tokens.toLocaleString()} × ${r.sequences} = ${r.totalCachedTokens.toLocaleString()}` })
   if (r.cacheGroups.length > 1) {
     for (const g of r.cacheGroups) {
       lines.push({ k: g.label, v: formatBytes(g.bytes) })
     }
   }
-  lines.push({ k: 'Per token', v: formatBytes(r.bytesPerToken) })
+  lines.push({ k: '每 token 占用', v: formatBytes(r.bytesPerToken) })
   if (Number.isFinite(r.hitRateBytesPerToken)) {
-    lines.push({ k: 'Reusable MLA / token', v: formatBytes(r.hitRateBytesPerToken) })
+    lines.push({ k: '可复用 MLA / token', v: formatBytes(r.hitRateBytesPerToken) })
   }
   if (r.tensorParallel > 1) {
-    lines.push({ k: 'Per device', v: formatBytes(r.perDeviceBytes) })
+    lines.push({ k: '每张卡占用', v: formatBytes(r.perDeviceBytes) })
   }
   return lines
 })
@@ -305,10 +284,19 @@ function recompute() {
   })
 }
 
-watch(modelId, (newId) => {
+watch(modelId, (newId, oldId) => {
+  // KV precision is intentionally preserved across model switches — the
+  // user's last choice (bf16/fp8/fp4) survives. Indexer precision is also
+  // preserved, but only when both the previous and new models have an
+  // indexer cache. When transitioning into an indexer model from a non-
+  // indexer one, fall back to the new model's default indexer precision.
   const m = MODEL_BY_ID[newId]
-  precision.value = defaultPrecisionId(m)
-  indexerPrecision.value = defaultIndexerPrecisionId(m)
+  const prev = oldId ? MODEL_BY_ID[oldId] : null
+  const prevHadIndexer = prev ? hasIndexerCache(prev) : false
+  const newHasIndexer = hasIndexerCache(m)
+  if (newHasIndexer && !prevHadIndexer) {
+    indexerPrecision.value = defaultIndexerPrecisionId(m)
+  }
   if (!hasKdaCheckpointInterval(m)) {
     kdaCheckpointPolicy.value = KDA_CHECKPOINT_POLICY_PROMPT_END
   }

@@ -367,9 +367,9 @@ export const toolGroups = [
         icon: 'mdi:counter',
       },
       {
-        name: 'KV Cache Calculator',
+        name: 'KVCache 尺寸计算器',
         path: '/kv-cache',
-        desc: '估算 LLM KV Cache 显存占用（算法与模型表来自 kvcache.ai）',
+        desc: '估算 LLM KV Cache 显存占用',
         icon: 'mdi:memory',
       },
     ],
