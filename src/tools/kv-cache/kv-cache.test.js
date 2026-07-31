@@ -209,3 +209,155 @@ describe('indexerLayerPlan', () => {
     expect(plan.activeIndexerLayers).toBe(61)
   })
 })
+
+import { calculateElementsPerSequence } from './kv-cache'
+
+// ============================================================
+// calculateElementsPerSequence — per-formula correctness
+// ============================================================
+
+describe('calculateElementsPerSequence — standard_gqa (Qwen3-8B)', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+  it('computes correct elementsPerToken for 1024 tokens, no draft', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(36 * 2 * 8 * 128)
+    expect(r.elementsPerSequence).toBe(73728 * 1024)
+    expect(r.formulaLabel).toBe('Standard MHA/GQA')
+    expect(r.byteGroups.length).toBe(1)
+    expect(r.byteGroups[0].role).toBe('kv')
+  })
+
+  it('does not add draft layers when model has no draft fields', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.elementsPerToken).toBe(36 * 2 * 8 * 128)
+  })
+})
+
+describe('calculateElementsPerSequence — mla (DeepSeek V3)', () => {
+  const model = MODEL_BY_ID['deepseek-v3']
+  it('computes correct elementsPerToken', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(61 * (512 + 64))
+    expect(r.elementsPerSequence).toBe(35136 * 1024)
+    expect(r.formulaLabel).toBe('MLA latent KV')
+  })
+
+  it('adds draft layer when includeDraftKvCache=true (num_nextn_predict_layers=1)', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.elementsPerToken).toBe(62 * (512 + 64))
+  })
+})
+
+describe('calculateElementsPerSequence — dsa_mla (DeepSeek V3.2)', () => {
+  const model = MODEL_BY_ID['deepseek-v3.2']
+  it('computes correct split between KV and indexer elements', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(35136 + 7808)
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[0].role).toBe('kv')
+    expect(r.byteGroups[1].role).toBe('indexer')
+  })
+})
+
+describe('calculateElementsPerSequence — kimi_kda_mla_hybrid (Kimi K3)', () => {
+  const model = MODEL_BY_ID['kimi-k3']
+  it('computes MLA elements per token without linear state', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(13824)
+    expect(r.byteGroups.length).toBe(1)
+    expect(r.byteGroups[0].role).toBe('kv')
+  })
+
+  it('adds KDA checkpoint state with prompt-end (Infinity) interval = 1 checkpoint', () => {
+    const r = calculateElementsPerSequence(model, 1024, {
+      includeLinearAttentionState: true,
+      kdaCheckpointInterval: Infinity,
+    })
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[1].role).toBe('linear_state')
+    // kda_conv_elements = 69 × 3 × (96×128 + 96×128 + 96×128) = 7,630,848
+    // kda_recurrent_elements = 69 × 96 × 128 × 128 = 108,527,616
+    // kda_state_bytes = 7,630,848 × 2 + 108,527,616 × 4 = 15,261,696 + 434,110,464 = 449,372,160
+    expect(r.byteGroups[1].bytesPerSequence).toBe(449372160)
+  })
+
+  it('uses ceil(tokens/interval) checkpoints for finite interval', () => {
+    const r = calculateElementsPerSequence(model, 1024, {
+      includeLinearAttentionState: true,
+      kdaCheckpointInterval: 100,
+    })
+    expect(r.byteGroups[1].bytesPerSequence).toBe(11 * 449372160)
+  })
+})
+
+describe('calculateElementsPerSequence — qwen_linear_full_hybrid (Qwen3.5-397B)', () => {
+  const model = MODEL_BY_ID['qwen3.5-397b-a17b']
+  it('computes full-attention elements without linear state', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(15360)
+    expect(r.byteGroups.length).toBe(1)
+  })
+
+  it('adds linear-attention state when enabled', () => {
+    const r = calculateElementsPerSequence(model, 1024, { includeLinearAttentionState: true })
+    expect(r.byteGroups.length).toBe(2)
+    expect(r.byteGroups[1].role).toBe('linear_state')
+    expect(r.byteGroups[1].bytesPerSequence).toBe(193167360)
+  })
+})
+
+describe('calculateElementsPerSequence — mixed_full_sliding_gqa (Gemma 4 31B)', () => {
+  const model = MODEL_BY_ID['gemma-4-31b']
+  it('caps sliding tokens at sliding_window when tokens > window', () => {
+    const r = calculateElementsPerSequence(model, 10000, {})
+    // full_elements = 10000 × 10 × 4 × (512 + 512) = 409,600,000
+    // sliding_elements = 1024 × 50 × 16 × (256 + 256) = 419,430,400
+    expect(r.byteGroups[0].elements).toBe(409600000)
+    expect(r.byteGroups[1].elements).toBe(419430400)
+  })
+
+  it('uses full tokens for sliding when tokens < window', () => {
+    const r = calculateElementsPerSequence(model, 500, {})
+    expect(r.byteGroups[0].elements).toBe(20480000)
+    expect(r.byteGroups[1].elements).toBe(204800000)
+  })
+})
+
+describe('calculateElementsPerSequence — minimax_msa (MiniMax M3)', () => {
+  const model = MODEL_BY_ID['minimax-m3']
+  it('computes correct KV and indexer elements', () => {
+    const r = calculateElementsPerSequence(model, 1024, {})
+    expect(r.elementsPerToken).toBe(61440 + 7296)
+    expect(r.byteGroups[0].role).toBe('kv')
+    expect(r.byteGroups[1].role).toBe('indexer')
+  })
+})
+
+describe('calculateElementsPerSequence — deepseek_v4_hybrid (V4 Pro)', () => {
+  const model = MODEL_BY_ID['deepseek-v4-pro']
+  it('matches an independent computation for 1024 tokens with draft enabled', () => {
+    const ratios = model.fields.compress_ratios.map(Number)
+    const layers = 61
+    const mainRatios = ratios.slice(0, layers)
+    const draftRatios = ratios.slice(layers)
+    const activeRatios = mainRatios.concat(draftRatios)
+    let windowElements = 0
+    let compressedElements = 0
+    let indexerElements = 0
+    for (const ratio of activeRatios) {
+      windowElements += 128 * 512
+      if (ratio > 0) compressedElements += Math.floor(1024 / ratio) * 512
+      if (ratio === 4) indexerElements += Math.floor(1024 / 4) * 128
+    }
+    const expectedAttention = windowElements + compressedElements
+    const r = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    expect(r.byteGroups[0].elements).toBe(expectedAttention)
+    expect(r.byteGroups[1].elements).toBe(indexerElements)
+  })
+
+  it('excludes draft ratio when includeDraftKvCache=false', () => {
+    const rWith = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: true })
+    const rWithout = calculateElementsPerSequence(model, 1024, { includeDraftKvCache: false })
+    expect(rWith.byteGroups[0].elements - rWithout.byteGroups[0].elements).toBe(65536)
+  })
+})
