@@ -642,5 +642,135 @@ export function calculateElementsPerSequence(model, tokens, settings = {}) {
 }
 
 // ============================================================
-// calculate — added in Task 6
+// Top-level calculate
 // ============================================================
+
+function bytesPerElementForGroup(precision, role) {
+  if ((role === 'kv' || role === 'attention') && Number.isFinite(precision.kvBytesPerElement)) {
+    return precision.kvBytesPerElement
+  }
+  if (role === 'indexer' && Number.isFinite(precision.indexerBytesPerElement)) {
+    return precision.indexerBytesPerElement
+  }
+  if (Number.isFinite(precision.bytesPerElement)) return precision.bytesPerElement
+  throw new Error(`Precision ${precision.label} does not define bytes for ${role} cache`)
+}
+
+function calculateCacheGroups(elementPlan, precision) {
+  const groups = elementPlan.byteGroups || [{ role: 'cache', elements: elementPlan.elementsPerSequence }]
+  return groups.map(group => ({
+    role: group.role,
+    label: group.label || 'KV cache',
+    elements: group.elements,
+    bytesPerSequence: Number.isFinite(group.bytesPerSequence)
+      ? group.bytesPerSequence
+      : group.elements * bytesPerElementForGroup(precision, group.role),
+  }))
+}
+
+function precisionComponents(precision) {
+  if (Number.isFinite(precision.kvBytesPerElement) || Number.isFinite(precision.indexerBytesPerElement)) {
+    return [
+      ['KV precision bytes', precision.kvBytesPerElement],
+      ['Indexer precision bytes', precision.indexerBytesPerElement],
+    ]
+  }
+  return [['Precision bytes', precision.bytesPerElement]]
+}
+
+export function calculate(model, input = {}, options = {}) {
+  if (!model) return { error: '未选择模型' }
+  const tokens = toPositiveInteger(input.tokens, model.default_tokens || 4096)
+  const sequences = toPositiveInteger(input.sequences, 1)
+  const tensorParallel = toPositiveInteger(input.tensorParallel, 1)
+
+  const precisionOpts = options.precisionOptions || PRECISION_OPTIONS
+  const indexerPrecisionOpts = options.indexerPrecisionOptions || INDEXER_PRECISION_OPTIONS
+
+  const precisionId = input.precision || defaultPrecisionId(model, precisionOpts)
+  if (!precisionOpts[precisionId]) {
+    return { error: `未知精度：${precisionId}` }
+  }
+  const precision = getPrecisionProfile(precisionId, precisionOpts, defaultPrecisionId(model, precisionOpts))
+
+  let indexerPrecision = null
+  if (hasIndexerCache(model)) {
+    const idxId = input.indexerPrecision || defaultIndexerPrecisionId(model, indexerPrecisionOpts, precisionId)
+    if (!indexerPrecisionOpts[idxId]) {
+      return { error: `未知 indexer 精度：${idxId}` }
+    }
+    indexerPrecision = getIndexerPrecisionProfile(idxId, indexerPrecisionOpts, model, precisionId)
+  }
+
+  const cachePrecision = indexerPrecision
+    ? {
+        label: precision.label,
+        bytesPerElement: precision.bytesPerElement,
+        kvBytesPerElement: precision.bytesPerElement,
+        indexerBytesPerElement: indexerPrecision.bytesPerElement,
+      }
+    : precision
+
+  let elementPlan
+  try {
+    elementPlan = calculateElementsPerSequence(model, tokens, {
+      includeDraftKvCache: hasDraftKvCache(model) && toBoolean(input.includeDraftKvCache),
+      includeLinearAttentionState: hasLinearAttentionState(model) && toBoolean(input.includeLinearAttentionState),
+      kdaCheckpointInterval: hasKdaCheckpointInterval(model)
+        ? input.kdaCheckpointPolicy === KDA_CHECKPOINT_POLICY_FIXED_INTERVAL
+          ? parseKdaCheckpointInterval(input.kdaCheckpointInterval, defaultKdaCheckpointInterval(model))
+          : Infinity
+        : undefined,
+    })
+  } catch (err) {
+    return { error: err.message }
+  }
+
+  const cacheGroupsPerSeq = calculateCacheGroups(elementPlan, cachePrecision)
+  const bytesPerSequence = cacheGroupsPerSeq.reduce((sum, g) => sum + g.bytesPerSequence, 0)
+  const totalBytes = bytesPerSequence * sequences
+
+  const kvBytesPerSeq = cacheGroupsPerSeq
+    .filter(g => g.role === 'kv' || g.role === 'attention' || g.role === 'cache')
+    .reduce((sum, g) => sum + g.bytesPerSequence, 0)
+  const indexerBytesPerSeq = cacheGroupsPerSeq
+    .filter(g => g.role === 'indexer')
+    .reduce((sum, g) => sum + g.bytesPerSequence, 0)
+
+  const hitRateBytesPerToken = Number.isFinite(elementPlan.hitRateElementsPerToken)
+    ? elementPlan.hitRateElementsPerToken * bytesPerElementForGroup(cachePrecision, 'kv')
+    : undefined
+
+  return {
+    modelId: model.id,
+    modelLabel: model.label,
+    formulaLabel: elementPlan.formulaLabel,
+    precisionLabel: precision.label,
+    indexerPrecisionLabel: indexerPrecision ? indexerPrecision.label : undefined,
+    bytesPerElement: precision.bytesPerElement,
+    tokens,
+    sequences,
+    totalCachedTokens: tokens * sequences,
+    tensorParallel,
+    totalBytes,
+    totalGB: totalBytes / BYTES_PER_GB,
+    totalGiB: totalBytes / BYTES_PER_GIB,
+    kvBytes: kvBytesPerSeq * sequences,
+    kvGiB: kvBytesPerSeq * sequences / BYTES_PER_GIB,
+    indexerBytes: indexerBytesPerSeq * sequences,
+    indexerGiB: indexerBytesPerSeq * sequences / BYTES_PER_GIB,
+    bytesPerSequence,
+    bytesPerToken: bytesPerSequence / tokens,
+    perDeviceBytes: totalBytes / tensorParallel,
+    perDeviceGiB: totalBytes / tensorParallel / BYTES_PER_GIB,
+    hitRateBytesPerToken,
+    cacheGroups: cacheGroupsPerSeq.map(g => ({
+      role: g.role,
+      label: g.label,
+      elements: Number.isFinite(g.elements) ? g.elements * sequences : undefined,
+      bytes: g.bytesPerSequence * sequences,
+    })),
+    elementPlan,
+    components: elementPlan.components.concat(precisionComponents(cachePrecision)),
+  }
+}

@@ -361,3 +361,175 @@ describe('calculateElementsPerSequence — deepseek_v4_hybrid (V4 Pro)', () => {
     expect(rWith.byteGroups[0].elements - rWithout.byteGroups[0].elements).toBe(65536)
   })
 })
+
+import { calculate, KDA_CHECKPOINT_POLICY_PROMPT_END, KDA_CHECKPOINT_POLICY_FIXED_INTERVAL } from './kv-cache'
+
+// ============================================================
+// calculate — top-level integration
+// ============================================================
+
+describe('calculate — input validation', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('returns error for unknown precision', () => {
+    const res = calculate(model, { tokens: 1024, precision: 'fp7' })
+    expect(res.error).toContain('未知精度')
+  })
+
+  it('returns error for unknown indexer precision', () => {
+    const res = calculate(MODEL_BY_ID['deepseek-v3.2'], { tokens: 1024, indexerPrecision: 'fp7' })
+    expect(res.error).toContain('未知 indexer 精度')
+  })
+
+  it('coerces invalid tokens to default', () => {
+    const res = calculate(model, { tokens: -1 })
+    expect(res.tokens).toBe(model.default_tokens)
+  })
+
+  it('coerces invalid sequences to 1', () => {
+    const res = calculate(model, { tokens: 1024, sequences: 0 })
+    expect(res.sequences).toBe(1)
+  })
+})
+
+describe('calculate — Qwen3-8B (standard_gqa, 1024 tokens, bf16, 1 seq)', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+  const res = calculate(model, { tokens: 1024, sequences: 1, precision: 'bf16_fp16' })
+
+  it('produces correct totalBytes', () => {
+    expect(res.totalBytes).toBe(36 * 2 * 8 * 128 * 1024 * 2)
+  })
+
+  it('reports totalGB (10^9) and totalGiB (1024^3)', () => {
+    // totalBytes = 150,994,944 (36×2×8×128×1024×2 bytes for bf16)
+    expect(res.totalGB).toBeCloseTo(150994944 / 1e9, 5)
+    expect(res.totalGiB).toBeCloseTo(150994944 / 1024 ** 3, 5)
+  })
+
+  it('reports bytesPerToken = bytesPerSequence / tokens', () => {
+    expect(res.bytesPerToken).toBeCloseTo(res.bytesPerSequence / 1024, 5)
+  })
+
+  it('kvBytes equals totalBytes (no indexer)', () => {
+    expect(res.kvBytes).toBe(res.totalBytes)
+    expect(res.indexerBytes).toBe(0)
+  })
+
+  it('precisionLabel is BF16 / FP16', () => {
+    expect(res.precisionLabel).toBe('BF16 / FP16')
+  })
+})
+
+describe('calculate — sequences scaling', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('totalBytes scales linearly with sequences', () => {
+    const r1 = calculate(model, { tokens: 1024, sequences: 1 })
+    const r4 = calculate(model, { tokens: 1024, sequences: 4 })
+    expect(r4.totalBytes).toBe(r1.totalBytes * 4)
+    expect(r4.totalCachedTokens).toBe(4096)
+  })
+})
+
+describe('calculate — tensor parallel splits bytes', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('perDeviceBytes = totalBytes / tensorParallel', () => {
+    const r = calculate(model, { tokens: 1024, sequences: 1, tensorParallel: 2 })
+    expect(r.perDeviceBytes).toBe(r.totalBytes / 2)
+    expect(r.perDeviceGiB).toBeCloseTo(r.totalBytes / 2 / 1024 ** 3, 5)
+  })
+})
+
+describe('calculate — precision switch halves bytes', () => {
+  const model = MODEL_BY_ID['qwen3-8b']
+
+  it('bf16 → fp8 halves totalBytes', () => {
+    const bf16 = calculate(model, { tokens: 1024, precision: 'bf16_fp16' })
+    const fp8 = calculate(model, { tokens: 1024, precision: 'fp8_int8' })
+    expect(bf16.totalBytes / fp8.totalBytes).toBe(2)
+  })
+
+  it('fp8 → fp4 halves again', () => {
+    const fp8 = calculate(model, { tokens: 1024, precision: 'fp8_int8' })
+    const fp4 = calculate(model, { tokens: 1024, precision: 'fp4_int4' })
+    expect(fp8.totalBytes / fp4.totalBytes).toBe(2)
+  })
+})
+
+describe('calculate — DeepSeek V3.2 (dsa_mla) separates KV and indexer bytes', () => {
+  const model = MODEL_BY_ID['deepseek-v3.2']
+  const res = calculate(model, { tokens: 1024, sequences: 1 })
+
+  it('kvBytes and indexerBytes sum to totalBytes', () => {
+    expect(res.kvBytes + res.indexerBytes).toBe(res.totalBytes)
+  })
+
+  it('indexerBytes > 0', () => {
+    expect(res.indexerBytes).toBeGreaterThan(0)
+  })
+
+  it('indexer precision defaults to bf16 (no fixed default for V3.2)', () => {
+    expect(res.indexerPrecisionLabel).toBe('BF16 / FP16')
+  })
+})
+
+describe('calculate — DeepSeek V4 Pro defaults to fp8 KV + fp4 indexer', () => {
+  const model = MODEL_BY_ID['deepseek-v4-pro']
+
+  it('default precision is fp8_int8', () => {
+    const res = calculate(model, { tokens: 1024 })
+    expect(res.precisionLabel).toBe('FP8 / INT8')
+    expect(res.indexerPrecisionLabel).toBe('FP4 / INT4')
+  })
+
+  it('indexer bytes use 0.5 bytes/element, KV uses 1 byte/element', () => {
+    const res = calculate(model, { tokens: 1024 })
+    const plan = calculateElementsPerSequence(model, 1024, {})
+    expect(res.kvBytes).toBe(plan.byteGroups[0].elements * 1)
+    expect(res.indexerBytes).toBe(plan.byteGroups[1].elements * 0.5)
+  })
+})
+
+describe('calculate — Kimi K3 prompt-end vs fixed-interval', () => {
+  const model = MODEL_BY_ID['kimi-k3']
+
+  it('prompt-end (default Infinity) → 1 checkpoint', () => {
+    const res = calculate(model, {
+      tokens: 1024,
+      includeLinearAttentionState: true,
+      kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_PROMPT_END,
+    })
+    expect(res.elementPlan.components.find(c => c[0] === 'KDA checkpoints per sequence')[1]).toBe(1)
+  })
+
+  it('fixed-interval=500 → ceil(1024/500) = 3 checkpoints', () => {
+    const res = calculate(model, {
+      tokens: 1024,
+      includeLinearAttentionState: true,
+      kdaCheckpointPolicy: KDA_CHECKPOINT_POLICY_FIXED_INTERVAL,
+      kdaCheckpointInterval: 500,
+    })
+    expect(res.elementPlan.components.find(c => c[0] === 'KDA checkpoints per sequence')[1]).toBe(3)
+  })
+
+  it('without linear-attention-state, KDA bytes are excluded', () => {
+    const res = calculate(model, { tokens: 1024, includeLinearAttentionState: false })
+    expect(res.cacheGroups.length).toBe(1)
+    expect(res.cacheGroups[0].role).toBe('kv')
+  })
+})
+
+describe('calculate — MiniMax M3 disables draft KV', () => {
+  const model = MODEL_BY_ID['minimax-m3']
+
+  it('hasDraftKvCache is false (disable_draft_kv_cache=true)', () => {
+    expect(hasDraftKvCache(model)).toBe(false)
+  })
+
+  it('calculate ignores includeDraftKvCache=true', () => {
+    const rOff = calculate(model, { tokens: 1024, includeDraftKvCache: false })
+    const rOn = calculate(model, { tokens: 1024, includeDraftKvCache: true })
+    expect(rOn.totalBytes).toBe(rOff.totalBytes)
+  })
+})
