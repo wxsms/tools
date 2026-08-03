@@ -63,7 +63,7 @@
     <!-- Keyboard (SVG with viewBox → auto-scales, no horizontal scrollbar) -->
     <div
       ref="kbEl"
-      class="bg-base-200 rounded-lg p-3 w-fit max-w-full"
+      class="bg-base-200 rounded-lg p-3 w-fit max-w-full focus:outline-none"
       tabindex="0"
     >
       <svg
