@@ -132,6 +132,15 @@ function select(path) {
   closePalette()
 }
 
+// double-shift 唤起:300ms 内连按两次 Shift 即触发
+// 中间按了别的键会重置(避免输入大写字母时误触)
+// 在 keyboard-tester 页面禁用,避免干扰键盘测试
+const DOUBLE_SHIFT_MS = 300
+let lastShiftAt = 0
+function isKeyboardTesterPage() {
+  return typeof window !== 'undefined' && window.location.pathname === '/keyboard-tester'
+}
+
 function handleKeydown(e) {
   const isToggleShortcut = (e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')
   if (isToggleShortcut) {
@@ -139,6 +148,21 @@ function handleKeydown(e) {
     if (open.value) closePalette()
     else openPalette()
     return
+  }
+
+  // double-shift 唤起(调色板未打开时)
+  if (!open.value && e.key === 'Shift' && !isKeyboardTesterPage()) {
+    const now = Date.now()
+    if (now - lastShiftAt < DOUBLE_SHIFT_MS) {
+      e.preventDefault()
+      openPalette()
+      lastShiftAt = 0
+      return
+    }
+    lastShiftAt = now
+  } else if (!open.value && e.key !== 'Shift') {
+    // 非 Shift 键重置计时
+    lastShiftAt = 0
   }
 
   if (!open.value) return
