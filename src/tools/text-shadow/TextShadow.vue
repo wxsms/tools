@@ -6,6 +6,20 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Left: Controls -->
       <div class="flex flex-col gap-4">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">预设</span></label>
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="p in presets"
+              :key="p.name"
+              class="btn btn-xs btn-outline"
+              :title="p.css"
+              @click="applyPreset(p)"
+            >
+              {{ p.name }}
+            </button>
+          </div>
+        </div>
         <!-- Shadow list -->
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">阴影列表</span></label>
@@ -202,7 +216,54 @@
 import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
 
-const defaultShadow = () => ({ x: 2, y: 2, blur: 4, color: '#000000', opacity: 0.5 })
+const defaultShadow = () => ({ x: 0, y: 6, blur: 12, color: '#000000', opacity: 0.6 })
+
+// Each preset may override shadows, textColor, and fontSize.
+const presets = [
+  { name: '原图', shadows: [], textColor: '#ffffff', fontSize: 48 },
+  { name: '硬阴影', shadows: [{ x: 2, y: 2, blur: 0, color: '#000000', opacity: 1 }], textColor: '#ffffff', fontSize: 48 },
+  { name: '柔和', shadows: [{ x: 0, y: 2, blur: 6, color: '#000000', opacity: 0.4 }], textColor: '#ffffff', fontSize: 48 },
+  { name: '深浮離', shadows: [{ x: 0, y: 6, blur: 12, color: '#000000', opacity: 0.6 }], textColor: '#ffffff', fontSize: 48 },
+  { name: '浅浮離', shadows: [{ x: 0, y: 1, blur: 2, color: '#000000', opacity: 0.3 }], textColor: '#ffffff', fontSize: 48 },
+  { name: '描边', shadows: [
+    { x: 1, y: 0, blur: 0, color: '#000000', opacity: 1 },
+    { x: -1, y: 0, blur: 0, color: '#000000', opacity: 1 },
+    { x: 0, y: 1, blur: 0, color: '#000000', opacity: 1 },
+    { x: 0, y: -1, blur: 0, color: '#000000', opacity: 1 },
+  ], textColor: '#ffffff', fontSize: 48 },
+  { name: '发光', shadows: [
+    { x: 0, y: 0, blur: 8, color: '#fbbf24', opacity: 0.9 },
+    { x: 0, y: 0, blur: 16, color: '#f59e0b', opacity: 0.6 },
+  ], textColor: '#ffffff', fontSize: 48 },
+  { name: '霓虹', shadows: [
+    { x: 0, y: 0, blur: 4, color: '#22d3ee', opacity: 1 },
+    { x: 0, y: 0, blur: 12, color: '#06b6d4', opacity: 0.8 },
+    { x: 0, y: 0, blur: 24, color: '#0891b2', opacity: 0.6 },
+  ], textColor: '#ffffff', fontSize: 48 },
+  { name: '火热', shadows: [
+    { x: 0, y: 0, blur: 6, color: '#ef4444', opacity: 0.9 },
+    { x: 0, y: 0, blur: 14, color: '#f97316', opacity: 0.7 },
+  ], textColor: '#ffffff', fontSize: 48 },
+  { name: '复古', shadows: [{ x: 4, y: 4, blur: 0, color: '#7c2d12', opacity: 0.8 }], textColor: '#fbbf24', fontSize: 48 },
+  { name: '3D', shadows: [
+    { x: 1, y: 1, blur: 0, color: '#9ca3af', opacity: 1 },
+    { x: 2, y: 2, blur: 0, color: '#6b7280', opacity: 1 },
+    { x: 3, y: 3, blur: 0, color: '#4b5563', opacity: 1 },
+    { x: 4, y: 4, blur: 0, color: '#374151', opacity: 1 },
+  ], textColor: '#ffffff', fontSize: 48 },
+  { name: '凹陷', shadows: [
+    { x: 1, y: 1, blur: 0, color: '#ffffff', opacity: 0.5 },
+    { x: -1, y: -1, blur: 0, color: '#000000', opacity: 0.5 },
+  ], textColor: '#9ca3af', fontSize: 48 },
+  { name: '长投影', shadows: [
+    { x: 1, y: 1, blur: 0, color: '#000000', opacity: 0.2 },
+    { x: 2, y: 2, blur: 0, color: '#000000', opacity: 0.2 },
+    { x: 3, y: 3, blur: 0, color: '#000000', opacity: 0.2 },
+    { x: 4, y: 4, blur: 0, color: '#000000', opacity: 0.2 },
+    { x: 5, y: 5, blur: 0, color: '#000000', opacity: 0.2 },
+    { x: 6, y: 6, blur: 1, color: '#000000', opacity: 0.2 },
+  ], textColor: '#ffffff', fontSize: 48 },
+]
 
 const shadows = ref([defaultShadow()])
 const selectedIndex = ref(0)
@@ -240,6 +301,13 @@ const cssCode = computed(() => `text-shadow: ${cssValue.value};`)
 function addShadow() {
   shadows.value.push(defaultShadow())
   selectedIndex.value = shadows.value.length - 1
+}
+
+function applyPreset(p) {
+  shadows.value = p.shadows.map(s => ({ ...s }))
+  selectedIndex.value = 0
+  if (p.textColor) textColor.value = p.textColor
+  if (p.fontSize) fontSize.value = p.fontSize
 }
 
 function removeShadow(i) {

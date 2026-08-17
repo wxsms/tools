@@ -227,10 +227,22 @@ export const toolGroups = [
         icon: 'mdi:box-shadow',
       },
       {
+        name: '文字阴影',
+        path: '/text-shadow',
+        desc: 'CSS text-shadow 可视化生成，支持多层阴影叠加',
+        icon: 'mdi:format-text',
+      },
+      {
         name: '渐变',
         path: '/gradient',
         desc: 'CSS 渐变可视化生成',
         icon: 'mdi:gradient-vertical',
+      },
+      {
+        name: '滤镜',
+        path: '/css-filter',
+        desc: 'CSS filter 可视化生成，支持多种滤镜叠加',
+        icon: 'lucide:sun',
       },
       {
         name: '圆角',
@@ -273,18 +285,6 @@ export const toolGroups = [
         path: '/grid',
         desc: 'CSS Grid 布局可视化编辑，实时调整容器与子项属性',
         icon: 'lucide:layout-grid',
-      },
-      {
-        name: '滤镜',
-        path: '/css-filter',
-        desc: 'CSS filter 可视化生成，支持多种滤镜叠加',
-        icon: 'lucide:sun',
-      },
-      {
-        name: '文字阴影',
-        path: '/text-shadow',
-        desc: 'CSS text-shadow 可视化生成，支持多层阴影叠加',
-        icon: 'mdi:format-text',
       },
     ],
   },

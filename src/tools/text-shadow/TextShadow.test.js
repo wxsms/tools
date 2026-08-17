@@ -14,7 +14,7 @@ describe('TextShadow', () => {
 
   it('shows default shadow in list', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('2px 2px 4px')
+    expect(wrapper.text()).toContain('0px 6px 12px')
   })
 
   it('has range sliders for shadow params', () => {
@@ -37,5 +37,12 @@ describe('TextShadow', () => {
     const wrapper = mountComponent()
     const preview = wrapper.find('span.font-bold')
     expect(preview.exists()).toBe(true)
+  })
+
+  it('renders preset buttons', () => {
+    const wrapper = mountComponent()
+    expect(wrapper.text()).toContain('预设')
+    expect(wrapper.text()).toContain('发光')
+    expect(wrapper.text()).toContain('霓虹')
   })
 })
