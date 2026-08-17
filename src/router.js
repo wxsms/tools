@@ -63,6 +63,8 @@ const components = {
   '/chmod': () => import('./tools/chmod/Chmod.vue'),
   '/flexbox': () => import('./tools/flexbox/Flexbox.vue'),
   '/grid': () => import('./tools/grid/Grid.vue'),
+  '/css-filter': () => import('./tools/css-filter/CssFilter.vue'),
+  '/text-shadow': () => import('./tools/text-shadow/TextShadow.vue'),
 }
 
 const routes = routeDefs.map(r => ({

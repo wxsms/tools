@@ -110,4 +110,6 @@ export default [
       wide: true,
     },
   },
+  { path: '/css-filter', meta: { title: '滤镜', description: 'CSS filter 可视化生成，支持 blur/brightness/contrast/drop-shadow 等多种滤镜叠加' } },
+  { path: '/text-shadow', meta: { title: '文字阴影', description: 'CSS text-shadow 可视化生成，支持多层阴影叠加' } },
 ]
