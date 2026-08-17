@@ -7,6 +7,20 @@
       <!-- Left: Controls -->
       <div class="flex flex-col gap-4">
         <div class="form-control">
+          <label class="label"><span class="label-text font-semibold">预设</span></label>
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="p in presets"
+              :key="p.name"
+              class="btn btn-xs btn-outline"
+              :title="p.css"
+              @click="applyPreset(p)"
+            >
+              {{ p.name }}
+            </button>
+          </div>
+        </div>
+        <div class="form-control">
           <label class="label"><span class="label-text font-semibold">滤镜函数</span></label>
           <ul class="flex flex-col gap-1">
             <li
@@ -249,7 +263,25 @@ const addGroups = [
   { label: '阴影', types: filterTypes.filter(t => t.name === 'drop-shadow') },
 ]
 
-const defaultFilter = () => ({ type: 'blur', value: 3, x: 0, y: 8, blur: 12, color: '#000000' })
+const defaultFilter = () => ({ type: 'blur', value: 4, x: 0, y: 8, blur: 12, color: '#000000' })
+
+// Each preset is a list of filter objects matching the editor's shape.
+const presets = [
+  { name: '原图', filters: [] },
+  { name: '模糊', filters: [{ type: 'blur', value: 4 }] },
+  { name: '强模糊', filters: [{ type: 'blur', value: 10 }] },
+  { name: '复古', filters: [{ type: 'sepia', value: 0.6 }, { type: 'contrast', value: 1.1 }, { type: 'brightness', value: 0.9 }] },
+  { name: '黑白', filters: [{ type: 'grayscale', value: 1 }, { type: 'contrast', value: 1.1 }] },
+  { name: '冷色', filters: [{ type: 'hue-rotate', value: 180 }, { type: 'saturate', value: 1.2 }] },
+  { name: '暖色', filters: [{ type: 'sepia', value: 0.3 }, { type: 'saturate', value: 1.4 }] },
+  { name: '高对比', filters: [{ type: 'contrast', value: 1.6 }, { type: 'brightness', value: 1.05 }] },
+  { name: '高饱和', filters: [{ type: 'saturate', value: 2 }] },
+  { name: '反色', filters: [{ type: 'invert', value: 1 }] },
+  { name: '明亮', filters: [{ type: 'brightness', value: 1.4 }, { type: 'contrast', value: 1.1 }] },
+  { name: '暗调', filters: [{ type: 'brightness', value: 0.7 }, { type: 'contrast', value: 1.2 }] },
+  { name: '投影', filters: [{ type: 'drop-shadow', value: 0, x: 0, y: 8, blur: 16, color: '#000000' }] },
+  { name: '梦幻', filters: [{ type: 'blur', value: 2 }, { type: 'brightness', value: 1.1 }, { type: 'saturate', value: 1.3 }] },
+]
 
 const filters = ref([defaultFilter()])
 const selectedIndex = ref(0)
@@ -326,6 +358,15 @@ function removeFilter(i) {
 
 function resetFilters() {
   filters.value = [defaultFilter()]
+  selectedIndex.value = 0
+}
+
+function applyPreset(p) {
+  if (p.filters.length === 0) {
+    filters.value = []
+  } else {
+    filters.value = p.filters.map(f => ({ ...f }))
+  }
   selectedIndex.value = 0
 }
 

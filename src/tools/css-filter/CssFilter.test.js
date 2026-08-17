@@ -38,4 +38,11 @@ describe('CssFilter', () => {
     const preview = wrapper.find('img')
     expect(preview.exists()).toBe(true)
   })
+
+  it('renders preset buttons', () => {
+    const wrapper = mountComponent()
+    expect(wrapper.text()).toContain('预设')
+    expect(wrapper.text()).toContain('复古')
+    expect(wrapper.text()).toContain('黑白')
+  })
 })
