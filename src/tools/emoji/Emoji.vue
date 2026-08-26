@@ -307,6 +307,11 @@ async function copyAndToast(text, msg) {
 }
 
 async function onEmojiClick(emoji, event) {
+  // 再次点击已选中的 emoji 时关闭 popover
+  if (selectedHex.value === emoji.hexcode) {
+    closePopover()
+    return
+  }
   selectedHex.value = emoji.hexcode
   referenceRef.value = event?.currentTarget || null
   await copyAndToast(emoji.char, `已复制 ${emoji.char}`)
