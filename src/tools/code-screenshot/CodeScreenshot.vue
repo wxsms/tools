@@ -4,7 +4,7 @@
       代码截图
     </h1>
 
-    <div class="flex flex-col gap-4 max-w-2xl">
+    <div class="flex flex-col gap-4 max-w-2xl mb-6">
       <!-- Row 1: Language + Theme -->
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
