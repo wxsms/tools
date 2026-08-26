@@ -211,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, watch } from 'vue'
+import { ref, shallowRef, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue'
 import { loadEmojiData, GROUPS } from './emoji-data.js'
 import { searchEmojis, copyFormats, copyText } from './emoji.js'
@@ -242,7 +242,12 @@ const { floatingStyles, placement, isPositioned } = useFloating(referenceRef, fl
   whileElementsMounted: (reference, floating, update) => autoUpdate(reference, floating, update),
 })
 
+function onKeydown(e) {
+  if (e.key === 'Escape' && selectedHex.value) closePopover()
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
   try {
     emojis.value = await loadEmojiData()
   } catch (e) {
@@ -250,6 +255,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
 })
 
 const tabs = computed(() => [
