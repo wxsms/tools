@@ -21,9 +21,10 @@ const props = defineProps({
   minHeight: { type: String, default: '120px' },
   bordered: { type: Boolean, default: true },
   fillHeight: { type: Boolean, default: false },
-  // A CodeMirror language extension (Extension or Extension[]). When omitted,
-  // the editor is plain text with default highlighting only.
-  language: { type: [Object, Array], default: null },
+  // A CodeMirror language extension, a language function (e.g. `css` from
+  // @codemirror/lang-css), or an array of extensions. When omitted, the
+  // editor is plain text with default highlighting only.
+  language: { type: [Object, Array, Function], default: null },
 })
 
 const emit = defineEmits(['update:modelValue', 'input'])
@@ -70,8 +71,13 @@ function buildExtensions() {
     exts.push(EditorState.readOnly.of(true))
   }
   if (props.language) {
-    const lang = Array.isArray(props.language) ? props.language : [props.language]
-    exts.push(...lang)
+    // Allow passing a language function (e.g. `css` from @codemirror/lang-css)
+    // or an already-created Extension / Extension[].
+    const lang = typeof props.language === 'function'
+      ? props.language()
+      : props.language
+    const arr = Array.isArray(lang) ? lang : [lang]
+    exts.push(...arr)
   }
   // oneDark provides syntax token colors tuned for dark backgrounds. In light
   // mode we omit it and rely on defaultHighlightStyle (which uses dark ink on

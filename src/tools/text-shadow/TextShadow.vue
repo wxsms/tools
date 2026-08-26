@@ -188,9 +188,18 @@
         <div class="form-control">
           <label class="label"><span class="label-text font-semibold">CSS 代码</span></label>
           <div class="relative">
-            <pre class="bg-base-200 rounded-lg p-4 font-mono text-sm break-all whitespace-pre-wrap">{{ cssCode }}</pre>
+            <div class="cm-container border border-base-300">
+              <CodeMirrorEditor
+                :model-value="cssCode"
+                :language="cssLang"
+                :read-only="true"
+                :bordered="false"
+                :fill-height="false"
+                min-height="80px"
+              />
+            </div>
             <button
-              class="btn btn-ghost btn-xs btn-square absolute right-2 top-2"
+              class="btn btn-ghost btn-xs btn-square absolute right-2 top-2 z-10"
               :title="copied ? '已复制！' : '复制'"
               @click="copyCode"
             >
@@ -214,6 +223,8 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
+import { css as cssLang } from '@codemirror/lang-css'
+import CodeMirrorEditor from '../../components/CodeMirrorEditor.vue'
 import { ref, computed } from 'vue'
 
 const defaultShadow = () => ({ x: 0, y: 6, blur: 12, color: '#000000', opacity: 0.6 })
@@ -326,3 +337,26 @@ async function copyCode() {
   } catch { /* clipboard not available */ }
 }
 </script>
+
+<style>
+.cm-container {
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.cm-container .cm-editor {
+  font-size: 0.875rem;
+}
+
+.cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .cm-container .cm-editor {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-200);
+  border-right: 1px solid var(--color-base-100);
+}
+</style>
