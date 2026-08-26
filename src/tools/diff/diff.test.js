@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeDiff, addInlineHighlights, computeStats, computeDisplayLines } from './diff.js'
+import { computeDiff, addInlineHighlights, computeStats, computeDisplayLines, computeSplitRows } from './diff.js'
 
 describe('computeDiff', () => {
   it('returns empty for two empty strings', () => {
@@ -165,5 +165,71 @@ describe('computeDisplayLines', () => {
     ]
     const result = computeDisplayLines(lines, 'compact', new Set(), 3)
     expect(result).toEqual(lines)
+  })
+})
+
+describe('computeSplitRows', () => {
+  it('pairs equal lines on both sides', () => {
+    const lines = [{ type: 'equal', text: 'a', oldNum: 1, newNum: 1 }]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([{ type: 'equal', left: lines[0], right: lines[0] }])
+  })
+
+  it('pairs a delete+add into a modify row', () => {
+    const lines = [
+      { type: 'delete', text: 'old', oldNum: 1, newNum: '' },
+      { type: 'add', text: 'new', oldNum: '', newNum: 1 },
+    ]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([{ type: 'modify', left: lines[0], right: lines[1] }])
+  })
+
+  it('emits a delete-only row when no matching add', () => {
+    const lines = [{ type: 'delete', text: 'old', oldNum: 1, newNum: '' }]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([{ type: 'delete', left: lines[0], right: null }])
+  })
+
+  it('emits an add-only row when no matching delete', () => {
+    const lines = [{ type: 'add', text: 'new', oldNum: '', newNum: 1 }]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([{ type: 'add', left: null, right: lines[0] }])
+  })
+
+  it('handles unbalanced delete+add runs', () => {
+    // 2 deletes, 1 add → 1 modify + 1 delete
+    const lines = [
+      { type: 'delete', text: 'a', oldNum: 1, newNum: '' },
+      { type: 'delete', text: 'b', oldNum: 2, newNum: '' },
+      { type: 'add', text: 'x', oldNum: '', newNum: 1 },
+    ]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([
+      { type: 'modify', left: lines[0], right: lines[2] },
+      { type: 'delete', left: lines[1], right: null },
+    ])
+  })
+
+  it('passes fold rows through unchanged', () => {
+    const fold = { type: 'fold', foldIndex: 0, count: 3 }
+    const rows = computeSplitRows([fold])
+    expect(rows).toEqual([fold])
+  })
+
+  it('handles a mixed sequence', () => {
+    const lines = [
+      { type: 'equal', text: 'same', oldNum: 1, newNum: 1 },
+      { type: 'delete', text: 'old', oldNum: 2, newNum: '' },
+      { type: 'add', text: 'new', oldNum: '', newNum: 2 },
+      { type: 'add', text: 'extra', oldNum: '', newNum: 3 },
+      { type: 'equal', text: 'tail', oldNum: 3, newNum: 4 },
+    ]
+    const rows = computeSplitRows(lines)
+    expect(rows).toEqual([
+      { type: 'equal', left: lines[0], right: lines[0] },
+      { type: 'modify', left: lines[1], right: lines[2] },
+      { type: 'add', left: null, right: lines[3] },
+      { type: 'equal', left: lines[4], right: lines[4] },
+    ])
   })
 })
