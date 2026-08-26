@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="csv-page">
     <h1 class="text-3xl font-bold mb-6">
       CSV 预览
     </h1>
@@ -10,13 +10,18 @@
       class="flex flex-col gap-4"
     >
       <div class="form-control">
-        <textarea
-          v-model="input"
-          class="textarea textarea-bordered w-full font-mono text-sm"
-          :class="{ 'textarea-error': state === 'error' }"
-          placeholder="粘贴 CSV 内容..."
-          rows="12"
-        />
+        <div
+          class="cm-container border border-base-300"
+          :class="{ 'border-error': state === 'error' }"
+        >
+          <CodeMirrorEditor
+            v-model="input"
+            :language="csvLang"
+            :bordered="false"
+            :fill-height="true"
+            placeholder="粘贴 CSV 内容..."
+          />
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <button
@@ -212,6 +217,8 @@ import {
   toJson,
   toMarkdown,
 } from './csv.js'
+import CodeMirrorEditor from '../../components/CodeMirrorEditor.vue'
+import { csvLang } from './csv-language.js'
 
 const SAMPLE_CSV = [
   'name,age,score,active,joined,last_login',
@@ -423,3 +430,35 @@ function onFileUpload(e) {
   e.target.value = ''
 }
 </script>
+
+<style>
+.csv-page .cm-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.csv-page .cm-container .cm-editor {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.csv-page .cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .csv-page .cm-container .cm-editor {
+  background: var(--color-base-300);
+}
+:not([data-theme="dark"]) .csv-page .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-300);
+  border-right: 1px solid var(--color-base-100);
+}
+:not([data-theme="dark"]) .csv-page .cm-container .cm-editor .cm-activeLineGutter {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .csv-page .cm-container .cm-editor .cm-activeLine {
+  background: var(--color-base-200);
+}
+</style>

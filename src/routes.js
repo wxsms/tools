@@ -49,7 +49,7 @@ export default [
   { path: '/transform', meta: { title: 'Transform 变换', description: 'CSS transform 可视化生成,支持 2D/3D 函数、matrix 反解析' } },
   { path: '/code-screenshot', meta: { title: '代码截图', description: '代码语法高亮截图，支持多语言与主题' } },
   { path: '/patch-viewer', meta: { title: 'Patch 查看', description: '可视化查看 git diff / unified patch 文件' } },
-  { path: '/cli-format', meta: { title: '命令行格式转换', description: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义' } },
+  { path: '/cli-format', meta: { title: '命令行格式转换', description: '命令行参数单行与多行风格互转,支持 Unix shell 引号与转义', wide: true } },
   { path: '/kv-cache', meta: { title: 'KV Cache 计算器', description: '估算 LLM KV Cache 显存占用,或根据 GPU 显存反推最大可缓存 token 数' } },
   {
     path: '/token-counter',
@@ -63,6 +63,7 @@ export default [
     meta: {
       title: 'CSV 预览',
       description: 'CSV 表格预览，支持类型推断、列统计、排序筛选、导出 JSON / Markdown',
+      wide: true,
     },
   },
   {
@@ -70,6 +71,7 @@ export default [
     meta: {
       title: 'SVG 预览',
       description: 'SVG 代码实时预览，支持美化 / 压缩、Data URI 生成、颜色覆盖与下载',
+      wide: true,
     },
   },
   {

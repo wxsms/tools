@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="cli-format-page">
     <h1 class="text-3xl font-bold mb-6">
       命令行格式转换
     </h1>
@@ -34,92 +34,97 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-4 max-w-3xl">
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">单行</span></label>
-        <div class="relative">
-          <textarea
-            v-model="singleLine"
-            class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="command --flag1 value1 --flag2 value2"
-            rows="5"
-            @input="onSingleChange"
-          />
+    <div class="flex gap-4">
+      <!-- Single line input -->
+      <div class="flex-1 form-control min-w-0">
+        <label class="label mb-2">
+          <span class="label-text font-semibold">单行</span>
           <button
             v-if="singleLine"
-            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="singleCopied ? '已复制！' : '复制'"
+            class="btn btn-ghost btn-xs gap-1"
             @click="copy(singleLine, 'singleCopied')"
           >
             <Icon
               v-if="singleCopied"
               icon="lucide:check"
-              class="w-4 h-4 text-success"
+              class="w-3.5 h-3.5 text-success"
             />
             <Icon
               v-else
               icon="lucide:clipboard"
-              class="w-4 h-4"
+              class="w-3.5 h-3.5"
             />
+            {{ singleCopied ? '已复制！' : '复制' }}
           </button>
+        </label>
+        <div class="cm-container border border-base-300">
+          <CodeMirrorEditor
+            v-model="singleLine"
+            :language="shellLang"
+            :bordered="false"
+            :fill-height="true"
+            placeholder="command --flag1 value1 --flag2 value2"
+            @input="onSingleChange"
+          />
         </div>
       </div>
 
-      <div class="flex justify-center opacity-40">
-        <Icon
-          icon="lucide:arrow-up-down"
-          class="w-6 h-6"
-        />
-      </div>
-
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">多行</span></label>
-        <div class="relative">
-          <textarea
-            v-model="multiLine"
-            class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="command \&#10;  --flag1 value1 \&#10;  --flag2 value2"
-            rows="9"
-            @input="onMultiChange"
-          />
+      <!-- Multi line output -->
+      <div class="flex-1 form-control min-w-0">
+        <label class="label mb-2">
+          <span class="label-text font-semibold">多行</span>
           <button
             v-if="multiLine"
-            class="btn btn-ghost btn-xs btn-square absolute bottom-2 right-2"
-            :title="multiCopied ? '已复制！' : '复制'"
+            class="btn btn-ghost btn-xs gap-1"
             @click="copy(multiLine, 'multiCopied')"
           >
             <Icon
               v-if="multiCopied"
               icon="lucide:check"
-              class="w-4 h-4 text-success"
+              class="w-3.5 h-3.5 text-success"
             />
             <Icon
               v-else
               icon="lucide:clipboard"
-              class="w-4 h-4"
+              class="w-3.5 h-3.5"
             />
+            {{ multiCopied ? '已复制！' : '复制' }}
           </button>
-        </div>
-        <p
-          v-if="error"
-          class="text-error text-sm mt-1"
-        >
-          {{ error }}
-        </p>
-      </div>
-
-      <div class="flex justify-end">
-        <button
-          class="btn btn-ghost btn-sm gap-1"
-          @click="clear"
-        >
-          <Icon
-            icon="lucide:trash-2"
-            class="w-4 h-4"
+        </label>
+        <div class="cm-container border border-base-300">
+          <CodeMirrorEditor
+            v-model="multiLine"
+            :language="shellLang"
+            :bordered="false"
+            :fill-height="true"
+            placeholder="command \&#10;  --flag1 value1 \&#10;  --flag2 value2"
+            @input="onMultiChange"
           />
-          清空
-        </button>
+        </div>
       </div>
+    </div>
+
+    <div class="flex items-center justify-between mt-4 gap-4">
+      <p
+        v-if="error"
+        class="text-error text-sm flex-1 min-w-0 truncate"
+      >
+        {{ error }}
+      </p>
+      <span
+        v-else
+        class="flex-1"
+      />
+      <button
+        class="btn btn-ghost btn-sm gap-1"
+        @click="clear"
+      >
+        <Icon
+          icon="lucide:trash-2"
+          class="w-4 h-4"
+        />
+        清空
+      </button>
     </div>
   </div>
 </template>
@@ -128,6 +133,11 @@
 import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
 import { toSingleLine, toMultiLine } from './cli-format.js'
+import CodeMirrorEditor from '../../components/CodeMirrorEditor.vue'
+import { StreamLanguage } from '@codemirror/language'
+import { shell } from '@codemirror/legacy-modes/mode/shell'
+
+const shellLang = StreamLanguage.define(shell)
 
 const DEFAULT_SINGLE = 'docker run --name "my container" -v /host/path:/container/path -e KEY=value --restart always alpine'
 
@@ -202,3 +212,35 @@ async function copy(text, flag) {
 
 onSingleChange()
 </script>
+
+<style>
+.cli-format-page .cm-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.cli-format-page .cm-container .cm-editor {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.cli-format-page .cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .cli-format-page .cm-container .cm-editor {
+  background: var(--color-base-300);
+}
+:not([data-theme="dark"]) .cli-format-page .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-300);
+  border-right: 1px solid var(--color-base-100);
+}
+:not([data-theme="dark"]) .cli-format-page .cm-container .cm-editor .cm-activeLineGutter {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .cli-format-page .cm-container .cm-editor .cm-activeLine {
+  background: var(--color-base-200);
+}
+</style>

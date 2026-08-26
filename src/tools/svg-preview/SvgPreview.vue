@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="svg-page">
     <h1 class="text-3xl font-bold mb-6">
       SVG 预览
     </h1>
@@ -60,13 +60,15 @@
           </button>
         </div>
 
-        <textarea
-          v-model="source"
-          class="textarea textarea-bordered w-full font-mono text-sm leading-relaxed"
-          placeholder="粘贴 SVG 代码..."
-          rows="20"
-          spellcheck="false"
-        />
+        <div class="cm-container border border-base-300">
+          <CodeMirrorEditor
+            v-model="source"
+            :language="xmlLang"
+            :bordered="false"
+            :fill-height="true"
+            placeholder="粘贴 SVG 代码..."
+          />
+        </div>
 
         <div class="flex flex-wrap items-center gap-3 text-sm">
           <span
@@ -77,6 +79,22 @@
             v-else
             class="opacity-60"
           >{{ source.length }} 字符{{ compressedSize != null ? ` · 压缩后 ${compressedSize} 字符` : '' }}</span>
+        </div>
+      </div>
+
+      <!-- Right: preview -->
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-semibold opacity-70 mr-1">背景:</span>
+          <button
+            v-for="bg in bgOptions"
+            :key="bg.value"
+            class="btn btn-sm"
+            :class="background === bg.value ? 'btn-primary' : 'btn-outline'"
+            @click="background = bg.value"
+          >
+            {{ bg.label }}
+          </button>
         </div>
 
         <!-- Color override -->
@@ -120,22 +138,6 @@
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Right: preview -->
-      <div class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-sm font-semibold opacity-70 mr-1">背景:</span>
-          <button
-            v-for="bg in bgOptions"
-            :key="bg.value"
-            class="btn btn-sm"
-            :class="background === bg.value ? 'btn-primary' : 'btn-outline'"
-            @click="background = bg.value"
-          >
-            {{ bg.label }}
-          </button>
         </div>
 
         <div
@@ -215,6 +217,10 @@
 import { Icon } from '@iconify/vue'
 import { ref, computed, watch } from 'vue'
 import { optimize } from 'svgo/browser'
+import { xml } from '@codemirror/lang-xml'
+import CodeMirrorEditor from '../../components/CodeMirrorEditor.vue'
+
+const xmlLang = xml()
 const DEFAULT = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
   <path d="M8 12h8M12 8v8"/>
@@ -379,3 +385,35 @@ function downloadSvg() {
   URL.revokeObjectURL(url)
 }
 </script>
+
+<style>
+.svg-page .cm-container {
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  border-radius: var(--radius-field, 0.5rem);
+  overflow: hidden;
+}
+
+.svg-page .cm-container .cm-editor {
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+.svg-page .cm-container .cm-editor.cm-focused {
+  outline: none;
+}
+
+:not([data-theme="dark"]) .svg-page .cm-container .cm-editor {
+  background: var(--color-base-300);
+}
+:not([data-theme="dark"]) .svg-page .cm-container .cm-editor .cm-gutters {
+  background: var(--color-base-300);
+  border-right: 1px solid var(--color-base-100);
+}
+:not([data-theme="dark"]) .svg-page .cm-container .cm-editor .cm-activeLineGutter {
+  background: var(--color-base-200);
+}
+:not([data-theme="dark"]) .svg-page .cm-container .cm-editor .cm-activeLine {
+  background: var(--color-base-200);
+}
+</style>
