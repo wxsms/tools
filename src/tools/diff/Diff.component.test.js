@@ -29,7 +29,7 @@ describe('Diff', () => {
     await textareas[1].setValue('world')
     const compareBtn = wrapper.findAll('button').find(b => b.text().includes('对比'))
     await compareBtn.trigger('click')
-    expect(wrapper.text()).toContain('对比结果')
+    expect(wrapper.text()).toContain('返回')
     expect(wrapper.text()).toContain('删除')
     expect(wrapper.text()).toContain('新增')
   })

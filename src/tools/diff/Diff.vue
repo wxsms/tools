@@ -60,10 +60,10 @@
     </div>
 
     <!-- Result view -->
-    <div
-      v-if="view === 'result'"
-      class="mt-4"
-    >
+    <div v-if="view === 'result'">
+      <h1 class="text-3xl font-bold mb-6">
+        对比结果
+      </h1>
       <!-- No diff hint -->
       <div
         v-if="compared && !hasChanges"
@@ -92,8 +92,8 @@
         v-if="compared && diffLines.length"
         class="mt-2"
       >
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-3">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <div class="flex items-center gap-2">
             <button
               class="btn btn-ghost btn-sm gap-1"
               @click="backToInput"
@@ -104,9 +104,6 @@
               />
               返回
             </button>
-            <h2 class="text-lg font-semibold">
-              对比结果
-            </h2>
           </div>
           <div class="flex items-center gap-4">
             <div class="join">
