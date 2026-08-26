@@ -48,7 +48,11 @@ export function addInlineHighlights(lines) {
     if (deletes.length > 0 && adds.length > 0) {
       const pairCount = Math.min(deletes.length, adds.length)
       for (let p = 0; p < pairCount; p++) {
-        const wordDiff = Diff.diffWords(deletes[p].text, adds[p].text)
+        // diffWordsWithSpace keeps leading/trailing whitespace as separate
+        // tokens so that identical indented content stays aligned between
+        // the delete and add lines (diffWords would merge whitespace into
+        // the changed token and shift the shared suffix).
+        const wordDiff = Diff.diffWordsWithSpace(deletes[p].text, adds[p].text)
         deletes[p].segments = wordDiff
           .filter(p => !p.added)
           .map(p => ({ type: p.removed ? 'delete' : 'equal', text: p.value }))
@@ -119,4 +123,61 @@ export function computeDisplayLines(lines, showMode, unfolded, context = 3) {
     }
   }
   return result
+}
+
+/**
+ * Convert the linear displayLines (unified) into paired rows for split view.
+ *
+ * Each output row has the shape:
+ *   { type: 'fold', foldIndex, count }                       // spans both columns
+ *   { type: 'equal', left, right }                            // both sides present
+ *   { type: 'modify', left, right }                           // delete on left, add on right
+ *   { type: 'delete', left, right: null }                     // left only
+ *   { type: 'add', left: null, right }                        // right only
+ *
+ * `left`/`right` are the original line objects (with text/oldNum/newNum/segments).
+ */
+export function computeSplitRows(displayLines) {
+  const rows = []
+  let i = 0
+  while (i < displayLines.length) {
+    const item = displayLines[i]
+
+    if (item.type === 'fold') {
+      rows.push({ type: 'fold', foldIndex: item.foldIndex, count: item.count })
+      i++
+      continue
+    }
+
+    if (item.type === 'equal') {
+      rows.push({ type: 'equal', left: item, right: item })
+      i++
+      continue
+    }
+
+    // Collect a run of consecutive delete lines, then a run of add lines.
+    const deletes = []
+    while (i < displayLines.length && displayLines[i].type === 'delete') {
+      deletes.push(displayLines[i])
+      i++
+    }
+    const adds = []
+    while (i < displayLines.length && displayLines[i].type === 'add') {
+      adds.push(displayLines[i])
+      i++
+    }
+
+    // Pair up deletes and adds row by row; leftover lines go solo.
+    const pairCount = Math.min(deletes.length, adds.length)
+    for (let p = 0; p < pairCount; p++) {
+      rows.push({ type: 'modify', left: deletes[p], right: adds[p] })
+    }
+    for (let p = pairCount; p < deletes.length; p++) {
+      rows.push({ type: 'delete', left: deletes[p], right: null })
+    }
+    for (let p = pairCount; p < adds.length; p++) {
+      rows.push({ type: 'add', left: null, right: adds[p] })
+    }
+  }
+  return rows
 }
