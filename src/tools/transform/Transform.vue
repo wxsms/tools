@@ -466,16 +466,29 @@
           </div>
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">CSS 代码</span></label>
+          <label class="label">
+            <span class="label-text font-semibold flex items-center gap-1">
+              CSS 代码
+              <span
+                class="tooltip tooltip-right"
+                data-tip="可编辑，双向联动"
+              >
+                <Icon
+                  icon="lucide:info"
+                  class="w-3.5 h-3.5 opacity-50 cursor-help"
+                />
+              </span>
+            </span>
+          </label>
           <div class="relative">
             <div class="cm-container border border-base-300">
               <CodeMirrorEditor
-                :model-value="cssCode"
+                v-model="cssCode"
                 :language="cssLang"
-                :read-only="true"
                 :bordered="false"
                 :fill-height="false"
                 min-height="80px"
+                @input="onCssCodeInput"
               />
             </div>
             <button
@@ -495,37 +508,15 @@
               />
             </button>
           </div>
-        </div>
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">反解析:粘贴 transform 串 → 回填表单</span></label>
-          <textarea
-            v-model="rawInput"
-            class="textarea textarea-bordered font-mono text-sm h-28"
-            placeholder="transform: translateX(10px) rotate(45deg);&#10;transform-origin: 50% 50% 0px;&#10;perspective: 800px;"
-          />
-          <div class="flex items-center gap-2 mt-2">
-            <button
-              class="btn btn-primary btn-sm"
-              @click="applyParse"
-            >
-              应用
-            </button>
-            <button
-              class="btn btn-ghost btn-sm"
-              @click="rawInput = ''; parseError = ''; parseWarnings = []"
-            >
-              清空
-            </button>
-          </div>
           <div
             v-if="parseError"
-            class="text-error text-sm mt-2 whitespace-pre-wrap"
+            class="text-error text-sm mt-1 whitespace-pre-wrap"
           >
             {{ parseError }}
           </div>
           <div
             v-if="parseWarnings.length > 0"
-            class="text-warning text-sm mt-2 whitespace-pre-wrap"
+            class="text-warning text-sm mt-1 whitespace-pre-wrap"
           >
             <div
               v-for="(w, i) in parseWarnings"
@@ -544,7 +535,7 @@
 import { Icon } from '@iconify/vue'
 import { css as cssLang } from '@codemirror/lang-css'
 import CodeMirrorEditor from '../../components/CodeMirrorEditor.vue'
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import draggable from 'vuedraggable'
 import { functionToCss, stateToCss, parseTransform } from './transform.js'
 
@@ -630,7 +621,19 @@ const addDetails = ref(null)
 
 const selected = computed(() => state.functions[selectedIndex.value])
 
-const cssCode = computed(() => stateToCss({ ...state, functions: state.functions }))
+const cssCode = ref(stateToCss({ ...state, functions: state.functions }))
+
+// When the form state changes (user edits via UI), regenerate the CSS code.
+// `applyingParse` guards against the feedback loop: when we just parsed the
+// user's CSS and wrote it back into the form, we don't want the resulting
+// state change to overwrite the editor content (which the user already owns).
+let applyingParse = false
+
+watch(() => ({ ...state, functions: [...state.functions] }), () => {
+  if (applyingParse) return
+  const next = stateToCss({ ...state, functions: state.functions })
+  if (next !== cssCode.value) cssCode.value = next
+}, { deep: true })
 
 const transformForPreview = computed(() =>
   state.functions.map(functionToCss).join(' ')
@@ -680,13 +683,11 @@ async function copyCode() {
   } catch { /* clipboard not available */ }
 }
 
-const rawInput = ref('')
 const parseError = ref('')
 const parseWarnings = ref([])
 
-function applyParse() {
-  if (rawInput.value.trim() === '') return
-  const r = parseTransform(rawInput.value)
+function onCssCodeInput(text) {
+  const r = parseTransform(text)
   if (!r.ok) {
     parseError.value = r.errors.map(e => `第 ${e.line} 行: ${e.message}`).join('\n')
     parseWarnings.value = []
@@ -694,7 +695,9 @@ function applyParse() {
   }
   parseError.value = ''
   parseWarnings.value = r.warnings || []
-  // Replace state
+  // Apply parsed state back into the form without triggering the watch that
+  // would overwrite the editor content.
+  applyingParse = true
   state.functions.splice(0, state.functions.length, ...r.state.functions.map(f => ({ uid: ++uidCounter, ...f })))
   state.origin.x = r.state.origin.x
   state.origin.y = r.state.origin.y
@@ -702,7 +705,11 @@ function applyParse() {
   state.perspective.n = r.state.perspective.n
   state.perspective.unit = r.state.perspective.unit
   selectedIndex.value = 0
-  rawInput.value = ''
+  // If the canonical form differs from what the user typed, sync the editor
+  // (e.g. the user typed something that normalizes to a different string).
+  const canonical = stateToCss({ ...state, functions: state.functions })
+  if (canonical !== text) cssCode.value = canonical
+  applyingParse = false
 }
 </script>
 
