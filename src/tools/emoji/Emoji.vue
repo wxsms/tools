@@ -64,13 +64,14 @@
         class="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1"
       >
         <button
-          v-for="emoji in visibleEmojis"
+          v-for="emoji in renderedEmojis"
           :key="emoji.hexcode"
           data-test="emoji-btn"
           class="aspect-square text-3xl flex items-center justify-center rounded-lg hover:bg-base-200 transition"
           :class="{ 'bg-base-300 ring-2 ring-primary': selectedHex === emoji.hexcode }"
           :title="emoji.label"
           :aria-label="`复制 emoji ${emoji.label}`"
+          style="content-visibility: auto; contain-intrinsic-size: 40px 40px;"
           @click="onEmojiClick(emoji, $event)"
         >
           {{ emoji.char }}
@@ -82,6 +83,12 @@
       >
         未找到匹配的 emoji
       </div>
+      <!-- 渐进式渲染哨兵：滚入视口时加载下一批 -->
+      <div
+        v-if="renderedEmojis.length < visibleEmojis.length"
+        ref="sentinelEl"
+        class="h-4"
+      />
     </template>
 
     <div
@@ -259,6 +266,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  if (sentinelObserver) sentinelObserver.disconnect()
 })
 
 const tabs = computed(() => [
@@ -272,6 +280,31 @@ const filteredByGroup = computed(() => {
 })
 
 const visibleEmojis = computed(() => searchEmojis(filteredByGroup.value, query.value))
+
+// 渐进式渲染：首屏只渲染前 renderLimit 个，滚到底部再加载下一批
+const RENDER_BATCH = 200
+const renderLimit = ref(RENDER_BATCH)
+const sentinelEl = ref(null)
+let sentinelObserver = null
+
+const renderedEmojis = computed(() => visibleEmojis.value.slice(0, renderLimit.value))
+
+// 搜索/分类变化时重置渲染数量并清除选中状态
+watch([query, activeGroup], () => {
+  renderLimit.value = RENDER_BATCH
+  closePopover()
+})
+
+watch(sentinelEl, (el) => {
+  if (sentinelObserver) sentinelObserver.disconnect()
+  if (!el) return
+  sentinelObserver = new IntersectionObserver((entries) => {
+    if (entries[0]?.isIntersecting) {
+      renderLimit.value += RENDER_BATCH
+    }
+  }, { rootMargin: '200px' })
+  sentinelObserver.observe(el)
+})
 
 const selectedEmoji = computed(() => {
   if (!selectedHex.value) return null
