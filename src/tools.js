@@ -324,14 +324,8 @@ export const toolGroups = [
     ],
   },
   {
-    name: '网络 Web',
+    name: '网络',
     tools: [
-      {
-        name: 'IP 查询',
-        path: '/ip-lookup',
-        desc: '查询 IP 地址归属地信息',
-        icon: 'mdi:ip-network',
-      },
       {
         name: 'URL 解析',
         path: '/url-parse',
