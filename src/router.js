@@ -34,7 +34,6 @@ const components = {
   '/html-entity': () => import('./tools/html-entity/HtmlEntity.vue'),
   '/password': () => import('./tools/password/Password.vue'),
   '/color-picker': () => import('./tools/color-picker/ColorPicker.vue'),
-  '/ip-lookup': () => import('./tools/ip-lookup/IpLookup.vue'),
   '/image-compress': () => import('./tools/image-compress/ImageCompress.vue'),
   '/http-status': () => import('./tools/http-status/HttpStatus.vue'),
   '/unicode': () => import('./tools/unicode/Unicode.vue'),
