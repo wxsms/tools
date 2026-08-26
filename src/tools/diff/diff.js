@@ -48,7 +48,11 @@ export function addInlineHighlights(lines) {
     if (deletes.length > 0 && adds.length > 0) {
       const pairCount = Math.min(deletes.length, adds.length)
       for (let p = 0; p < pairCount; p++) {
-        const wordDiff = Diff.diffWords(deletes[p].text, adds[p].text)
+        // diffWordsWithSpace keeps leading/trailing whitespace as separate
+        // tokens so that identical indented content stays aligned between
+        // the delete and add lines (diffWords would merge whitespace into
+        // the changed token and shift the shared suffix).
+        const wordDiff = Diff.diffWordsWithSpace(deletes[p].text, adds[p].text)
         deletes[p].segments = wordDiff
           .filter(p => !p.added)
           .map(p => ({ type: p.removed ? 'delete' : 'equal', text: p.value }))

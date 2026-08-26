@@ -82,6 +82,33 @@ describe('addInlineHighlights', () => {
     expect(result[0].segments).toBeDefined()
     expect(result[1].segments).toBeDefined()
   })
+
+  it('keeps shared leading whitespace as an equal segment (regression for alignment)', () => {
+    // Both lines share two leading spaces; the only change is a leading "#".
+    // diffWords would merge "  #" into one added token and shift the shared
+    // suffix, breaking visual alignment between the delete and add rows.
+    const lines = [
+      { type: 'delete', text: '  reasoning-parser: glm45', oldNum: 1, newNum: '' },
+      { type: 'add', text: '  #reasoning-parser: glm45', oldNum: '', newNum: 1 },
+    ]
+    const result = addInlineHighlights(lines)
+    const deleted = result.find(l => l.type === 'delete')
+    const added = result.find(l => l.type === 'add')
+
+    // The leading "  " must be an equal segment on both sides, not folded
+    // into the changed token.
+    expect(deleted.segments[0]).toEqual({ type: 'equal', text: '  ' })
+    expect(added.segments[0]).toEqual({ type: 'equal', text: '  ' })
+
+    // The "#" must be a standalone added segment on the add side, and absent
+    // from the delete side.
+    expect(added.segments.some(s => s.type === 'add' && s.text === '#')).toBe(true)
+    expect(deleted.segments.some(s => s.type === 'delete')).toBe(false)
+
+    // The shared suffix must be an equal segment on both sides.
+    expect(deleted.segments.some(s => s.type === 'equal' && s.text === 'reasoning-parser: glm45')).toBe(true)
+    expect(added.segments.some(s => s.type === 'equal' && s.text === 'reasoning-parser: glm45')).toBe(true)
+  })
 })
 
 describe('computeStats', () => {

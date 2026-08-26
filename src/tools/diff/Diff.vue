@@ -155,30 +155,34 @@
                   <td class="text-right px-2 py-0.5 text-base-content/30 select-none align-top">
                     {{ item.type === 'delete' ? '' : item.newNum }}
                   </td>
-                  <td class="px-3 py-0.5 whitespace-pre-wrap break-all">
-                    <span
-                      v-if="item.type === 'add'"
-                      class="text-success inline-block w-4 select-none"
-                    >+</span>
-                    <span
-                      v-else-if="item.type === 'delete'"
-                      class="text-error inline-block w-4 select-none"
-                    >-</span>
-                    <span
-                      v-else
-                      class="inline-block w-4"
-                    />
-                    <template v-if="item.segments">
+                  <td class="px-3 py-0.5">
+                    <div class="flex gap-2">
                       <span
-                        v-for="(seg, si) in item.segments"
-                        :key="si"
-                        :class="{
-                          'bg-error/30 text-error': seg.type === 'delete',
-                          'bg-success/30 text-success': seg.type === 'add',
-                        }"
-                      >{{ seg.text }}</span>
-                    </template>
-                    <span v-else>{{ item.text }}</span>
+                        v-if="item.type === 'add'"
+                        class="text-success w-4 shrink-0 select-none text-center"
+                      >+</span>
+                      <span
+                        v-else-if="item.type === 'delete'"
+                        class="text-error w-4 shrink-0 select-none text-center"
+                      >-</span>
+                      <span
+                        v-else
+                        class="w-4 shrink-0 select-none"
+                      />
+                      <div class="whitespace-pre-wrap break-all min-w-0 flex-1">
+                        <template v-if="item.segments">
+                          <span
+                            v-for="(seg, si) in item.segments"
+                            :key="si"
+                            :class="{
+                              'bg-error/30 text-error': seg.type === 'delete',
+                              'bg-success/30 text-success': seg.type === 'add',
+                            }"
+                          >{{ seg.text }}</span>
+                        </template>
+                        <span v-else>{{ item.text }}</span>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               </template>
