@@ -71,6 +71,7 @@ export default [
     meta: {
       title: 'SVG 预览',
       description: 'SVG 代码实时预览，支持美化 / 压缩、Data URI 生成、颜色覆盖与下载',
+      wide: true,
     },
   },
   {
