@@ -1,60 +1,69 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-6">
-      文本对比
-    </h1>
-    <div class="flex flex-col gap-4">
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4">
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">原始文本</span></label>
-          <textarea
-            v-model="leftText"
-            class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入原始文本..."
-            rows="10"
-          />
+    <!-- Input view -->
+    <div v-if="view === 'input'">
+      <h1 class="text-3xl font-bold mb-6">
+        文本对比
+      </h1>
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4">
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">原始文本</span></label>
+            <textarea
+              v-model="leftText"
+              class="textarea textarea-bordered w-full font-mono text-sm"
+              placeholder="输入原始文本..."
+              rows="10"
+            />
+          </div>
+          <div class="hidden lg:flex items-center justify-center opacity-30">
+            <Icon
+              icon="lucide:arrow-left-right"
+              class="w-5 h-5"
+            />
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">修改后文本</span></label>
+            <textarea
+              v-model="rightText"
+              class="textarea textarea-bordered w-full font-mono text-sm"
+              placeholder="输入修改后文本..."
+              rows="10"
+            />
+          </div>
         </div>
-        <div class="hidden lg:flex items-center justify-center opacity-30">
-          <Icon
-            icon="lucide:arrow-left-right"
-            class="w-5 h-5"
-          />
-        </div>
-        <div class="form-control">
-          <label class="label"><span class="label-text font-semibold">修改后文本</span></label>
-          <textarea
-            v-model="rightText"
-            class="textarea textarea-bordered w-full font-mono text-sm"
-            placeholder="输入修改后文本..."
-            rows="10"
-          />
+
+        <div class="flex justify-center gap-2">
+          <button
+            class="btn btn-primary btn-sm gap-1"
+            :disabled="!leftText && !rightText"
+            @click="computeDiffFn"
+          >
+            <Icon
+              icon="lucide:arrow-left-right"
+              class="w-4 h-4"
+            />
+            对比
+          </button>
+          <button
+            class="btn btn-ghost btn-sm gap-1"
+            @click="clear"
+          >
+            <Icon
+              icon="lucide:trash-2"
+              class="w-4 h-4"
+            />
+            清空
+          </button>
         </div>
       </div>
+    </div>
 
-      <div class="flex justify-center gap-2">
-        <button
-          class="btn btn-primary btn-sm gap-1"
-          :disabled="!leftText && !rightText"
-          @click="computeDiffFn"
-        >
-          <Icon
-            icon="lucide:arrow-left-right"
-            class="w-4 h-4"
-          />
-          对比
-        </button>
-        <button
-          class="btn btn-ghost btn-sm gap-1"
-          @click="clear"
-        >
-          <Icon
-            icon="lucide:trash-2"
-            class="w-4 h-4"
-          />
-          清空
-        </button>
-      </div>
-
+    <!-- Result view -->
+    <div
+      v-if="view === 'result'"
+      class="mt-4"
+    >
       <!-- No diff hint -->
       <div
         v-if="compared && !hasChanges"
@@ -84,9 +93,21 @@
         class="mt-2"
       >
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-lg font-semibold">
-            对比结果
-          </h2>
+          <div class="flex items-center gap-3">
+            <button
+              class="btn btn-ghost btn-sm gap-1"
+              @click="backToInput"
+            >
+              <Icon
+                icon="lucide:arrow-left"
+                class="w-4 h-4"
+              />
+              返回
+            </button>
+            <h2 class="text-lg font-semibold">
+              对比结果
+            </h2>
+          </div>
           <div class="flex items-center gap-4">
             <div class="join">
               <button
@@ -200,13 +221,14 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { computeDiff as doComputeDiff, computeStats, computeDisplayLines } from './diff.js'
 
 const leftText = ref('')
 const rightText = ref('')
 const diffLines = ref([])
 const compared = ref(false)
+const view = ref('input')
 const showMode = ref('compact')
 const unfolded = ref(new Set())
 const CONTEXT = 3
@@ -224,14 +246,33 @@ function unfold(foldIndex) {
 function computeDiffFn() {
   diffLines.value = doComputeDiff(leftText.value, rightText.value)
   compared.value = true
+  view.value = 'result'
   unfolded.value = new Set()
 }
+
+function backToInput() {
+  view.value = 'input'
+}
+
+function onKeydown(e) {
+  if (e.key !== 'Backspace') return
+  if (view.value !== 'result') return
+  // Don't hijack when focus is inside an editable element
+  const tag = document.activeElement?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return
+  e.preventDefault()
+  backToInput()
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 function clear() {
   leftText.value = ''
   rightText.value = ''
   diffLines.value = []
   compared.value = false
+  view.value = 'input'
   showMode.value = 'compact'
   unfolded.value = new Set()
 }

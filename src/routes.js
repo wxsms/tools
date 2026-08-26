@@ -2,7 +2,7 @@ export default [
   { path: '/', meta: { title: null, description: 'wxsm 的个人在线工具箱，包含编码转换、加密解密、文本处理等多种实用工具' } },
   { path: '/base64', meta: { title: 'Base64 转换', description: 'Base64 编码与解码' } },
   { path: '/gzip', meta: { title: 'Gzip 压缩', description: 'Gzip 压缩与解压（Base64 表示）' } },
-  { path: '/diff', meta: { title: '文本对比', description: '文本对比，支持字符级差异与行内高亮' } },
+  { path: '/diff', meta: { title: '文本对比', description: '文本对比，支持字符级差异与行内高亮', wide: true } },
   { path: '/watermark', meta: { title: '图片水印', description: '为图片添加透明文字水印' } },
   { path: '/aes-encrypt', meta: { title: '对称加密', description: 'AES 对称加密与解密' } },
   { path: '/hash-hmac', meta: { title: '哈希 / 散列', description: '哈希摘要与 HMAC 计算' } },
