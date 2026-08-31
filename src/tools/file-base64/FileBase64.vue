@@ -32,14 +32,30 @@
       v-if="activeTab === 'to-base64'"
       class="flex flex-col gap-4 max-w-2xl"
     >
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">选择文件</span></label>
-        <input
-          ref="fileInput"
-          type="file"
-          class="file-input file-input-bordered w-full"
-          @change="onFileChange"
-        >
+      <!-- Hidden file input, triggered by dropzone click -->
+      <input
+        ref="fileInput"
+        type="file"
+        class="hidden"
+        @change="onFileChange"
+      >
+
+      <!-- Dropzone -->
+      <div
+        class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+        :class="dragging ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-base-400'"
+        @click="openPicker"
+        @dragover.prevent="dragging = true"
+        @dragleave.prevent="dragging = false"
+        @drop.prevent="onDrop"
+      >
+        <Icon
+          icon="lucide:file-up"
+          class="w-12 h-12 mx-auto mb-2 opacity-50"
+        />
+        <p class="text-sm text-base-content/60">
+          点击此处、拖拽文件到此处，或直接 <kbd class="kbd kbd-sm">Ctrl</kbd>+<kbd class="kbd kbd-sm">V</kbd> 粘贴
+        </p>
       </div>
 
       <div
@@ -92,7 +108,10 @@
         </div>
       </div>
 
-      <div class="flex justify-end">
+      <div
+        v-if="fileInfo"
+        class="flex justify-end"
+      >
         <button
           class="btn btn-ghost btn-sm gap-1"
           @click="clearEncode"
@@ -165,7 +184,10 @@
         </div>
       </div>
 
-      <div class="flex justify-end gap-2">
+      <div
+        v-if="base64Input"
+        class="flex justify-end gap-2"
+      >
         <button
           class="btn btn-ghost btn-sm gap-1"
           @click="clearDecode"
@@ -196,21 +218,18 @@
 import { Icon } from '@iconify/vue'
 import { ref, computed } from 'vue'
 import { IMAGE_MIMES, formatSize, mimeToExt, parseDataUrl, buildImageSrc } from './file-base64.js'
+import { useImageInput } from '../../composables/useImageInput.js'
 
 // --- Shared ---
 const activeTab = ref('to-base64')
 
 // --- File → Base64 ---
-const fileInput = ref(null)
 const base64Output = ref('')
 const fileInfo = ref(null)
 const imagePreviewUrl = ref('')
 const encodeCopied = ref(false)
 
-function onFileChange(e) {
-  const file = e.target.files[0]
-  if (!file) return
-
+function loadFile(file) {
   fileInfo.value = { name: file.name, size: formatSize(file.size) }
   imagePreviewUrl.value = ''
 
@@ -224,6 +243,8 @@ function onFileChange(e) {
   }
   reader.readAsDataURL(file)
 }
+
+const { fileInput, dragging, openPicker, onFileChange, onDrop } = useImageInput(loadFile, { accept: false })
 
 async function copyBase64Output() {
   try {
