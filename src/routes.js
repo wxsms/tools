@@ -73,6 +73,7 @@ export default [
       wide: true,
     },
   },
+  { path: '/qr-decode', meta: { title: '二维码解析', description: '从图片解析二维码内容，支持 URL/WiFi/vCard 等类型识别' } },
   {
     path: '/keyboard-tester',
     meta: {

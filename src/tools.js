@@ -304,6 +304,12 @@ export const toolGroups = [
         icon: 'lucide:qr-code',
       },
       {
+        name: '二维码解析',
+        path: '/qr-decode',
+        desc: '从图片解析二维码内容，支持 URL/WiFi/vCard 等类型识别',
+        icon: 'mdi:qrcode-scan',
+      },
+      {
         name: '图片压缩',
         path: '/image-compress',
         desc: '图片压缩、缩放与格式转换',

@@ -64,6 +64,7 @@ const components = {
   '/grid': () => import('./tools/grid/Grid.vue'),
   '/css-filter': () => import('./tools/css-filter/CssFilter.vue'),
   '/text-shadow': () => import('./tools/text-shadow/TextShadow.vue'),
+  '/qr-decode': () => import('./tools/qr-decode/QrDecode.vue'),
 }
 
 const routes = routeDefs.map(r => ({
