@@ -17,7 +17,7 @@
       <div
         class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
         :class="dragging ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-base-400'"
-        @click="fileInput?.click()"
+        @click="openPicker"
         @dragover.prevent="dragging = true"
         @dragleave.prevent="dragging = false"
         @drop.prevent="onDrop"
@@ -120,21 +120,19 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import jsQR from 'jsqr'
+import { useImageInput } from '../../composables/useImageInput.js'
 
-const fileInput = ref(null)
 const status = ref('idle') // 'idle' | 'decoding' | 'success' | 'error'
 const rawText = ref('')
 const imageSrc = ref('')
-const dragging = ref(false)
 const copied = ref(false)
 let copyTimer = null
 
 const isUrl = computed(() => /^https?:\/\//i.test(rawText.value.trim()))
 
 function decodeImage(file) {
-  if (!file || !file.type.startsWith('image/')) return
   status.value = 'decoding'
   rawText.value = ''
   const reader = new FileReader()
@@ -163,31 +161,7 @@ function decodeImage(file) {
   reader.readAsDataURL(file)
 }
 
-function onFileChange(e) {
-  const file = e.target.files?.[0]
-  if (file) decodeImage(file)
-  e.target.value = '' // allow re-selecting same file
-}
-
-function onDrop(e) {
-  dragging.value = false
-  const file = e.dataTransfer?.files?.[0]
-  if (file) decodeImage(file)
-}
-
-function onPaste(e) {
-  const items = e.clipboardData?.items
-  if (!items) return
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      const file = item.getAsFile()
-      if (file) {
-        decodeImage(file)
-        break
-      }
-    }
-  }
-}
+const { fileInput, dragging, openPicker, onFileChange, onDrop } = useImageInput(decodeImage)
 
 function copyText(value) {
   if (!value) return
@@ -201,10 +175,4 @@ function copyText(value) {
 function openLink() {
   window.open(rawText.value.trim(), '_blank', 'noopener')
 }
-
-onMounted(() => window.addEventListener('paste', onPaste))
-onUnmounted(() => {
-  window.removeEventListener('paste', onPaste)
-  if (copyTimer) clearTimeout(copyTimer)
-})
 </script>

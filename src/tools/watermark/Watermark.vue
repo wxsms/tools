@@ -4,16 +4,31 @@
       图片水印
     </h1>
     <div class="flex flex-col gap-6 max-w-2xl">
-      <!-- Upload -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-semibold">选择图片</span></label>
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          class="file-input file-input-bordered w-full"
-          @change="onFileChange"
-        >
+      <!-- Hidden file input, triggered by dropzone click -->
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        class="hidden"
+        @change="onFileChange"
+      >
+
+      <!-- Dropzone -->
+      <div
+        class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+        :class="dragging ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-base-400'"
+        @click="openPicker"
+        @dragover.prevent="dragging = true"
+        @dragleave.prevent="dragging = false"
+        @drop.prevent="onDrop"
+      >
+        <Icon
+          icon="lucide:image-up"
+          class="w-12 h-12 mx-auto mb-2 opacity-50"
+        />
+        <p class="text-sm text-base-content/60">
+          点击此处、拖拽图片到此处，或直接 <kbd class="kbd kbd-sm">Ctrl</kbd>+<kbd class="kbd kbd-sm">V</kbd> 粘贴
+        </p>
       </div>
 
       <!-- Config -->
@@ -148,7 +163,8 @@
 <script setup>
 import { Icon } from '@iconify/vue'
 import { ref, watch, nextTick } from 'vue'
-const fileInput = ref(null)
+import { useImageInput } from '../../composables/useImageInput.js'
+
 const canvas = ref(null)
 const imageSrc = ref('')
 const imageObj = ref(null)
@@ -160,9 +176,7 @@ const opacity = ref(0.3)
 const rotation = ref(-30)
 const tile = ref(true)
 
-function onFileChange(e) {
-  const file = e.target.files[0]
-  if (!file) return
+function loadImage(file) {
   const reader = new FileReader()
   reader.onload = (ev) => {
     imageSrc.value = ev.target.result
@@ -175,6 +189,8 @@ function onFileChange(e) {
   }
   reader.readAsDataURL(file)
 }
+
+const { fileInput, dragging, openPicker, onFileChange, onDrop } = useImageInput(loadImage)
 
 function render() {
   const img = imageObj.value
