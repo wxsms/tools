@@ -84,7 +84,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { searchIndex, searchTools, highlightMatch, truncateResults } from '../tools/search.js'
 
@@ -96,6 +96,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
 
 const open = ref(false)
 const query = ref('')
@@ -138,7 +139,9 @@ function select(path) {
 const DOUBLE_SHIFT_MS = 300
 let lastShiftAt = 0
 function isKeyboardTesterPage() {
-  return typeof window !== 'undefined' && window.location.pathname === '/keyboard-tester'
+  // 用 router 而非 window.location.pathname：部署在子路径（如 /tools/）时
+  // pathname 会带前缀，route.path 才是去前缀后的路由路径。
+  return route.path === '/keyboard-tester'
 }
 
 function handleKeydown(e) {

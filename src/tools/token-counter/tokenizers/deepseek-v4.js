@@ -76,10 +76,13 @@ function renderMessages(messages) {
 }
 
 async function load() {
-  const res = await fetch(DEEPSEEK_V4_CONFIG.tokenizer.file)
+  // 部署在子路径（如 GitHub Pages /tools/）时需要 base 前缀；
+  // BASE_URL 末尾带斜杠，file 以斜杠开头，直接拼接即可。
+  const url = import.meta.env.BASE_URL + DEEPSEEK_V4_CONFIG.tokenizer.file
+  const res = await fetch(url)
   if (!res.ok) {
     throw new Error(
-      `Failed to fetch ${DEEPSEEK_V4_CONFIG.tokenizer.file}: ${res.status}`,
+      `Failed to fetch ${url}: ${res.status}`,
     )
   }
   // Prefer res.json() when the runtime provides it; fall back to text()+parse

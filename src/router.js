@@ -75,6 +75,8 @@ const routes = routeDefs.map(r => ({
 export { routeDefs }
 
 export default createRouter({
-  history: createWebHistory(),
+  // 部署在 GitHub Pages 子路径 /tools/ 下，base 必须与 vite base 一致，
+  // 否则路由会脱离 /tools 前缀。dev / build 时 vite 注入 BASE_URL。
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })

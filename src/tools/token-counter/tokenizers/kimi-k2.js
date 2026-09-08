@@ -82,10 +82,13 @@ function renderMessages(messages) {
 }
 
 async function load() {
-  const res = await fetch(KIMI_K2_CONFIG.tokenizer.file)
+  // 部署在子路径（如 GitHub Pages /tools/）时需要 base 前缀；
+  // BASE_URL 末尾带斜杠，file 以斜杠开头，直接拼接即可。
+  const url = import.meta.env.BASE_URL + KIMI_K2_CONFIG.tokenizer.file
+  const res = await fetch(url)
   if (!res.ok) {
     throw new Error(
-      `Failed to fetch ${KIMI_K2_CONFIG.tokenizer.file}: ${res.status}`,
+      `Failed to fetch ${url}: ${res.status}`,
     )
   }
   const text = await res.text()

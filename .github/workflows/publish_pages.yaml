@@ -26,7 +26,7 @@ jobs:
           PUPPETEER_SKIP_DOWNLOAD: true
       - run: npm run build
         env:
-          VITE_SITE_URL: https://tools.wxsm.space
+          VITE_SITE_URL: https://wxsms.github.io/tools
       - run: cp dist/index.html dist/404.html
       - name: GitHub Pages
         uses: crazy-max/ghaction-github-pages@v5
@@ -36,4 +36,3 @@ jobs:
           target_branch: gh-pages
           build_dir: dist
           jekyll: false
-          fqdn: tools.wxsm.space
