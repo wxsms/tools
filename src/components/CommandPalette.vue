@@ -141,7 +141,9 @@ let lastShiftAt = 0
 function isKeyboardTesterPage() {
   // 用 router 而非 window.location.pathname：部署在子路径（如 /tools/）时
   // pathname 会带前缀，route.path 才是去前缀后的路由路径。
-  return route.path === '/keyboard-tester'
+  // 直接访问带尾斜杠的 URL（如 /tools/keyboard-tester/）时 route.path
+  // 会保留尾斜杠，所以去掉尾斜杠再比较。
+  return route.path.replace(/\/$/, '') === '/keyboard-tester'
 }
 
 function handleKeydown(e) {
