@@ -316,6 +316,12 @@ export const toolGroups = [
         icon: 'lucide:image',
       },
       {
+        name: '图片占位图',
+        path: '/image-placeholder',
+        desc: '生成自定义尺寸与配色的占位图,支持导出 SVG / PNG 与 Data URI',
+        icon: 'lucide:image-plus',
+      },
+      {
         name: '代码截图',
         path: '/code-screenshot',
         desc: '代码语法高亮截图，支持多语言与主题',

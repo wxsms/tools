@@ -66,6 +66,7 @@ const components = {
   '/text-shadow': () => import('./tools/text-shadow/TextShadow.vue'),
   '/qr-decode': () => import('./tools/qr-decode/QrDecode.vue'),
   '/curl-generator': () => import('./tools/curl-generator/CurlGenerator.vue'),
+  '/image-placeholder': () => import('./tools/image-placeholder/ImagePlaceholder.vue'),
 }
 
 const routes = routeDefs.map(r => ({
