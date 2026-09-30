@@ -236,6 +236,66 @@
         </div>
       </div>
 
+      <!-- Settings -->
+      <div
+        v-show="activeTab === 'settings'"
+        class="flex flex-col gap-5 max-w-xl"
+      >
+        <label class="flex items-start justify-between gap-4 cursor-pointer">
+          <span>
+            <span class="block font-semibold text-sm">跟随重定向</span>
+            <span class="block text-sm opacity-60">自动跟随 3xx 重定向响应</span>
+          </span>
+          <span class="flex items-center gap-2 shrink-0 py-0.5">
+            <code class="text-xs opacity-50 font-mono">-L</code>
+            <input
+              v-model="followRedirects"
+              type="checkbox"
+              class="toggle toggle-sm toggle-primary"
+            >
+          </span>
+        </label>
+
+        <label class="flex items-start justify-between gap-4 cursor-pointer">
+          <span>
+            <span class="block font-semibold text-sm">跳过 SSL 证书校验</span>
+            <span class="block text-sm opacity-60">不校验服务器证书,适用于自签名或内网服务</span>
+          </span>
+          <span class="flex items-center gap-2 shrink-0 py-0.5">
+            <code class="text-xs opacity-50 font-mono">-k</code>
+            <input
+              v-model="insecure"
+              type="checkbox"
+              class="toggle toggle-sm toggle-primary"
+            >
+          </span>
+        </label>
+
+        <div class="flex items-start justify-between gap-4">
+          <span>
+            <span class="block font-semibold text-sm">HTTP 版本</span>
+            <span class="block text-sm opacity-60">限定使用的 HTTP 协议版本,默认自动协商</span>
+          </span>
+          <span class="flex items-center gap-2 shrink-0">
+            <code class="text-xs opacity-50 font-mono">{{ httpFlag || '—' }}</code>
+            <select
+              v-model="httpVersion"
+              class="select select-bordered select-sm w-28"
+            >
+              <option value="">
+                Auto
+              </option>
+              <option value="http1.1">
+                HTTP/1.1
+              </option>
+              <option value="http2">
+                HTTP/2
+              </option>
+            </select>
+          </span>
+        </div>
+      </div>
+
       <!-- Output -->
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">cURL 命令</span></label>
@@ -303,6 +363,9 @@ const bodyMode = ref('none')
 const rawLang = ref('text')
 const rawBody = ref('')
 const formPairs = ref([{ key: 'username', value: 'wxsm' }])
+const followRedirects = ref(false)
+const insecure = ref(false)
+const httpVersion = ref('')
 const copied = ref(false)
 
 /** Postman 风格的 Method 语义色 */
@@ -332,7 +395,14 @@ const tabs = computed(() => [
   { key: 'params', label: 'Params', count: activeCount.value.params },
   { key: 'headers', label: 'Headers', count: activeCount.value.headers },
   { key: 'body', label: 'Body', count: activeCount.value.body },
+  { key: 'settings', label: 'Settings', count: settingsCount.value },
 ])
+
+/** Settings tab 徽标:非默认配置数 */
+const settingsCount = computed(() =>
+  (followRedirects.value ? 1 : 0) +
+  (insecure.value ? 1 : 0) +
+  (httpVersion.value ? 1 : 0))
 
 /** raw 语言 → CodeMirror 扩展 */
 const RAW_LANGUAGES = {
@@ -393,6 +463,9 @@ const cmd = computed(() => buildCurl({
   rawBody: rawBody.value,
   formPairs: formPairs.value,
   formEncoding: bodyMode.value,
+  followRedirects: followRedirects.value,
+  insecure: insecure.value,
+  httpVersion: httpVersion.value,
 }))
 
 async function copyCmd() {
