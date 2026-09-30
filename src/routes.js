@@ -114,4 +114,5 @@ export default [
   },
   { path: '/css-filter', meta: { title: '滤镜', description: 'CSS filter 可视化生成，支持 blur/brightness/contrast/drop-shadow 等多种滤镜叠加' } },
   { path: '/text-shadow', meta: { title: '文字阴影', description: 'CSS text-shadow 可视化生成，支持多层阴影叠加' } },
+  { path: '/curl-generator', meta: { title: 'cURL 生成器', description: '填写 URL、Method、Headers 与 Body,实时生成可复制的 cURL 命令' } },
 ]
