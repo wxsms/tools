@@ -29,10 +29,27 @@ export function rawContentType(lang) {
 
 /**
  * 行是否参与命令:enabled !== false 且 key 非空。
- * @param {{key: string, value?: string, enabled?: boolean}} row
+ * @param {{key: string, value: string, enabled?: boolean}} row
  */
 function isActive(row) {
   return row.enabled !== false && String(row.key || '').trim() !== ''
+}
+
+/**
+ * 行为选项对应的 curl flag。
+ * @param {{
+ *   followRedirects?: boolean,
+ *   insecure?: boolean,
+ *   httpVersion?: '' | 'http1.1' | 'http2',
+ * }} opts
+ * @returns {string[]} 如 ['-L', '-k', '--http1.1']
+ */
+export function behaviorFlags(opts = {}) {
+  const flags = []
+  if (opts.followRedirects) flags.push('-L')
+  if (opts.insecure) flags.push('-k')
+  if (opts.httpVersion) flags.push(`--${opts.httpVersion}`)
+  return flags
 }
 
 /**
@@ -47,11 +64,14 @@ function isActive(row) {
  *   rawBody: string,
  *   formPairs: Array<{key: string, value: string, enabled?: boolean}>,
  *   formEncoding: 'form-data' | 'urlencoded',
+ *   followRedirects?: boolean,
+ *   insecure?: boolean,
+ *   httpVersion?: '' | 'http1.1' | 'http2',
  * }} req
  * @returns {string}
  */
 export function buildCurl(req) {
-  const parts = ['curl']
+  const parts = ['curl', ...behaviorFlags(req)]
 
   if (req.method && req.method !== 'GET') parts.push(`-X ${req.method}`)
 

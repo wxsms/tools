@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCurl, shellQuote, splitUrlQuery, rawContentType } from './curl.js'
+import { buildCurl, shellQuote, splitUrlQuery, rawContentType, behaviorFlags } from './curl.js'
 
 describe('shellQuote', () => {
   it('wraps plain text', () => {
@@ -144,6 +144,34 @@ line2'`)
     })
     expect(cmd).toContain(`'https://a.com/it'\\''s'`)
     expect(cmd).toContain(`'he said "hi" & left'`)
+  })
+
+  it('adds behavior flags after curl and before url', () => {
+    const cmd = buildCurl({
+      method: 'GET',
+      url: 'https://a.com',
+      followRedirects: true,
+      insecure: true,
+      httpVersion: 'http1.1',
+    })
+    expect(cmd).toBe(`curl -L -k --http1.1 'https://a.com'`)
+  })
+
+  it('omits behavior flags by default', () => {
+    expect(buildCurl({ method: 'GET', url: 'https://a.com' })).toBe(`curl 'https://a.com'`)
+    expect(behaviorFlags({})).toEqual([])
+  })
+
+  it('accepts behavior flags with other options combined', () => {
+    const cmd = buildCurl({
+      method: 'POST',
+      url: 'https://a.com',
+      insecure: true,
+      bodyMode: 'raw',
+      rawLang: 'json',
+      rawBody: '{"a":1}',
+    })
+    expect(cmd).toBe(`curl -k -X POST 'https://a.com' -H 'Content-Type: application/json' --data-raw '{"a":1}'`)
   })
 })
 
