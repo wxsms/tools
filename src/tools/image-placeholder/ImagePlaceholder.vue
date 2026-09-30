@@ -130,17 +130,53 @@
           />
           SVG
         </button>
-        <button
-          class="btn btn-primary btn-sm gap-1"
-          :disabled="!svg"
-          @click="downloadPng"
+        <div
+          class="dropdown dropdown-end"
+          :class="{ 'dropdown-open': pngMenuOpen }"
         >
-          <Icon
-            icon="lucide:image-down"
-            class="w-4 h-4"
-          />
-          PNG
-        </button>
+          <button
+            tabindex="0"
+            class="btn btn-ghost btn-sm gap-1"
+            :disabled="!svg"
+            @click="pngMenuOpen = !pngMenuOpen"
+          >
+            <Icon
+              icon="lucide:image-down"
+              class="w-4 h-4"
+            />
+            PNG
+            <span class="font-mono text-xs opacity-60">{{ pngScale }}x</span>
+            <Icon
+              icon="lucide:chevron-down"
+              class="w-3.5 h-3.5 opacity-60"
+            />
+          </button>
+          <ul
+            tabindex="0"
+            class="dropdown-content menu bg-base-200 rounded-box w-28 p-1.5 shadow-lg z-50"
+          >
+            <li
+              v-for="s in [1, 2, 3]"
+              :key="s"
+            >
+              <button
+                :class="{ active: s === pngScale }"
+                @click="pickPngScale(s)"
+              >
+                <Icon
+                  v-if="s === pngScale"
+                  icon="lucide:check"
+                  class="w-4 h-4"
+                />
+                <span
+                  v-else
+                  class="w-4"
+                />
+                {{ s }}x
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Data URI -->
@@ -194,6 +230,15 @@ const foreground = ref('#111827')
 const text = ref('')
 const copied = ref(false)
 const uriCopied = ref(false)
+const pngScale = ref(1)
+const pngMenuOpen = ref(false)
+
+/** 选择倍率后立即下载并收起菜单 */
+function pickPngScale(s) {
+  pngScale.value = s
+  pngMenuOpen.value = false
+  downloadPng()
+}
 
 function clampSize(v) {
   const n = Math.floor(Number(v))
@@ -225,9 +270,9 @@ function applyPreset(p) {
   height.value = p.h
 }
 
-function downloadBlob(blob, ext) {
+function downloadBlob(blob, ext, suffix = '') {
   const link = document.createElement('a')
-  link.download = `placeholder-${safeWidth.value}x${safeHeight.value}.${ext}`
+  link.download = `placeholder-${safeWidth.value}x${safeHeight.value}${suffix}.${ext}`
   link.href = URL.createObjectURL(blob)
   link.click()
   URL.revokeObjectURL(link.href)
@@ -246,14 +291,14 @@ async function downloadPng() {
     img.onerror = () => reject(new Error('SVG 解码失败'))
     img.src = dataUri.value
   })
-  const scale = 2 // 2x 导出,保证清晰度
+  const scale = pngScale.value
   const canvas = document.createElement('canvas')
   canvas.width = safeWidth.value * scale
   canvas.height = safeHeight.value * scale
   const ctx = canvas.getContext('2d')
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
   const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-  downloadBlob(blob, 'png')
+  downloadBlob(blob, 'png', `@${scale}x`)
 }
 
 async function copySvg() {
