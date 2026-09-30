@@ -350,6 +350,12 @@ export const toolGroups = [
         desc: 'MIME 类型与文件扩展名速查',
         icon: 'mdi:format-list-bulleted-type',
       },
+      {
+        name: 'cURL 生成器',
+        path: '/curl-generator',
+        desc: '填写 URL、Method、Headers 与 Body,实时生成可复制的 cURL 命令',
+        icon: 'lucide:terminal',
+      },
     ],
   },
   {
