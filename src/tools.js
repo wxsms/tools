@@ -333,6 +333,12 @@ export const toolGroups = [
         desc: 'SVG 代码实时预览，支持美化 / 压缩、Data URI、颜色覆盖与下载',
         icon: 'mdi:svg',
       },
+      {
+        name: 'PNG 转 SVG',
+        path: '/png-to-svg',
+        desc: '将 PNG 位图描摹为可编辑的矢量 SVG，支持颜色数量、平滑度、噪点过滤与背景去除',
+        icon: 'mdi:svg',
+      },
     ],
   },
   {
