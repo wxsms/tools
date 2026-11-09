@@ -73,6 +73,13 @@ export default [
     },
   },
   {
+    path: '/png-to-svg',
+    meta: {
+      title: 'PNG 转 SVG',
+      description: '将 PNG 位图描摹为可编辑的矢量 SVG，支持颜色数量、平滑度、噪点过滤与背景去除',
+    },
+  },
+  {
     path: '/keyboard-tester',
     meta: {
       title: '键盘测试',

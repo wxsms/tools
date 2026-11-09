@@ -58,6 +58,7 @@ const components = {
   '/token-counter': () => import('./tools/token-counter/TokenCounter.vue'),
   '/csv': () => import('./tools/csv/CsvPreview.vue'),
   '/svg-preview': () => import('./tools/svg-preview/SvgPreview.vue'),
+  '/png-to-svg': () => import('./tools/png-to-svg/PngToSvg.vue'),
   '/keyboard-tester': () => import('./tools/keyboard-tester/KeyboardTester.vue'),
   '/emoji': () => import('./tools/emoji/Emoji.vue'),
   '/chmod': () => import('./tools/chmod/Chmod.vue'),
