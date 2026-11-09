@@ -313,7 +313,7 @@ export const toolGroups = [
         name: 'PNG 转 SVG',
         path: '/png-to-svg',
         desc: '将 PNG 位图描摹为可编辑的矢量 SVG，支持颜色数量、平滑度、噪点过滤与背景去除',
-        icon: 'mdi:vector-square',
+        icon: 'mdi:svg',
       },
     ],
   },

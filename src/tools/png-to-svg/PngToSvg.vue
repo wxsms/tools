@@ -41,11 +41,12 @@
                 max="64"
                 step="1"
                 class="range range-sm flex-1"
+                aria-label="颜色数量"
               >
               <span class="text-sm w-10 text-right">{{ params.colors }}</span>
             </div>
             <p class="text-xs opacity-60">
-              调色板颜色越多细节越丰富，文件也越大
+              调色板颜色越多细节越丰富，文件也越大；开启去除背景时其中一种会被背景占用
             </p>
           </div>
 
@@ -59,6 +60,7 @@
                 max="10"
                 step="1"
                 class="range range-sm flex-1"
+                aria-label="平滑度"
               >
               <span class="text-sm w-10 text-right">{{ params.smoothness }}</span>
             </div>
@@ -77,6 +79,7 @@
                 max="32"
                 step="1"
                 class="range range-sm flex-1"
+                aria-label="噪点过滤"
               >
               <span class="text-sm w-10 text-right">{{ params.noiseFilter }}</span>
             </div>
@@ -94,7 +97,8 @@
             <span class="label-text font-semibold">去除背景</span>
           </label>
           <p class="-mt-2 text-xs opacity-60">
-            取图片四边最常见的颜色，从边缘向内填充成透明；被图形包围的同色区域会保留
+            取图片四边最常见的颜色，从边缘向内填充成透明；被图形包围的同色区域会保留。
+            若该颜色本身就贴满边框（例如紧裁的截图），会判定为主体并跳过去除
           </p>
         </div>
 
@@ -156,6 +160,10 @@
             v-if="converting"
             class="opacity-60"
           >更新中…</span>
+          <span
+            v-if="result.backgroundSkipReason === 'subject'"
+            class="text-warning"
+          >已跳过去除背景：四边同色区域是主体而非背景</span>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -209,7 +217,7 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { DEFAULT_PARAMS, MAX_TRACE_DIM, vectorize } from './png-to-svg.js'
 
 const checkerStyle = {
@@ -264,8 +272,15 @@ function loadImage(file) {
   })
 }
 
+// Decoding a huge PNG costs its full pixel count in memory before the downscale
+// even runs, so refuse images that a browser would struggle to rasterize.
+const MAX_SOURCE_PIXELS = 64 * 1024 * 1024
+
 // Downscale to MAX_TRACE_DIM and hand the pixels over as plain ImageData.
 function toImageData(img) {
+  if (img.naturalWidth * img.naturalHeight > MAX_SOURCE_PIXELS) {
+    throw new Error('图片像素过多，请先缩小后再试')
+  }
   const scale = Math.min(1, MAX_TRACE_DIM / Math.max(img.naturalWidth, img.naturalHeight))
   const width = Math.max(1, Math.round(img.naturalWidth * scale))
   const height = Math.max(1, Math.round(img.naturalHeight * scale))
@@ -273,9 +288,14 @@ function toImageData(img) {
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) throw new Error('当前浏览器不支持 Canvas，无法读取图片像素')
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, 0, 0, width, height)
-  return ctx.getImageData(0, 0, width, height)
+  try {
+    return ctx.getImageData(0, 0, width, height)
+  } catch {
+    throw new Error('无法读取图片像素，请确认文件未损坏且不是超大的 PNG')
+  }
 }
 
 async function onFileChange(event) {
@@ -314,6 +334,8 @@ function retrace(delay = RETRACE_DELAY) {
 }
 
 watch(params, () => retrace(), { deep: true })
+
+onBeforeUnmount(() => clearTimeout(retraceTimer))
 
 function reset() {
   clearTimeout(retraceTimer)

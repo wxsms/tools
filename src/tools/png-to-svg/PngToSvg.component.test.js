@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import PngToSvg from './PngToSvg.vue'
@@ -73,5 +73,28 @@ describe('PngToSvg view', () => {
     const reset = wrapper.findAll('button').find(b => b.text().includes('重置'))
     await reset.trigger('click')
     expect(wrapper.text()).toContain('选择 PNG 图片后自动转换')
+  })
+
+  it('gives every slider an accessible name', () => {
+    const wrapper = mountComponent()
+    const ranges = wrapper.findAll('input[type="range"]')
+    expect(ranges).toHaveLength(3)
+    expect(ranges.map(r => r.attributes('aria-label'))).toEqual(['颜色数量', '平滑度', '噪点过滤'])
+  })
+
+  it('clears a pending retrace when unmounted', async () => {
+    vi.useFakeTimers()
+    try {
+      const wrapper = mountComponent()
+      // Simulate a loaded image so a parameter change schedules a retrace.
+      wrapper.vm.imageData = { width: 1, height: 1, data: new Uint8ClampedArray(4) }
+      const colors = wrapper.findAll('input[type="range"]')[0]
+      await colors.setValue('32')
+      wrapper.unmount()
+      // A timer left running after unmount would convert against a torn-down component.
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

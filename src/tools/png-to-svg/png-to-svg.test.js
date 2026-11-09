@@ -4,6 +4,7 @@ import {
   DEFAULT_PARAMS,
   removeBackground,
   sampleBorderColor,
+  sampleOpaquePalette,
   toleranceForSmoothness,
   vectorize,
 } from './png-to-svg.js'
@@ -26,6 +27,37 @@ function makeImage(width, height, colorAt) {
 
 const WHITE = [255, 255, 255]
 const RED = [220, 30, 60]
+const BLUE = [30, 90, 200]
+
+// Path fills with their effective opacity, parsed from the emitted SVG.
+function fillsOf(svg) {
+  return [...svg.matchAll(/<path\b[^>]*>/g)].map(([tag]) => {
+    const fill = /fill="rgb\((\d+),(\d+),(\d+)\)"/.exec(tag)
+    if (!fill) return null
+    const opacity = /opacity="([\d.]+)"/.exec(tag)
+    return {
+      r: Number(fill[1]),
+      g: Number(fill[2]),
+      b: Number(fill[3]),
+      opacity: opacity ? Number(opacity[1]) : 1,
+    }
+  }).filter(Boolean)
+}
+
+const isVisibleWhite = f => f.r >= 240 && f.g >= 240 && f.b >= 240 && f.opacity > 0.5
+const isVisibleBlue = f => f.b >= 180 && f.r < 80 && f.opacity > 0.5
+
+// A logo drawn small in the middle of a page: white eye, blue ring, white page.
+// The eye shares the page's color, so quantization has to keep it distinct from
+// the flood-filled background.
+function smallLogo(size, outer, inner) {
+  return makeImage(size, size, (x, y) => {
+    const d = Math.hypot(x - size / 2, y - size / 2)
+    if (d < inner) return WHITE
+    if (d < outer) return BLUE
+    return WHITE
+  })
+}
 
 function redSquareOnWhite(size = 32, inset = 8) {
   return makeImage(size, size, (x, y) =>
@@ -181,5 +213,84 @@ describe('vectorize', () => {
     const { svg, pathCount } = vectorize(blank, DEFAULT_PARAMS, { width: 16, height: 16 })
     expect(pathCount).toBe(0)
     expect(svg).toBe('')
+  })
+
+  // The eye is the same white as the page. Before the fix, the flood-filled page
+  // dominated every k-means cluster, so the eye's cluster averaged to alpha 0 and
+  // was dropped: the output was a blue ring with a transparent hole.
+  it.each([
+    [256, 30, 10],
+    [256, 50, 17],
+    [512, 60, 20],
+  ])('keeps an enclosed region of the background color (%ipx, ring %i, eye %i)', (size, outer, inner) => {
+    const { svg } = vectorize(smallLogo(size, outer, inner), DEFAULT_PARAMS, { width: size, height: size })
+    const fills = fillsOf(svg)
+    expect(fills.some(isVisibleWhite)).toBe(true)
+    expect(fills.some(isVisibleBlue)).toBe(true)
+  })
+
+  // A subject that reaches the border makes its own color the most common border
+  // color. Removing that color erases the subject itself.
+  it('does not remove the subject when it is the only color touching the border', () => {
+    const image = makeImage(128, 128, (x, y) =>
+      Math.hypot(x - 64, y - 64) <= 72 ? BLUE : WHITE)
+    const { svg, backgroundRemoved } = vectorize(image, DEFAULT_PARAMS, { width: 128, height: 128 })
+    expect(backgroundRemoved).toBe(false)
+    expect(fillsOf(svg).some(isVisibleBlue)).toBe(true)
+  })
+
+  it('reports when background removal was skipped', () => {
+    const image = makeImage(128, 128, (x, y) =>
+      Math.hypot(x - 64, y - 64) <= 72 ? BLUE : WHITE)
+    const result = vectorize(image, DEFAULT_PARAMS, { width: 128, height: 128 })
+    expect(result.backgroundRemoved).toBe(false)
+    expect(result.backgroundSkipReason).toBeTruthy()
+  })
+
+  it('still removes a real background on a padded image', () => {
+    const { svg, backgroundRemoved } = vectorize(redSquareOnWhite(32, 8), DEFAULT_PARAMS, { width: 32, height: 32 })
+    expect(backgroundRemoved).toBe(true)
+    const fills = fillsOf(svg)
+    expect(fills.some(f => f.r >= 200 && f.g < 80)).toBe(true)
+  })
+
+  // Without a floor, a subject that fills the frame is removed entirely and the
+  // output is empty. A single-color image must still produce an empty result.
+  it('keeps the subject when removal would erase everything but a sliver', () => {
+    const image = makeImage(128, 128, (x, y) =>
+      Math.hypot(x - 64, y - 64) <= 90 ? BLUE : WHITE)
+    const { svg, pathCount } = vectorize(image, DEFAULT_PARAMS, { width: 128, height: 128 })
+    expect(pathCount).toBeGreaterThan(0)
+    expect(fillsOf(svg).some(isVisibleBlue)).toBe(true)
+  })
+})
+
+describe('sampleOpaquePalette', () => {
+  // Flood-filled page: transparent except the subject. The eye is only ~11% of the
+  // opaque pixels, so a strided sampler can miss it entirely on a large image.
+  it('includes every significant opaque color on a large image', () => {
+    const size = 2048
+    const image = makeImage(size, size, (x, y) => {
+      const d = Math.hypot(x - size / 2, y - size / 2)
+      if (d < 80) return WHITE
+      if (d < 240) return BLUE
+      return [255, 255, 255, 0]
+    })
+    const palette = sampleOpaquePalette(image, 15)
+    expect(palette.some(p => p.r >= 240 && p.g >= 240 && p.b >= 240)).toBe(true)
+    expect(palette.some(p => p.b >= 180 && p.r < 80)).toBe(true)
+    expect(palette.every(p => p.a === 255)).toBe(true)
+  })
+
+  it('never returns more than the requested number of colors', () => {
+    const image = makeImage(64, 64, (x, y) => [x * 4, y * 4, (x + y) * 2])
+    expect(sampleOpaquePalette(image, 8).length).toBeLessThanOrEqual(8)
+    expect(sampleOpaquePalette(image, 8).length).toBeGreaterThan(0)
+  })
+
+  it('never returns transparent colors', () => {
+    const image = makeImage(16, 16, (x, y) =>
+      x >= 4 && x < 12 && y >= 4 && y < 12 ? RED : [255, 255, 255, 0])
+    expect(sampleOpaquePalette(image, 4).every(p => p.a === 255)).toBe(true)
   })
 })
