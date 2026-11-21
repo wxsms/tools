@@ -75,6 +75,13 @@ export default [
   },
   { path: '/qr-decode', meta: { title: '二维码解析', description: '从图片解析二维码内容，支持 URL/WiFi/vCard 等类型识别' } },
   {
+    path: '/png-to-svg',
+    meta: {
+      title: 'PNG 转 SVG',
+      description: '将 PNG 位图描摹为可编辑的矢量 SVG，支持颜色数量、平滑度、噪点过滤与背景去除',
+    },
+  },
+  {
     path: '/keyboard-tester',
     meta: {
       title: '键盘测试',
